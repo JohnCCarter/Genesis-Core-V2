@@ -110,6 +110,15 @@ _WORKSPACE_VERIFICATION_FILES = [
 ]
 
 
+_BOOTSTRAP_VERIFICATION_FILES = [
+    "seed_manifest.json",
+    ".env.example",
+    ".pre-commit-config.yaml",
+    "tests/runtime/test_local_env_template.py",
+    "tests/runtime/test_local_precommit_config.py",
+]
+
+
 _MODULE_LOOP_FILES = [
     "src/core/server.py",
     "mcp_server/server.py",
@@ -424,6 +433,26 @@ def test_seed_contains_workspace_verification_manifest() -> None:
         "tasks": {
             "runtime_test_file": "tests/runtime/test_local_vscode_tasks.py",
             "workspace_file": ".vscode/tasks.json",
+        },
+    }
+
+
+def test_seed_contains_bootstrap_verification_manifest() -> None:
+    repo_root = Path(__file__).resolve().parents[2]
+
+    for relative_path in _BOOTSTRAP_VERIFICATION_FILES:
+        assert (repo_root / relative_path).exists(), relative_path
+
+    manifest = json.loads((repo_root / "seed_manifest.json").read_text(encoding="utf-8"))
+
+    assert manifest["bootstrap_verification"] == {
+        "env_template": {
+            "runtime_test_file": "tests/runtime/test_local_env_template.py",
+            "tracked_file": ".env.example",
+        },
+        "precommit": {
+            "runtime_test_file": "tests/runtime/test_local_precommit_config.py",
+            "tracked_file": ".pre-commit-config.yaml",
         },
     }
 
