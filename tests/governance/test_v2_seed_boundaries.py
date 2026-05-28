@@ -23,6 +23,12 @@ _WORKFLOW_FILES = [
 ]
 
 
+_TASK_FILES = [
+    ".vscode/tasks.json",
+    "tests/runtime/test_local_vscode_tasks.py",
+]
+
+
 _MCP_FILES = [
     ".vscode/mcp.json",
     "config/mcp_settings.json",
@@ -123,6 +129,20 @@ def test_seed_contains_local_mcp_shell() -> None:
     scope_text = (repo_root / "docs" / "SKELETON_SCOPE.md").read_text(encoding="utf-8")
     assert "local MCP stdio shell" in scope_text
     assert "remote MCP surfaces remain deferred" in scope_text
+
+
+def test_seed_contains_local_vscode_task_loop() -> None:
+    repo_root = Path(__file__).resolve().parents[2]
+
+    for relative_path in _TASK_FILES:
+        assert (repo_root / relative_path).exists(), relative_path
+
+    readme = (repo_root / "README.md").read_text(encoding="utf-8")
+    scope_text = (repo_root / "docs" / "SKELETON_SCOPE.md").read_text(encoding="utf-8")
+
+    assert "Local VS Code tasks:" in readme
+    assert "genesis-v2: api shell" in readme
+    assert ".vscode/tasks.json" in scope_text
 
 
 def test_seed_excludes_legacy_and_stateful_surfaces() -> None:

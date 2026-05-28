@@ -3,7 +3,7 @@
 Runtime-first seed with admitted local-only API shell generated from the current
 `Genesis-Core` repository.
 
-Source Genesis-Core HEAD: `a5826a7e`
+Source Genesis-Core HEAD: `d2349bc7`
 
 ## What is included
 
@@ -17,6 +17,7 @@ Source Genesis-Core HEAD: `a5826a7e`
 - narrow config bootstrap (`config/__init__.py`, `config/timeframe_configs.py`,
     `config/backtest_defaults.yaml`)
 - local MCP stdio shell (`mcp_server/*.py`, `.vscode/mcp.json`, `config/mcp_settings.json`)
+- local VS Code task loop (`.vscode/tasks.json` for API shell, smoke suite, and pytest)
 - runtime-only governance guardrails
 - admitted source model payloads under `config/models/**`
 - deterministic fixture model-registry/prob-model smoke
@@ -81,6 +82,9 @@ Local champion-backed evaluate smoke: `python -m core.bootstrap.evaluate_champio
 Local bootstrap smoke: `python -m core.bootstrap.fixture_smoke`
 Local backtest bootstrap smoke: `python -m core.bootstrap.backtest_smoke`
 Local runtime smoke suite: `python -m core.bootstrap.smoke_suite`
+
+Local VS Code tasks:
+`genesis-v2: api shell`, `genesis-v2: smoke suite`, `genesis-v2: pytest`
 
 Console scripts after editable install:
 `genesis-v2-fixture-smoke`, `genesis-v2-backtest-smoke`, `genesis-v2-smoke-suite`

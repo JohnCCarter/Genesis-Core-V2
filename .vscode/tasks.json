@@ -1,0 +1,55 @@
+{
+  "tasks": [
+    {
+      "args": [
+        "-m",
+        "uvicorn",
+        "core.server:app",
+        "--app-dir",
+        "src",
+        "--reload"
+      ],
+      "command": "python",
+      "isBackground": true,
+      "label": "genesis-v2: api shell",
+      "presentation": {
+        "panel": "dedicated",
+        "reveal": "always"
+      },
+      "problemMatcher": [],
+      "type": "shell"
+    },
+    {
+      "args": [
+        "-m",
+        "core.bootstrap.smoke_suite"
+      ],
+      "command": "python",
+      "label": "genesis-v2: smoke suite",
+      "presentation": {
+        "panel": "shared",
+        "reveal": "always"
+      },
+      "type": "shell"
+    },
+    {
+      "args": [
+        "-m",
+        "pytest",
+        "-q"
+      ],
+      "command": "python",
+      "group": {
+        "isDefault": true,
+        "kind": "test"
+      },
+      "label": "genesis-v2: pytest",
+      "presentation": {
+        "panel": "shared",
+        "reveal": "always"
+      },
+      "type": "shell"
+    }
+  ],
+  "version": "2.0.0"
+}

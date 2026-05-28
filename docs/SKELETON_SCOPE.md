@@ -19,7 +19,8 @@ Included in the current priority lane:
 
 - README and local workflow docs
 - `AGENTS.md` and `.github/copilot-instructions.md`
-- `.vscode/mcp.json`, `config/mcp_settings.json`, and `mcp_server/**` for local MCP use
+- `.vscode/mcp.json` and `.vscode/tasks.json` for local editor workflow
+- `config/mcp_settings.json` and `mcp_server/**` for local MCP use
 - local-only API shell (`config`, `status`, `models`, `strategy`)
 - fixture-backed smoke tests and console scripts
 - explicitly admitted non-sensitive config/model artifacts already carried into the seed
@@ -40,4 +41,5 @@ Deferred to separate verified slices:
 - In `Genesis-Core`: `python -m pytest tests/utils/test_open_v2_runtime_seed.py -q`
 - Regenerate the seed: `python scripts/extract/open_v2_runtime_seed.py --clean`
 - In `Genesis-Core-V2`: `python -m pytest -q`
+- Local task loop: `genesis-v2: api shell`, `genesis-v2: smoke suite`, `genesis-v2: pytest`
 - Optional local MCP install: `python -m pip install -e ".[mcp]"`
