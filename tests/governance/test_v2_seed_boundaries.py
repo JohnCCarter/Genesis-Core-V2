@@ -35,6 +35,12 @@ _SETTINGS_FILES = [
 ]
 
 
+_ENV_TEMPLATE_FILES = [
+    ".env.example",
+    "tests/runtime/test_local_env_template.py",
+]
+
+
 _EXTENSIONS_FILES = [
     ".vscode/extensions.json",
     "tests/runtime/test_local_vscode_extensions.py",
@@ -175,6 +181,20 @@ def test_seed_contains_local_vscode_settings() -> None:
     assert ".vscode/settings.json" in readme
     assert "Python analysis/test settings" in readme
     assert ".vscode/settings.json" in scope_text
+
+
+def test_seed_contains_local_env_template() -> None:
+    repo_root = Path(__file__).resolve().parents[2]
+
+    for relative_path in _ENV_TEMPLATE_FILES:
+        assert (repo_root / relative_path).exists(), relative_path
+
+    readme = (repo_root / "README.md").read_text(encoding="utf-8")
+    scope_text = (repo_root / "docs" / "SKELETON_SCOPE.md").read_text(encoding="utf-8")
+
+    assert ".env.example" in readme
+    assert "tracked env bootstrap template" in readme
+    assert ".env.example" in scope_text
 
 
 def test_seed_contains_local_vscode_extensions() -> None:

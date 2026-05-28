@@ -3,7 +3,7 @@
 Runtime-first seed with admitted local-only API shell generated from the current
 `Genesis-Core` repository.
 
-Source Genesis-Core HEAD: `96b6d989`
+Source Genesis-Core HEAD: `2fee9429`
 
 ## What is included
 
@@ -20,6 +20,7 @@ Source Genesis-Core HEAD: `96b6d989`
 - local VS Code task/debug loop (`.vscode/tasks.json`, `.vscode/launch.json`)
 - local VS Code Python analysis/test settings (`.vscode/settings.json`)
 - local VS Code extension recommendations (`.vscode/extensions.json`)
+- tracked env bootstrap template (`.env.example`)
 - runtime-only governance guardrails
 - admitted source model payloads under `config/models/**`
 - deterministic fixture model-registry/prob-model smoke
@@ -65,7 +66,7 @@ Phase 1 intentionally excludes `config/strategy/champions/**`; runtime falls bac
 The admitted API shell is local-only (`config/status/models/strategy`); exchange-facing,
 paper, public-data, and UI surfaces remain excluded for a later slice.
 Runtime state and champion authority payloads remain excluded; generated `.env` contains only
-local-shell placeholders.
+local-shell placeholders. Tracked `.env.example` mirrors the same narrow values for copy-forward bootstrap.
 Unneeded Optuna/optimizer closure is intentionally pruned from the seed until and unless a later
 explicit slice admits those higher-sensitivity surfaces.
 Local MCP support is admitted for stdio-only workspace usage; remote MCP entrypoints and remote
@@ -80,6 +81,7 @@ allowlist variants remain deferred.
 - `.vscode/tasks.json` and `.vscode/launch.json` inject `PYTHONPATH=${workspaceFolder}/src` for local non-installed loops.
 - `.vscode/settings.json` aligns Python analysis/test discovery with the `src/` layout and local `.env` placeholder.
 - `.vscode/extensions.json` recommends the Python/Pylance/Ruff stack for local skeleton work.
+- `.env.example` keeps the narrow local placeholder values tracked even though `.env` stays ignored.
 
 After editable install, local module commands:
 

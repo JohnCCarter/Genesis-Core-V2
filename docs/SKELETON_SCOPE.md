@@ -20,6 +20,7 @@ Included in the current priority lane:
 - README and local workflow docs
 - `AGENTS.md` and `.github/copilot-instructions.md`
 - `.vscode/mcp.json`, `.vscode/tasks.json`, `.vscode/launch.json`, `.vscode/settings.json`, and `.vscode/extensions.json` for local editor workflow
+- tracked local env bootstrap template (`.env.example`) plus ignored local placeholder `.env`
 - `config/mcp_settings.json` and `mcp_server/**` for local MCP use
 - local-only API shell (`config`, `status`, `models`, `strategy`)
 - fixture-backed smoke tests and console scripts
