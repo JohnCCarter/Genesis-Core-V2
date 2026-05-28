@@ -23,12 +23,18 @@ _ADMITTED_FILES = [
 
 
 _EXCLUDED_FILES = [
+    "src/core/pipeline.py",
     "src/core/strategy/features.py",
+    "src/core/utils/diffing/optuna_guard.py",
+    "src/core/utils/diffing/results_diff.py",
+    "src/core/utils/diffing/trial_cache.py",
+    "src/core/utils/optuna_helpers.py",
     "config/runtime.json",
     "config/runtime.seed.json",
 ]
 
 _EXCLUDED_PREFIXES = [
+    "src/core/optimizer",
     "data",
 ]
 
@@ -37,7 +43,13 @@ _EXCLUDED_JSON_PAYLOAD_DIRS = [
 ]
 
 _EXCLUDED_MODULE_PREFIXES = [
+    "core.optimizer",
+    "core.pipeline",
     "core.strategy.features",
+    "core.utils.diffing.optuna_guard",
+    "core.utils.diffing.results_diff",
+    "core.utils.diffing.trial_cache",
+    "core.utils.optuna_helpers",
 ]
 
 

@@ -3,11 +3,11 @@
 Runtime-first seed with admitted API/service shell generated from the current
 `Genesis-Core` repository.
 
-Source Genesis-Core HEAD: `eb29d88a`
+Source Genesis-Core HEAD: `c1f00c9c`
 
 ## What is included
 
-- runtime kernel roots (`pipeline`, `backtest`, `strategy`, `regime`)
+- runtime kernel roots (`backtest`, `strategy`, `regime`)
 - local dependency closure required by those roots
 - admitted API/service shell (`src/core/server.py`, `src/core/api/**`)
 - source-backed config validation seam (`src/core/config/validator.py`,
@@ -32,7 +32,11 @@ Source Genesis-Core HEAD: `eb29d88a`
 
 ## What is intentionally excluded
 
+- `src/core/pipeline.py`
+- `src/core/optimizer/**`
 - `src/core/strategy/features.py`
+- `src/core/utils/optuna_helpers.py`
+- `src/core/utils/diffing/{optuna_guard,results_diff,trial_cache}.py`
 - `config/runtime.json`
 - `config/runtime.seed.json`
 - `config/strategy/champions/**`
@@ -50,6 +54,8 @@ Phase 1 intentionally excludes `config/strategy/champions/**`; runtime falls bac
 `config/timeframe_configs.py` through `ChampionLoader` when champion payloads are absent.
 The API/service shell is admitted, but runtime state and champion authority payloads remain
 excluded; generated `.env` contains placeholder values for bearer/auth seams only.
+Unneeded Optuna/optimizer closure is intentionally pruned from the seed until and unless a later
+explicit slice admits those higher-sensitivity surfaces.
 
 Local model smoke: `python -m core.bootstrap.model_smoke`
 Local champion smoke: `python -m core.bootstrap.champion_smoke`
