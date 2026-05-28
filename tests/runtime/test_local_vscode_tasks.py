@@ -5,16 +5,9 @@ from pathlib import Path
 
 
 EXPECTED_TASK_ARGS = {
-    "genesis-v2: api shell": [
-        "-m",
-        "uvicorn",
-        "core.server:app",
-        "--app-dir",
-        "src",
-        "--reload",
-    ],
-    "genesis-v2: smoke suite": ["-m", "core.bootstrap.smoke_suite"],
-    "genesis-v2: pytest": ["-m", "pytest", "-q"],
+    "genesis-v2: api shell": ["scripts/api/api_shell.py", "--reload"],
+    "genesis-v2: smoke suite": ["scripts/smoke/smoke_suite.py"],
+    "genesis-v2: pytest": ["scripts/validate/pytest_suite.py", "-q"],
 }
 
 

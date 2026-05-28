@@ -3,7 +3,7 @@
 Runtime-first seed with admitted local-only API shell generated from the current
 `Genesis-Core` repository.
 
-Source Genesis-Core HEAD: `4369f5c5`
+Source Genesis-Core HEAD: `e5ce7dfd`
 
 ## What is included
 
@@ -91,8 +91,8 @@ editor-specific tasks or an editable install first.
 - `AGENTS.md` defines the skeleton-first repo contract.
 - `.github/copilot-instructions.md` keeps local agent work aligned with generator-driven slices.
 - `docs/SKELETON_SCOPE.md` records Track A vs Track B and the verification loop.
-- `.vscode/mcp.json` wires VS Code to the local stdio MCP server using `config/mcp_settings.json`.
-- `.vscode/tasks.json` and `.vscode/launch.json` inject `PYTHONPATH=${workspaceFolder}/src` for local non-installed loops.
+- `.vscode/mcp.json` wires VS Code to the local `scripts/mcp/mcp_stdio.py` wrapper using `config/mcp_settings.json`.
+- `.vscode/tasks.json` and `.vscode/launch.json` route local API/smoke/test loops through the repo-local wrappers while keeping `PYTHONPATH=${workspaceFolder}/src` available.
 - `.vscode/settings.json` aligns Python analysis/test discovery with the `src/` layout and local `.env` placeholder.
 - `.vscode/extensions.json` recommends the Python/Pylance/Ruff stack for local skeleton work.
 - `.env.example` keeps the narrow local placeholder values tracked even though `.env` stays ignored.

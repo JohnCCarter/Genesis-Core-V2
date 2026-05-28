@@ -8,11 +8,7 @@
   "tasks": [
     {
       "args": [
-        "-m",
-        "uvicorn",
-        "core.server:app",
-        "--app-dir",
-        "src",
+        "scripts/api/api_shell.py",
         "--reload"
       ],
       "command": "python",
@@ -27,8 +23,7 @@
     },
     {
       "args": [
-        "-m",
-        "core.bootstrap.smoke_suite"
+        "scripts/smoke/smoke_suite.py"
       ],
       "command": "python",
       "label": "genesis-v2: smoke suite",
@@ -40,8 +35,7 @@
     },
     {
       "args": [
-        "-m",
-        "pytest",
+        "scripts/validate/pytest_suite.py",
         "-q"
       ],
       "command": "python",

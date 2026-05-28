@@ -2,8 +2,7 @@
   "servers": {
     "genesis-core-v2": {
       "args": [
-        "-m",
-        "mcp_server.server"
+        "scripts/mcp/mcp_stdio.py"
       ],
       "command": "python",
       "env": {

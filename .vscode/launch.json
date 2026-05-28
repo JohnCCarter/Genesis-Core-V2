@@ -2,9 +2,6 @@
   "configurations": [
     {
       "args": [
-        "core.server:app",
-        "--app-dir",
-        "src",
         "--reload"
       ],
       "console": "integratedTerminal",
@@ -12,8 +9,8 @@
       "env": {
         "PYTHONPATH": "${workspaceFolder}/src"
       },
-      "module": "uvicorn",
       "name": "genesis-v2: api shell",
+      "program": "${workspaceFolder}/scripts/api/api_shell.py",
       "request": "launch",
       "type": "debugpy"
     },
@@ -23,8 +20,8 @@
       "env": {
         "PYTHONPATH": "${workspaceFolder}/src"
       },
-      "module": "core.bootstrap.smoke_suite",
       "name": "genesis-v2: smoke suite",
+      "program": "${workspaceFolder}/scripts/smoke/smoke_suite.py",
       "request": "launch",
       "type": "debugpy"
     },
@@ -37,8 +34,8 @@
       "env": {
         "PYTHONPATH": "${workspaceFolder}/src"
       },
-      "module": "pytest",
       "name": "genesis-v2: pytest",
+      "program": "${workspaceFolder}/scripts/validate/pytest_suite.py",
       "purpose": [
         "debug-test"
       ],

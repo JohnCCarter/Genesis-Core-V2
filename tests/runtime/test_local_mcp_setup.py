@@ -15,7 +15,7 @@ def test_local_mcp_files_encode_safe_skeleton_defaults() -> None:
     )
 
     server = vscode_payload["servers"]["genesis-core-v2"]
-    assert server["args"] == ["-m", "mcp_server.server"]
+    assert server["args"] == ["scripts/mcp/mcp_stdio.py"]
     assert server["env"]["GENESIS_MCP_CONFIG_PATH"] == "config/mcp_settings.json"
 
     assert settings_payload["server_name"] == "genesis-core-v2"
