@@ -1,4 +1,10 @@
 {
+  "options": {
+    "cwd": "${workspaceFolder}",
+    "env": {
+      "PYTHONPATH": "${workspaceFolder}/src"
+    }
+  },
   "tasks": [
     {
       "args": [

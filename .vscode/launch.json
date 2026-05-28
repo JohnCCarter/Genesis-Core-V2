@@ -1,0 +1,50 @@
+{
+  "configurations": [
+    {
+      "args": [
+        "core.server:app",
+        "--app-dir",
+        "src",
+        "--reload"
+      ],
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/src"
+      },
+      "module": "uvicorn",
+      "name": "genesis-v2: api shell",
+      "request": "launch",
+      "type": "debugpy"
+    },
+    {
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/src"
+      },
+      "module": "core.bootstrap.smoke_suite",
+      "name": "genesis-v2: smoke suite",
+      "request": "launch",
+      "type": "debugpy"
+    },
+    {
+      "args": [
+        "-q"
+      ],
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/src"
+      },
+      "module": "pytest",
+      "name": "genesis-v2: pytest",
+      "purpose": [
+        "debug-test"
+      ],
+      "request": "launch",
+      "type": "debugpy"
+    }
+  ],
+  "version": "0.2.0"
+}

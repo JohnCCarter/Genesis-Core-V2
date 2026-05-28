@@ -24,6 +24,10 @@ def test_local_vscode_tasks_encode_repeatable_skeleton_loop() -> None:
     tasks = {task["label"]: task for task in payload["tasks"]}
 
     assert payload["version"] == "2.0.0"
+    assert payload["options"] == {
+        "cwd": "${workspaceFolder}",
+        "env": {"PYTHONPATH": "${workspaceFolder}/src"},
+    }
     assert set(EXPECTED_TASK_ARGS).issubset(tasks)
 
     for label, expected_args in EXPECTED_TASK_ARGS.items():

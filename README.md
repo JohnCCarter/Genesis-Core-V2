@@ -3,7 +3,7 @@
 Runtime-first seed with admitted local-only API shell generated from the current
 `Genesis-Core` repository.
 
-Source Genesis-Core HEAD: `d2349bc7`
+Source Genesis-Core HEAD: `5e0114a4`
 
 ## What is included
 
@@ -17,7 +17,7 @@ Source Genesis-Core HEAD: `d2349bc7`
 - narrow config bootstrap (`config/__init__.py`, `config/timeframe_configs.py`,
     `config/backtest_defaults.yaml`)
 - local MCP stdio shell (`mcp_server/*.py`, `.vscode/mcp.json`, `config/mcp_settings.json`)
-- local VS Code task loop (`.vscode/tasks.json` for API shell, smoke suite, and pytest)
+- local VS Code task/debug loop (`.vscode/tasks.json`, `.vscode/launch.json`)
 - runtime-only governance guardrails
 - admitted source model payloads under `config/models/**`
 - deterministic fixture model-registry/prob-model smoke
@@ -75,6 +75,9 @@ allowlist variants remain deferred.
 - `.github/copilot-instructions.md` keeps local agent work aligned with generator-driven slices.
 - `docs/SKELETON_SCOPE.md` records Track A vs Track B and the verification loop.
 - `.vscode/mcp.json` wires VS Code to the local stdio MCP server using `config/mcp_settings.json`.
+- `.vscode/tasks.json` and `.vscode/launch.json` inject `PYTHONPATH=${workspaceFolder}/src` for local non-installed loops.
+
+After editable install, local module commands:
 
 Local model smoke: `python -m core.bootstrap.model_smoke`
 Local champion smoke: `python -m core.bootstrap.champion_smoke`
@@ -84,6 +87,9 @@ Local backtest bootstrap smoke: `python -m core.bootstrap.backtest_smoke`
 Local runtime smoke suite: `python -m core.bootstrap.smoke_suite`
 
 Local VS Code tasks:
+`genesis-v2: api shell`, `genesis-v2: smoke suite`, `genesis-v2: pytest`
+
+Local VS Code debug profiles:
 `genesis-v2: api shell`, `genesis-v2: smoke suite`, `genesis-v2: pytest`
 
 Console scripts after editable install:
