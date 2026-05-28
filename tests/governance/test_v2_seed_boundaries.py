@@ -129,6 +129,14 @@ _MCP_VERIFICATION_FILES = [
 ]
 
 
+_PIPELINE_VERIFICATION_FILES = [
+    "seed_manifest.json",
+    "src/core/pipeline.py",
+    "src/core/utils/random_seeds.py",
+    "tests/runtime/test_pipeline_defaults.py",
+]
+
+
 _MODULE_LOOP_FILES = [
     "src/core/server.py",
     "mcp_server/server.py",
@@ -167,7 +175,6 @@ _EXCLUDED_FILES = [
     "src/core/api/paper.py",
     "src/core/api/public.py",
     "src/core/api/ui.py",
-    "src/core/pipeline.py",
     "src/core/strategy/features.py",
     "src/core/utils/diffing/optuna_guard.py",
     "src/core/utils/diffing/results_diff.py",
@@ -195,7 +202,6 @@ _EXCLUDED_MODULE_PREFIXES = [
     "core.api.ui",
     "core.io",
     "core.optimizer",
-    "core.pipeline",
     "core.strategy.features",
     "core.utils.diffing.optuna_guard",
     "core.utils.diffing.results_diff",
@@ -486,6 +492,27 @@ def test_seed_contains_mcp_verification_manifest() -> None:
             "runtime_test_file": "tests/runtime/test_local_mcp_script.py",
         },
     }
+
+
+def test_seed_contains_pipeline_verification_manifest() -> None:
+    repo_root = Path(__file__).resolve().parents[2]
+
+    for relative_path in _PIPELINE_VERIFICATION_FILES:
+        assert (repo_root / relative_path).exists(), relative_path
+
+    manifest = json.loads((repo_root / "seed_manifest.json").read_text(encoding="utf-8"))
+    readme = (repo_root / "README.md").read_text(encoding="utf-8")
+    scope_text = (repo_root / "docs" / "SKELETON_SCOPE.md").read_text(encoding="utf-8")
+
+    assert manifest["pipeline_verification"] == {
+        "defaults_and_seeding": {
+            "module_file": "src/core/pipeline.py",
+            "seed_helper_file": "src/core/utils/random_seeds.py",
+            "runtime_test_file": "tests/runtime/test_pipeline_defaults.py",
+        }
+    }
+    assert "runtime pipeline orchestration (`src/core/pipeline.py`)" in readme
+    assert "src/core/pipeline.py" in scope_text
 
 
 def test_seed_contains_editable_install_module_loop() -> None:

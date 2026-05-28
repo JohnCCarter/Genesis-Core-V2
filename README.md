@@ -3,11 +3,12 @@
 Runtime-first seed with admitted local-only API shell generated from the current
 `Genesis-Core` repository.
 
-Source Genesis-Core HEAD: `e6bccfe9`
+Source Genesis-Core HEAD: `9b710249`
 
 ## What is included
 
 - runtime kernel roots (`backtest`, `strategy`, `regime`)
+- runtime pipeline orchestration (`src/core/pipeline.py`)
 - local dependency closure required by those roots
 - admitted local-only API shell (`src/core/server.py`,
   `src/core/api/{config,models,status,strategy}.py`)
@@ -46,7 +47,6 @@ Source Genesis-Core HEAD: `e6bccfe9`
 
 - `src/core/api/{account,info,paper,public,ui}.py`
 - `src/core/io/**`
-- `src/core/pipeline.py`
 - `src/core/optimizer/**`
 - `src/core/strategy/features.py`
 - `src/core/utils/optuna_helpers.py`
@@ -73,6 +73,8 @@ The admitted API shell is local-only (`config/status/models/strategy`); exchange
 paper, public-data, and UI surfaces remain excluded for a later slice.
 Runtime state and champion authority payloads remain excluded; generated `.env` contains only
 local-shell placeholders. Tracked `.env.example` mirrors the same narrow values for copy-forward bootstrap.
+Runtime pipeline orchestration is admitted through `src/core/pipeline.py`, while the narrower
+`src/core/utils/random_seeds.py` helper keeps Optuna/optimizer-only helpers out of the seed.
 Unneeded Optuna/optimizer closure is intentionally pruned from the seed until and unless a later
 explicit slice admits those higher-sensitivity surfaces.
 Local MCP support is admitted for stdio-only workspace usage; remote MCP entrypoints and remote

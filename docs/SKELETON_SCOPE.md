@@ -5,6 +5,7 @@
 `Genesis-Core-V2` is intentionally a thin, runnable shell:
 
 - minimal repo structure
+- runtime pipeline orchestration via `src/core/pipeline.py`
 - local-only API
 - local MCP stdio shell
 - generated workflow guidance for agent-driven work
@@ -28,6 +29,7 @@ Included in the current priority lane:
 - repo-local smoke scripts (`scripts/smoke/*.py`) for non-installed execution
 - `config/mcp_settings.json` and `mcp_server/**` for local MCP use
 - local-only API shell (`config`, `status`, `models`, `strategy`)
+- `src/core/pipeline.py` plus narrow deterministic seeding helper `src/core/utils/random_seeds.py`
 - fixture-backed smoke tests and console scripts
 - explicitly admitted non-sensitive config/model artifacts already carried into the seed
 
