@@ -23,6 +23,20 @@
     },
     {
       "args": [
+        "scripts/mcp/mcp_stdio.py"
+      ],
+      "command": "python",
+      "isBackground": true,
+      "label": "genesis-v2: mcp stdio",
+      "presentation": {
+        "panel": "dedicated",
+        "reveal": "always"
+      },
+      "problemMatcher": [],
+      "type": "shell"
+    },
+    {
+      "args": [
         "scripts/smoke/smoke_suite.py"
       ],
       "command": "python",

@@ -442,7 +442,7 @@
     "Runtime-first seed with local-only API shell generated locally.",
     "Workflow files make the V2 seed self-describing as a skeleton-first repository.",
     "Local stdio MCP tooling is admitted with a safe V2-specific config; remote MCP surfaces remain excluded.",
-    "Generated `.vscode/tasks.json` and `.vscode/launch.json` provide repeatable local API/smoke/test loops via `PYTHONPATH=${workspaceFolder}/src`.",
+    "Generated `.vscode/tasks.json` and `.vscode/launch.json` provide repeatable local API/MCP/smoke/test loops via `PYTHONPATH=${workspaceFolder}/src`.",
     "Generated `.vscode/settings.json` aligns Python analysis and pytest discovery with the V2 `src` layout.",
     "Generated `.vscode/extensions.json` recommends Python/Pylance/Ruff extensions for the V2 editor workflow.",
     "Generated `.env.example` mirrors the narrow local placeholder `.env` for tracked bootstrap guidance.",
@@ -465,12 +465,12 @@
     ".gitignore": "8ee95e751b95b668510265f2fde549d9ad495c4059a77b348cb06a6df9a253f2",
     ".pre-commit-config.yaml": "b8af71324cc02d8bce8f6e34583c438dab39ec47f845413080b5ebafe6d63494",
     ".vscode/extensions.json": "5d1b5e77d7eb37c81ec5e9e1cc884a3bc363c6f14158e8481307c19519587c83",
-    ".vscode/launch.json": "710528f5bb735632c7fca82423274b904ab6af9d50ae6921660b78dd7b4dc0ee",
+    ".vscode/launch.json": "7ee50a322f47d9a6cfd8c02fc51614d34d7997204e3fbbf06e21340d8438ac5c",
     ".vscode/mcp.json": "47d666456dbc8def5821cf14444bee22f929eb6360689a259806b51d247958f8",
     ".vscode/settings.json": "e74b59b003fce766ae7c842d5822ddd7557b4498812ccc62275fca2789a27b26",
-    ".vscode/tasks.json": "98cc13076f9ee644d40f68db4a56d3d4008b0ccf39550fedb2d6546a873801f1",
+    ".vscode/tasks.json": "ac998b8a5f78b05bca7d7e5bdcbc19b368bb06c822e2690bfd509b0245ae2bb4",
     "AGENTS.md": "71eaaeabd1163498adb37fc00dcaac640e91ee7a9f8e92f78857a399fa61e4e3",
-    "README.md": "ebc748fc286ba54373a0f6c955a6450bc72ef84eec4ece9f89e48afdd358fa6f",
+    "README.md": "f71a3a4b1dce53ac4376053f5d72cf7f7dcd69e3257694c8cf8bcb78d6f57162",
     "config/__init__.py": "8994ca2027dce1be71c006c42a3a6372fbbe93c547c0516a258499cf08142753",
     "config/backtest_defaults.yaml": "f3e7464975dbeaf6a27ec2119d0df325728ca2f68cececd16ebeb5c9f79addfe",
     "config/mcp_settings.json": "2e70225f77b5c0754cd55d97b3f6fa3135dc6d9f00d2eabcfc2fb86dfce63bbb",
@@ -662,7 +662,7 @@
     "scripts/smoke/model_smoke.py": "e6b010d000355d4ea36bdf1a74c65f4048b87101d9d6488714b5c7deb293f52e",
     "scripts/smoke/smoke_suite.py": "7a3024915117b72ad51b8aebff97858a45ac0acea89a5371d4b0a6015ccc0439",
     "scripts/validate/pytest_suite.py": "3470549cbe64fcb0f7648a4e1d7dbfdf8de4136087a61b0109ff6a8706d5e262",
-    "seed_manifest.json": "1dc9c172e7b407bd9b80431d0fa2ec6a94555ecd41a7b7f9b282c7cdaf5b06da",
+    "seed_manifest.json": "0354f35822327525a8f76948706865bcb7c75aca5b574962c0ff60d4d0281b66",
     "src/core/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "src/core/api/__init__.py": "9e141c9574a06d3ca44c17148afa758dfa9e17480bb422c6762a15ce9b47e555",
     "src/core/api/config.py": "c09e6116eacc63445b54e33b05eee90554861f8ea0ac1eb690134ca869ac06e0",
@@ -783,9 +783,9 @@
     "tests/runtime/test_local_mcp_setup.py": "771804f7ecf3ee9a5caa00fa245422cabede8f14a769eda3498679cad91091e1",
     "tests/runtime/test_local_pytest_script.py": "cc6b79e27428164183ea4493ac3f308d850d6b35d3ad32a393fc70cfa6f7750a",
     "tests/runtime/test_local_smoke_scripts.py": "369bf08493cedc1c90c05d209499f7f4c3036ecb1edd1f65e49b83fe7c5a2255",
-    "tests/runtime/test_local_vscode_launch.py": "85787b5a9707037ce4e5b9625188d8da045f333dcedadb22cbce2b583884c652",
+    "tests/runtime/test_local_vscode_launch.py": "8e9763b6019e69fd32cf317d04788f369f3d4316996a0e73be1ae29e201ba111",
     "tests/runtime/test_local_vscode_settings.py": "86b4856466544e4783ab4ef441ccd5bd3081bfd7c33cd33a3fc05fe52539b360",
-    "tests/runtime/test_local_vscode_tasks.py": "a06c20e0bb7e9fe17100a9ec7f83b3df782817b6be9fb3c316da22c6c199f24f",
+    "tests/runtime/test_local_vscode_tasks.py": "5e63c9b401f552e4982a7b6906fdd66045e37b97a562f32d0f74dc8391454ed2",
     "tests/runtime/test_model_smoke.py": "2290517c2bea5b931c36820f078cce3a137a06f5a7435319c50b3197c4fc7a7f",
     "tests/runtime/test_runtime_fixture_smoke.py": "229e71ec3c803bbedad884e9302dc7308db5906384d0b2700295c86a280eb6c6",
     "tests/runtime/test_smoke_suite.py": "520826d830356a2979113586a0c7ad6137fe24bc1b6edca48766ce4dd39407b9"
@@ -846,7 +846,7 @@
       "python scripts/smoke/smoke_suite.py"
     ]
   },
-  "source_head": "c7d18b00",
+  "source_head": "bf5f3024",
   "source_of_truth_repo": "Genesis-Core",
   "source_repo": "C:\\Users\\fa06662\\Projects\\Genesis-Core",
   "status": "genesis_core_v2_runtime_seed_local_materialization",
@@ -869,6 +869,7 @@
   ],
   "workspace_launch_labels": [
     "genesis-v2: api shell",
+    "genesis-v2: mcp stdio",
     "genesis-v2: smoke suite",
     "genesis-v2: pytest"
   ],
@@ -885,6 +886,7 @@
   ],
   "workspace_task_labels": [
     "genesis-v2: api shell",
+    "genesis-v2: mcp stdio",
     "genesis-v2: smoke suite",
     "genesis-v2: pytest"
   ]

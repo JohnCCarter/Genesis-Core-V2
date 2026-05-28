@@ -6,6 +6,7 @@ from pathlib import Path
 
 EXPECTED_LAUNCH_PROGRAMS = {
     "genesis-v2: api shell": "${workspaceFolder}/scripts/api/api_shell.py",
+    "genesis-v2: mcp stdio": "${workspaceFolder}/scripts/mcp/mcp_stdio.py",
     "genesis-v2: smoke suite": "${workspaceFolder}/scripts/smoke/smoke_suite.py",
     "genesis-v2: pytest": "${workspaceFolder}/scripts/validate/pytest_suite.py",
 }
@@ -28,6 +29,7 @@ def test_local_vscode_launch_profiles_encode_repeatable_debug_loop() -> None:
         assert configs[name]["console"] == "integratedTerminal"
 
     assert configs["genesis-v2: api shell"]["args"] == ["--reload"]
+    assert configs["genesis-v2: mcp stdio"].get("args", []) == []
     assert configs["genesis-v2: smoke suite"].get("args", []) == []
     assert configs["genesis-v2: pytest"]["args"] == ["-q"]
     assert configs["genesis-v2: pytest"]["purpose"] == ["debug-test"]

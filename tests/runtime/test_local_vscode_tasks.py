@@ -6,6 +6,7 @@ from pathlib import Path
 
 EXPECTED_TASK_ARGS = {
     "genesis-v2: api shell": ["scripts/api/api_shell.py", "--reload"],
+    "genesis-v2: mcp stdio": ["scripts/mcp/mcp_stdio.py"],
     "genesis-v2: smoke suite": ["scripts/smoke/smoke_suite.py"],
     "genesis-v2: pytest": ["scripts/validate/pytest_suite.py", "-q"],
 }
@@ -28,4 +29,5 @@ def test_local_vscode_tasks_encode_repeatable_skeleton_loop() -> None:
         assert tasks[label]["args"] == expected_args
 
     assert tasks["genesis-v2: api shell"]["isBackground"] is True
+    assert tasks["genesis-v2: mcp stdio"]["isBackground"] is True
     assert tasks["genesis-v2: pytest"]["group"] == {"kind": "test", "isDefault": True}

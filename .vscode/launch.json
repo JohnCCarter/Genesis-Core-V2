@@ -20,6 +20,17 @@
       "env": {
         "PYTHONPATH": "${workspaceFolder}/src"
       },
+      "name": "genesis-v2: mcp stdio",
+      "program": "${workspaceFolder}/scripts/mcp/mcp_stdio.py",
+      "request": "launch",
+      "type": "debugpy"
+    },
+    {
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/src"
+      },
       "name": "genesis-v2: smoke suite",
       "program": "${workspaceFolder}/scripts/smoke/smoke_suite.py",
       "request": "launch",

@@ -3,7 +3,7 @@
 Runtime-first seed with admitted local-only API shell generated from the current
 `Genesis-Core` repository.
 
-Source Genesis-Core HEAD: `c7d18b00`
+Source Genesis-Core HEAD: `bf5f3024`
 
 ## What is included
 
@@ -92,7 +92,7 @@ editor-specific tasks or an editable install first.
 - `.github/copilot-instructions.md` keeps local agent work aligned with generator-driven slices.
 - `docs/SKELETON_SCOPE.md` records Track A vs Track B and the verification loop.
 - `.vscode/mcp.json` wires VS Code to the local `scripts/mcp/mcp_stdio.py` wrapper using `config/mcp_settings.json`.
-- `.vscode/tasks.json` and `.vscode/launch.json` route local API/smoke/test loops through the repo-local wrappers while keeping `PYTHONPATH=${workspaceFolder}/src` available.
+- `.vscode/tasks.json` and `.vscode/launch.json` route local API/MCP/smoke/test loops through the repo-local wrappers while keeping `PYTHONPATH=${workspaceFolder}/src` available.
 - `.vscode/settings.json` aligns Python analysis/test discovery with the `src/` layout and local `.env` placeholder.
 - `.vscode/extensions.json` recommends the Python/Pylance/Ruff stack for local skeleton work.
 - `.env.example` keeps the narrow local placeholder values tracked even though `.env` stays ignored.
@@ -133,10 +133,10 @@ Non-installed local smoke scripts:
 `python scripts/smoke/smoke_suite.py`
 
 Local VS Code tasks:
-`genesis-v2: api shell`, `genesis-v2: smoke suite`, `genesis-v2: pytest`
+`genesis-v2: api shell`, `genesis-v2: mcp stdio`, `genesis-v2: smoke suite`, `genesis-v2: pytest`
 
 Local VS Code debug profiles:
-`genesis-v2: api shell`, `genesis-v2: smoke suite`, `genesis-v2: pytest`
+`genesis-v2: api shell`, `genesis-v2: mcp stdio`, `genesis-v2: smoke suite`, `genesis-v2: pytest`
 
 Suggested VS Code extensions:
 `ms-python.python`, `ms-python.vscode-pylance`, `charliermarsh.ruff`
