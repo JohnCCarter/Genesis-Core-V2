@@ -3,7 +3,7 @@
 Runtime-first seed with admitted local-only API shell generated from the current
 `Genesis-Core` repository.
 
-Source Genesis-Core HEAD: `715c71bb`
+Source Genesis-Core HEAD: `ad2ad979`
 
 ## What is included
 
