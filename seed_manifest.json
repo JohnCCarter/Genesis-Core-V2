@@ -368,6 +368,7 @@
     "scripts/smoke/backtest_smoke.py",
     "scripts/smoke/fixture_smoke.py",
     "scripts/smoke/smoke_suite.py",
+    "scripts/validate/pytest_suite.py",
     "seed_manifest.json",
     "src/core/bootstrap/__init__.py",
     "src/core/bootstrap/backtest_smoke.py",
@@ -390,6 +391,7 @@
     "tests/runtime/test_installed_console_scripts.py",
     "tests/runtime/test_local_api_shell_script.py",
     "tests/runtime/test_local_mcp_setup.py",
+    "tests/runtime/test_local_pytest_script.py",
     "tests/runtime/test_local_smoke_scripts.py",
     "tests/runtime/test_local_vscode_launch.py",
     "tests/runtime/test_local_vscode_settings.py",
@@ -409,7 +411,8 @@
     "scripts/api/api_shell.py",
     "scripts/smoke/backtest_smoke.py",
     "scripts/smoke/fixture_smoke.py",
-    "scripts/smoke/smoke_suite.py"
+    "scripts/smoke/smoke_suite.py",
+    "scripts/validate/pytest_suite.py"
   ],
   "mode": "RESEARCH",
   "notes": [
@@ -423,6 +426,7 @@
     "Generated `.pre-commit-config.yaml` keeps a narrow local formatting/lint/sanity hook loop tracked in the seed.",
     "Generated `pyproject.toml` carries narrow local pytest/ruff/black QA defaults for the V2 workspace.",
     "Generated `scripts/api/api_shell.py` provides a non-installed local API entrypoint against the V2 `src` layout.",
+    "Generated `scripts/validate/pytest_suite.py` provides a non-installed local pytest entrypoint against the V2 `src` layout.",
     "Generated `scripts/smoke/*.py` provide non-installed local smoke entrypoints against the V2 `src` layout.",
     "Exchange-facing, paper, public-data, and UI service edges are intentionally excluded.",
     "Pipeline, Optuna, and optimizer-only closure are intentionally excluded.",
@@ -433,7 +437,7 @@
   "output_hashes": {
     ".env": "369a0ce352acd15713e7da5ec1bf9d11d61dd68409e7b58ab1c04a0fc424d7d0",
     ".env.example": "3f9b2f787fec25a945c6021084bef12d0e4ec03c9f9ae0ecddedf993b4cd7678",
-    ".github/copilot-instructions.md": "4a8fcad20f8249b9a9b7708b457c6d7daf4d29a1a9f5c2a836f7358e035a97ac",
+    ".github/copilot-instructions.md": "e8b575e0791fe896d79cfb7ba3d81296e89a2ccf5d09ab7492fe4bf3643fece8",
     ".gitignore": "8ee95e751b95b668510265f2fde549d9ad495c4059a77b348cb06a6df9a253f2",
     ".pre-commit-config.yaml": "b8af71324cc02d8bce8f6e34583c438dab39ec47f845413080b5ebafe6d63494",
     ".vscode/extensions.json": "5d1b5e77d7eb37c81ec5e9e1cc884a3bc363c6f14158e8481307c19519587c83",
@@ -441,8 +445,8 @@
     ".vscode/mcp.json": "0ff40c8e08a3b9e95effbcce810154486c23cf6f1e3f11590fd801c9c2e8de60",
     ".vscode/settings.json": "e74b59b003fce766ae7c842d5822ddd7557b4498812ccc62275fca2789a27b26",
     ".vscode/tasks.json": "2e25f022e5cbb918e3bd71476ec1246e9c5a8c5a958a4c24785781b78b6bd046",
-    "AGENTS.md": "b48037aac59b122e0cc0f6977d591a297916566f7708b54e04b0111254388edb",
-    "README.md": "cbb370ac2c7812823d3b3dc33203ebaae4c68631336c95120a22b653e1c14057",
+    "AGENTS.md": "533a1fad48d142033f119f638589970ea727051ad6378cb27f21f09bb87830f7",
+    "README.md": "1690fbb23c733d6892c9dc283fc8f56ff97890879dcbe2e4c515e447d66f8f20",
     "config/__init__.py": "8994ca2027dce1be71c006c42a3a6372fbbe93c547c0516a258499cf08142753",
     "config/backtest_defaults.yaml": "f3e7464975dbeaf6a27ec2119d0df325728ca2f68cececd16ebeb5c9f79addfe",
     "config/mcp_settings.json": "2e70225f77b5c0754cd55d97b3f6fa3135dc6d9f00d2eabcfc2fb86dfce63bbb",
@@ -613,7 +617,7 @@
     "config/models/tXTZUSD_5m.json": "a6df5e580bdde9cd982947c47e97c1af4feafc969e8964e7b811ccb8c870a586",
     "config/models/tXTZUSD_6h.json": "a6df5e580bdde9cd982947c47e97c1af4feafc969e8964e7b811ccb8c870a586",
     "config/timeframe_configs.py": "18469ea5de4609c626ce07d00c5cb13cc6c930f34662aa17008488af935582fa",
-    "docs/SKELETON_SCOPE.md": "9a2b7e9fe5b38e6e6164646014c1b1943a7e024dfc1d3b0bcedb3a5becf28e34",
+    "docs/SKELETON_SCOPE.md": "eb020802a90df2fff223bdeb59835b3cecf29e219c49b07d93446c74f9949289",
     "mcp_server/__init__.py": "f80803af0867fe2f671c072d1348f335fef5332f4d43c208479dfe519e1702a8",
     "mcp_server/config.py": "d21d266978d95d7483347b81abd34122cfc63b954244acbf7e998f7d366b117d",
     "mcp_server/resources.py": "aeb64bb170ef223c09675742d8da90a501a8ee0074d775f4915506bd6d321204",
@@ -629,7 +633,8 @@
     "scripts/smoke/backtest_smoke.py": "fca261738f697d5a6ce5e66ccf4154d730cdd352a68bb7ba704f1c297aecd9bc",
     "scripts/smoke/fixture_smoke.py": "44f21a6867de7fd893f88f844ebed63d6130af86943be68464426a5e0c643a96",
     "scripts/smoke/smoke_suite.py": "7a3024915117b72ad51b8aebff97858a45ac0acea89a5371d4b0a6015ccc0439",
-    "seed_manifest.json": "b29a00ed824b9247edab6a2a727b771a01859fb08e87023eee8717e8e8cc16e1",
+    "scripts/validate/pytest_suite.py": "3470549cbe64fcb0f7648a4e1d7dbfdf8de4136087a61b0109ff6a8706d5e262",
+    "seed_manifest.json": "371a7b3fd3682e78b32688a6025631dd2f9d51ad89753ad1aea70abf2e058e08",
     "src/core/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "src/core/api/__init__.py": "9e141c9574a06d3ca44c17148afa758dfa9e17480bb422c6762a15ce9b47e555",
     "src/core/api/config.py": "c09e6116eacc63445b54e33b05eee90554861f8ea0ac1eb690134ca869ac06e0",
@@ -737,7 +742,7 @@
     "tests/governance/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "tests/governance/test_no_legacy_feature_imports.py": "dcee377048d91888d23f389b869e5bc2238b366308c86f8fb5260da997f8c26c",
     "tests/governance/test_pyproject_console_scripts.py": "9106a306939b884b7c84667b0b5aaa6c2d93da5f71f0f3a32dd034e8401f5431",
-    "tests/governance/test_v2_seed_boundaries.py": "5acd0ac9b5aa0eb4c065dc348a73db23c2d1eb41366e3fd8d9185b46ee377fde",
+    "tests/governance/test_v2_seed_boundaries.py": "4df29e00a7f525eaaba267d6ffffcc1e95ead7a07d93211bf62e2ae4d0c042ec",
     "tests/integration/test_config_endpoints.py": "28059e71553716539edb23924a26951e2687f580703507843d5029335afcf310",
     "tests/runtime/test_backtest_bootstrap_smoke.py": "2e557462e03d83f775d31510654223bc3812556b9547dce5e528440174e685ce",
     "tests/runtime/test_backtest_engine_fixture_smoke.py": "54f837ed9437bb32b347143508f2afd18d80d6167209a89f4c14b4234ed30753",
@@ -747,6 +752,7 @@
     "tests/runtime/test_installed_console_scripts.py": "5d4c0c7909d4b66e50b968c729d6757626fddcdee96cba0018175f824bf64857",
     "tests/runtime/test_local_api_shell_script.py": "3fafb6752399c4ca8bc08d21d616b566829b25c0046b2de8cb2ea2d798f80de9",
     "tests/runtime/test_local_mcp_setup.py": "589fdfee1a26f2d4dc79f8e4a36c96a4b1187634e9eb18557c8001c9ae0cf45c",
+    "tests/runtime/test_local_pytest_script.py": "cc6b79e27428164183ea4493ac3f308d850d6b35d3ad32a393fc70cfa6f7750a",
     "tests/runtime/test_local_smoke_scripts.py": "508fb3b759130b2c1d20d281523ec9ffa433e3a011679dbc5063a193c1b3475d",
     "tests/runtime/test_local_vscode_launch.py": "c8ef1b0fb5a6601b9d672a471eaa08cac16b2a70f87e5ec5e641f0a59803d298",
     "tests/runtime/test_local_vscode_settings.py": "86b4856466544e4783ab4ef441ccd5bd3081bfd7c33cd33a3fc05fe52539b360",
@@ -772,6 +778,13 @@
     "tool.ruff.lint",
     "tool.black.extend-exclude"
   ],
+  "pytest_entrypoints": {
+    "module_command": "python -m pytest -q",
+    "script_commands": [
+      "python scripts/validate/pytest_suite.py",
+      "python scripts/validate/pytest_suite.py tests/runtime/test_local_api_shell_script.py -q"
+    ]
+  },
   "skeleton_priority": "prioritize_v2_skeleton_completeness_before_content_migration",
   "smoke_entrypoints": {
     "console_scripts": [
@@ -794,7 +807,7 @@
       "python scripts/smoke/smoke_suite.py"
     ]
   },
-  "source_head": "63d59d2d",
+  "source_head": "737b7d44",
   "source_of_truth_repo": "Genesis-Core",
   "source_repo": "C:\\Users\\fa06662\\Projects\\Genesis-Core",
   "status": "genesis_core_v2_runtime_seed_local_materialization",

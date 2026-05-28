@@ -3,7 +3,7 @@
 Runtime-first seed with admitted local-only API shell generated from the current
 `Genesis-Core` repository.
 
-Source Genesis-Core HEAD: `63d59d2d`
+Source Genesis-Core HEAD: `737b7d44`
 
 ## What is included
 
@@ -24,6 +24,7 @@ Source Genesis-Core HEAD: `63d59d2d`
 - local pre-commit hook config (`.pre-commit-config.yaml`)
 - narrow local QA defaults in `pyproject.toml`
 - repo-local API launcher (`scripts/api/api_shell.py`)
+- repo-local pytest launcher (`scripts/validate/pytest_suite.py`)
 - repo-local smoke scripts (`scripts/smoke/{fixture_smoke,backtest_smoke,smoke_suite}.py`)
 - runtime-only governance guardrails
 - admitted source model payloads under `config/models/**`
@@ -77,6 +78,8 @@ Local MCP support is admitted for stdio-only workspace usage; remote MCP entrypo
 allowlist variants remain deferred.
 Repo-local API launcher is generated so the local API shell can start without depending on
 editor-specific tasks or an editable install first.
+Repo-local pytest launcher is generated so the seed can run its test loop without depending on
+editor-specific tasks or an editable install first.
 Repo-local smoke scripts are generated so the seed can run its core smoke loops without relying on
 editor-specific tasks or an editable install first.
 
@@ -93,6 +96,7 @@ editor-specific tasks or an editable install first.
 - `.pre-commit-config.yaml` keeps a narrow local formatting/lint/sanity hook loop tracked in the seed.
 - `pyproject.toml` carries narrow local pytest/ruff/black defaults for the generated V2 workspace.
 - `scripts/api/api_shell.py` wraps the local API shell with `src/` bootstrapping for non-installed startup.
+- `scripts/validate/pytest_suite.py` wraps `pytest` with local `src/` bootstrapping for non-installed test execution.
 - `scripts/smoke/*.py` wraps the core smoke modules with local `src/` bootstrapping so the seed is runnable before install.
 
 After editable install, local module commands:
@@ -107,6 +111,10 @@ Local runtime smoke suite: `python -m core.bootstrap.smoke_suite`
 Non-installed local API launcher:
 `python scripts/api/api_shell.py`
 `python scripts/api/api_shell.py --reload`
+
+Non-installed local pytest launcher:
+`python scripts/validate/pytest_suite.py`
+`python scripts/validate/pytest_suite.py tests/runtime/test_local_api_shell_script.py -q`
 
 Non-installed local smoke scripts:
 `python scripts/smoke/fixture_smoke.py`

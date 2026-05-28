@@ -23,6 +23,7 @@ Included in the current priority lane:
 - tracked local env bootstrap template (`.env.example`) plus ignored local placeholder `.env`
 - narrow local pytest/ruff/black defaults in `pyproject.toml`
 - repo-local API launcher (`scripts/api/api_shell.py`) for non-installed startup
+- repo-local pytest launcher (`scripts/validate/pytest_suite.py`) for non-installed test execution
 - repo-local smoke scripts (`scripts/smoke/*.py`) for non-installed execution
 - `config/mcp_settings.json` and `mcp_server/**` for local MCP use
 - local-only API shell (`config`, `status`, `models`, `strategy`)
@@ -52,5 +53,6 @@ Deferred to separate verified slices:
 - Local pre-commit workflow: `pre-commit install`, then `pre-commit run --all-files`
 - Local QA defaults: `pytest` recursion guards plus narrow `ruff`/`black` excludes in `pyproject.toml`
 - Non-installed local API launcher: `python scripts/api/api_shell.py`, optional reload via `python scripts/api/api_shell.py --reload`
+- Non-installed local pytest launcher: `python scripts/validate/pytest_suite.py`, optional focused run via `python scripts/validate/pytest_suite.py tests/runtime/test_local_api_shell_script.py -q`
 - Non-installed local smoke scripts: `python scripts/smoke/fixture_smoke.py`, `python scripts/smoke/backtest_smoke.py`, `python scripts/smoke/smoke_suite.py`
 - Optional local MCP install: `python -m pip install -e ".[mcp]"`

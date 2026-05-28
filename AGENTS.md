@@ -16,6 +16,7 @@ Use this track for:
 - repo structure and generated workflow files
 - local MCP stdio shell and safe editor hookup
 - repo-local API launcher under `scripts/api/`
+- repo-local pytest launcher under `scripts/validate/`
 - repo-local smoke scripts under `scripts/smoke/`
 - local VS Code tasks, debug profiles, settings, and extension recommendations
 - local-only API shell
