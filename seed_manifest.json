@@ -476,7 +476,7 @@
     ".vscode/settings.json": "e74b59b003fce766ae7c842d5822ddd7557b4498812ccc62275fca2789a27b26",
     ".vscode/tasks.json": "ac998b8a5f78b05bca7d7e5bdcbc19b368bb06c822e2690bfd509b0245ae2bb4",
     "AGENTS.md": "71eaaeabd1163498adb37fc00dcaac640e91ee7a9f8e92f78857a399fa61e4e3",
-    "README.md": "1475245baa6f21f180ec837e6b0c43931b7ba1987c6f397abc2fbeea1578f821",
+    "README.md": "854a926add7cabd04ffa3373e5b3e1de310750b8613c83b2d39dda9ef8015462",
     "config/__init__.py": "8994ca2027dce1be71c006c42a3a6372fbbe93c547c0516a258499cf08142753",
     "config/backtest_defaults.yaml": "f3e7464975dbeaf6a27ec2119d0df325728ca2f68cececd16ebeb5c9f79addfe",
     "config/mcp_settings.json": "2e70225f77b5c0754cd55d97b3f6fa3135dc6d9f00d2eabcfc2fb86dfce63bbb",
@@ -668,7 +668,7 @@
     "scripts/smoke/model_smoke.py": "e6b010d000355d4ea36bdf1a74c65f4048b87101d9d6488714b5c7deb293f52e",
     "scripts/smoke/smoke_suite.py": "7a3024915117b72ad51b8aebff97858a45ac0acea89a5371d4b0a6015ccc0439",
     "scripts/validate/pytest_suite.py": "3470549cbe64fcb0f7648a4e1d7dbfdf8de4136087a61b0109ff6a8706d5e262",
-    "seed_manifest.json": "e6459dbc92b19657c7d7d8a7a00452068410e4d72ed7d4e224bf086c4d58f95c",
+    "seed_manifest.json": "e00a7a3d6adaab7b444d2e7295e1d90510b58c2fc5cadb50d273ed2eb9e05c98",
     "src/core/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "src/core/api/__init__.py": "9e141c9574a06d3ca44c17148afa758dfa9e17480bb422c6762a15ce9b47e555",
     "src/core/api/config.py": "c09e6116eacc63445b54e33b05eee90554861f8ea0ac1eb690134ca869ac06e0",
@@ -776,7 +776,7 @@
     "tests/governance/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "tests/governance/test_no_legacy_feature_imports.py": "dcee377048d91888d23f389b869e5bc2238b366308c86f8fb5260da997f8c26c",
     "tests/governance/test_pyproject_console_scripts.py": "bae048f52db088076f4844e0ccf08d561468d6c73cb627b56d646c8f29c42194",
-    "tests/governance/test_v2_seed_boundaries.py": "ce13545259d35b7f3cff79392cd9397fe5ad1471c418ce2a4d1823d7489ad7f6",
+    "tests/governance/test_v2_seed_boundaries.py": "6b64d1ead42218a1abe2efbce13c710c29842a8f5136cc2dcb56b57b05ab05ca",
     "tests/integration/test_config_endpoints.py": "28059e71553716539edb23924a26951e2687f580703507843d5029335afcf310",
     "tests/runtime/test_backtest_bootstrap_smoke.py": "2e557462e03d83f775d31510654223bc3812556b9547dce5e528440174e685ce",
     "tests/runtime/test_backtest_engine_fixture_smoke.py": "54f837ed9437bb32b347143508f2afd18d80d6167209a89f4c14b4234ed30753",
@@ -852,7 +852,7 @@
       "python scripts/smoke/smoke_suite.py"
     ]
   },
-  "source_head": "ad2ad979",
+  "source_head": "12c789a7",
   "source_of_truth_repo": "Genesis-Core",
   "source_repo": "C:\\Users\\fa06662\\Projects\\Genesis-Core",
   "status": "genesis_core_v2_runtime_seed_local_materialization",
@@ -895,5 +895,23 @@
     "genesis-v2: mcp stdio",
     "genesis-v2: smoke suite",
     "genesis-v2: pytest"
-  ]
+  ],
+  "workspace_verification": {
+    "extensions": {
+      "runtime_test_file": "tests/runtime/test_local_vscode_extensions.py",
+      "workspace_file": ".vscode/extensions.json"
+    },
+    "launch": {
+      "runtime_test_file": "tests/runtime/test_local_vscode_launch.py",
+      "workspace_file": ".vscode/launch.json"
+    },
+    "settings": {
+      "runtime_test_file": "tests/runtime/test_local_vscode_settings.py",
+      "workspace_file": ".vscode/settings.json"
+    },
+    "tasks": {
+      "runtime_test_file": "tests/runtime/test_local_vscode_tasks.py",
+      "workspace_file": ".vscode/tasks.json"
+    }
+  }
 }
