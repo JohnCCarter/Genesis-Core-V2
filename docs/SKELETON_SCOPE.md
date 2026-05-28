@@ -21,6 +21,7 @@ Included in the current priority lane:
 - `AGENTS.md`, `.github/copilot-instructions.md`, and `.pre-commit-config.yaml`
 - `.vscode/mcp.json`, `.vscode/tasks.json`, `.vscode/launch.json`, `.vscode/settings.json`, and `.vscode/extensions.json` for local editor workflow
 - tracked local env bootstrap template (`.env.example`) plus ignored local placeholder `.env`
+- narrow local pytest/ruff/black defaults in `pyproject.toml`
 - `config/mcp_settings.json` and `mcp_server/**` for local MCP use
 - local-only API shell (`config`, `status`, `models`, `strategy`)
 - fixture-backed smoke tests and console scripts
@@ -47,4 +48,5 @@ Deferred to separate verified slices:
 - Local editor settings: `python.analysis.extraPaths`, `python.testing.*`, `python.envFile`
 - Local editor recommendations: `ms-python.python`, `ms-python.vscode-pylance`, `charliermarsh.ruff`
 - Local pre-commit workflow: `pre-commit install`, then `pre-commit run --all-files`
+- Local QA defaults: `pytest` recursion guards plus narrow `ruff`/`black` excludes in `pyproject.toml`
 - Optional local MCP install: `python -m pip install -e ".[mcp]"`

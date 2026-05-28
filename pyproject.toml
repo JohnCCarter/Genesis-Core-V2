@@ -48,11 +48,24 @@ include = ["core*", "genesis_core_v2_cli*"]
 addopts = "-q"
 pythonpath = ["src"]
 testpaths = ["tests"]
+norecursedirs = ["cache", "data", "logs", "results", ".venv"]
 
 [tool.ruff]
 line-length = 100
 target-version = "py311"
+extend-exclude = [
+    ".venv/",
+    "cache/",
+    "data/",
+    "logs/",
+    "results/"
+]
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "B", "C4", "UP"]
+ignore = ["E501", "B008", "C901"]
 
 [tool.black]
 line-length = 100
 target-version = ['py311']
+extend-exclude = '(^cache/|^data/|^logs/|^results/)'

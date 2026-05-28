@@ -3,7 +3,7 @@
 Runtime-first seed with admitted local-only API shell generated from the current
 `Genesis-Core` repository.
 
-Source Genesis-Core HEAD: `c5d70e85`
+Source Genesis-Core HEAD: `97b12c41`
 
 ## What is included
 
@@ -22,6 +22,7 @@ Source Genesis-Core HEAD: `c5d70e85`
 - local VS Code extension recommendations (`.vscode/extensions.json`)
 - tracked env bootstrap template (`.env.example`)
 - local pre-commit hook config (`.pre-commit-config.yaml`)
+- narrow local QA defaults in `pyproject.toml`
 - runtime-only governance guardrails
 - admitted source model payloads under `config/models/**`
 - deterministic fixture model-registry/prob-model smoke
@@ -84,6 +85,7 @@ allowlist variants remain deferred.
 - `.vscode/extensions.json` recommends the Python/Pylance/Ruff stack for local skeleton work.
 - `.env.example` keeps the narrow local placeholder values tracked even though `.env` stays ignored.
 - `.pre-commit-config.yaml` keeps a narrow local formatting/lint/sanity hook loop tracked in the seed.
+- `pyproject.toml` carries narrow local pytest/ruff/black defaults for the generated V2 workspace.
 
 After editable install, local module commands:
 
