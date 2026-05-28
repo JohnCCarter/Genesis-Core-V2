@@ -3,7 +3,7 @@
 Runtime-first seed with admitted local-only API shell generated from the current
 `Genesis-Core` repository.
 
-Source Genesis-Core HEAD: `e39d5025`
+Source Genesis-Core HEAD: `e57e3700`
 
 ## What is included
 
@@ -61,6 +61,12 @@ Runtime state and champion authority payloads remain excluded; generated `.env` 
 local-shell placeholders.
 Unneeded Optuna/optimizer closure is intentionally pruned from the seed until and unless a later
 explicit slice admits those higher-sensitivity surfaces.
+
+## Skeleton workflow
+
+- `AGENTS.md` defines the skeleton-first repo contract.
+- `.github/copilot-instructions.md` keeps local agent work aligned with generator-driven slices.
+- `docs/SKELETON_SCOPE.md` records Track A vs Track B and the verification loop.
 
 Local model smoke: `python -m core.bootstrap.model_smoke`
 Local champion smoke: `python -m core.bootstrap.champion_smoke`

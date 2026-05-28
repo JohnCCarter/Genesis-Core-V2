@@ -16,6 +16,13 @@ _ADMITTED_FILES = [
 ]
 
 
+_WORKFLOW_FILES = [
+    ".github/copilot-instructions.md",
+    "AGENTS.md",
+    "docs/SKELETON_SCOPE.md",
+]
+
+
 _EXCLUDED_FILES = [
     "src/core/api/account.py",
     "src/core/api/info.py",
@@ -71,6 +78,24 @@ def test_seed_contains_admitted_local_api_shell_slice() -> None:
 
     for relative_path in _ADMITTED_FILES:
         assert (repo_root / relative_path).exists(), relative_path
+
+
+def test_seed_contains_skeleton_workflow_guidance() -> None:
+    repo_root = Path(__file__).resolve().parents[2]
+
+    for relative_path in _WORKFLOW_FILES:
+        assert (repo_root / relative_path).exists(), relative_path
+
+    agents_text = (repo_root / "AGENTS.md").read_text(encoding="utf-8")
+    instructions_text = (repo_root / ".github" / "copilot-instructions.md").read_text(
+        encoding="utf-8"
+    )
+    scope_text = (repo_root / "docs" / "SKELETON_SCOPE.md").read_text(encoding="utf-8")
+
+    assert "Prioritize V2 skeleton completeness before content migration." in agents_text
+    assert "Prefer generator-driven changes in `Genesis-Core` over manual drift in this repo." in instructions_text
+    assert "Track A — skeleton completeness" in scope_text
+    assert "Track B — authority migration" in scope_text
 
 
 def test_seed_excludes_legacy_and_stateful_surfaces() -> None:

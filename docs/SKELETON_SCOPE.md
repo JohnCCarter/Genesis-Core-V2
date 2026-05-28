@@ -1,0 +1,39 @@
+# Genesis-Core-V2 Skeleton Scope
+
+## Current target
+
+`Genesis-Core-V2` is intentionally a thin, runnable shell:
+
+- minimal repo structure
+- local-only API
+- generated workflow guidance for agent-driven work
+- fixture-backed smoke tests
+- no exchange, no UI, and no private runtime edges
+
+`Genesis-Core` remains the source of truth until each slice is proven.
+
+## Track A — skeleton completeness
+
+Included in the current priority lane:
+
+- README and local workflow docs
+- `AGENTS.md` and `.github/copilot-instructions.md`
+- local-only API shell (`config`, `status`, `models`, `strategy`)
+- fixture-backed smoke tests and console scripts
+- explicitly admitted non-sensitive config/model artifacts already carried into the seed
+
+## Track B — authority migration
+
+Deferred to separate verified slices:
+
+- strategy authority expansion
+- config semantics and runtime authority
+- backtest authority plus comparison/readiness surfaces
+- exchange, paper, UI, and other private/live-adjacent edges
+- freeze-sensitive surfaces
+
+## Verification loop
+
+- In `Genesis-Core`: `python -m pytest tests/utils/test_open_v2_runtime_seed.py -q`
+- Regenerate the seed: `python scripts/extract/open_v2_runtime_seed.py --clean`
+- In `Genesis-Core-V2`: `python -m pytest -q`
