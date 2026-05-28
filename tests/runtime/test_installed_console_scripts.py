@@ -10,8 +10,11 @@ import pytest
 
 
 EXPECTED_ENTRYPOINTS = {
+    "genesis-v2-champion-smoke": "genesis_core_v2_cli.console_scripts:champion_smoke_main",
+    "genesis-v2-evaluate-champion-smoke": "genesis_core_v2_cli.console_scripts:evaluate_champion_smoke_main",
     "genesis-v2-fixture-smoke": "genesis_core_v2_cli.console_scripts:fixture_smoke_main",
     "genesis-v2-backtest-smoke": "genesis_core_v2_cli.console_scripts:backtest_smoke_main",
+    "genesis-v2-model-smoke": "genesis_core_v2_cli.console_scripts:model_smoke_main",
     "genesis-v2-smoke-suite": "genesis_core_v2_cli.console_scripts:smoke_suite_main",
 }
 
@@ -54,10 +57,22 @@ def _resolve_console_script(command: str) -> list[str]:
 @pytest.mark.parametrize(
     ("command", "expected_pairs"),
     [
+        (
+            "genesis-v2-champion-smoke",
+            {"version": "seed_champion_fixture_v1"},
+        ),
+        (
+            "genesis-v2-evaluate-champion-smoke",
+            {"action": "NONE", "champion_source": "registry/fixtures/champions/tBTCUSD_1h.json"},
+        ),
         ("genesis-v2-fixture-smoke", {"action": "NONE"}),
         (
             "genesis-v2-backtest-smoke",
             {"trade_count": 1, "deterministic": True},
+        ),
+        (
+            "genesis-v2-model-smoke",
+            {"schema": ["ema_50"]},
         ),
         (
             "genesis-v2-smoke-suite",

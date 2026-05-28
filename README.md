@@ -3,7 +3,7 @@
 Runtime-first seed with admitted local-only API shell generated from the current
 `Genesis-Core` repository.
 
-Source Genesis-Core HEAD: `b8a50f8e`
+Source Genesis-Core HEAD: `b7f19e6c`
 
 ## What is included
 
@@ -145,7 +145,9 @@ Python analysis/test settings:
 `.vscode/settings.json`
 
 Console scripts after editable install:
+`genesis-v2-champion-smoke`, `genesis-v2-evaluate-champion-smoke`
 `genesis-v2-fixture-smoke`, `genesis-v2-backtest-smoke`, `genesis-v2-smoke-suite`
+`genesis-v2-model-smoke`
 
 Suggested install verification:
 `python -m pip install -e ".[dev]"`
