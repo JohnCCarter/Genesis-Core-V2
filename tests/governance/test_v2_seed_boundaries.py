@@ -119,6 +119,16 @@ _BOOTSTRAP_VERIFICATION_FILES = [
 ]
 
 
+_MCP_VERIFICATION_FILES = [
+    "seed_manifest.json",
+    ".vscode/mcp.json",
+    "config/mcp_settings.json",
+    "scripts/mcp/mcp_stdio.py",
+    "tests/runtime/test_local_mcp_setup.py",
+    "tests/runtime/test_local_mcp_script.py",
+]
+
+
 _MODULE_LOOP_FILES = [
     "src/core/server.py",
     "mcp_server/server.py",
@@ -453,6 +463,27 @@ def test_seed_contains_bootstrap_verification_manifest() -> None:
         "precommit": {
             "runtime_test_file": "tests/runtime/test_local_precommit_config.py",
             "tracked_file": ".pre-commit-config.yaml",
+        },
+    }
+
+
+def test_seed_contains_mcp_verification_manifest() -> None:
+    repo_root = Path(__file__).resolve().parents[2]
+
+    for relative_path in _MCP_VERIFICATION_FILES:
+        assert (repo_root / relative_path).exists(), relative_path
+
+    manifest = json.loads((repo_root / "seed_manifest.json").read_text(encoding="utf-8"))
+
+    assert manifest["mcp_verification"] == {
+        "workspace_registration": {
+            "workspace_file": ".vscode/mcp.json",
+            "config_file": "config/mcp_settings.json",
+            "runtime_test_file": "tests/runtime/test_local_mcp_setup.py",
+        },
+        "local_launcher": {
+            "tracked_file": "scripts/mcp/mcp_stdio.py",
+            "runtime_test_file": "tests/runtime/test_local_mcp_script.py",
         },
     }
 
