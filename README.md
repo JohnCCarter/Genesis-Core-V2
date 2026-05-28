@@ -1,13 +1,18 @@
 # Genesis-Core-V2
 
-Runtime-only Phase-1 seed generated from the current `Genesis-Core` repository.
+Runtime-first seed with admitted API/service shell generated from the current
+`Genesis-Core` repository.
 
-Source Genesis-Core HEAD: `c9e42b21`
+Source Genesis-Core HEAD: `eb29d88a`
 
 ## What is included
 
 - runtime kernel roots (`pipeline`, `backtest`, `strategy`, `regime`)
 - local dependency closure required by those roots
+- admitted API/service shell (`src/core/server.py`, `src/core/api/**`)
+- source-backed config validation seam (`src/core/config/validator.py`,
+  `src/core/config/legacy_schema_v1.json`)
+- source-backed config endpoint integration smoke (`tests/integration/test_config_endpoints.py`)
 - narrow config bootstrap (`config/__init__.py`, `config/timeframe_configs.py`,
     `config/backtest_defaults.yaml`)
 - runtime-only governance guardrails
@@ -27,10 +32,7 @@ Source Genesis-Core HEAD: `c9e42b21`
 
 ## What is intentionally excluded
 
-- `src/core/server.py`
-- `src/core/api/**`
 - `src/core/strategy/features.py`
-- `src/core/config/validator.py`
 - `config/runtime.json`
 - `config/runtime.seed.json`
 - `config/strategy/champions/**`
@@ -41,11 +43,13 @@ Source Genesis-Core HEAD: `c9e42b21`
 
 This seed is intentionally narrower than the source repository.
 It is a local starting point, not a claim that all later bootstrap, model, champion,
-or API/service decisions are already resolved.
+or wider state-authority decisions are already resolved.
 Source `config/models/**` payloads are copied into the seed, while deterministic smoke
 paths use fixture-backed model registry payloads under `registry/fixtures/model_registry/**`.
 Phase 1 intentionally excludes `config/strategy/champions/**`; runtime falls back to
 `config/timeframe_configs.py` through `ChampionLoader` when champion payloads are absent.
+The API/service shell is admitted, but runtime state and champion authority payloads remain
+excluded; generated `.env` contains placeholder values for bearer/auth seams only.
 
 Local model smoke: `python -m core.bootstrap.model_smoke`
 Local champion smoke: `python -m core.bootstrap.champion_smoke`

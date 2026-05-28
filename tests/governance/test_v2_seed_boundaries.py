@@ -4,16 +4,31 @@ import ast
 from pathlib import Path
 
 
-_EXCLUDED_FILES = [
+_ADMITTED_FILES = [
     "src/core/server.py",
-    "src/core/strategy/features.py",
+    "src/core/api/__init__.py",
+    "src/core/api/account.py",
+    "src/core/api/config.py",
+    "src/core/api/info.py",
+    "src/core/api/models.py",
+    "src/core/api/paper.py",
+    "src/core/api/public.py",
+    "src/core/api/status.py",
+    "src/core/api/strategy.py",
+    "src/core/api/ui.py",
     "src/core/config/validator.py",
+    "src/core/config/legacy_schema_v1.json",
+    "tests/integration/test_config_endpoints.py",
+]
+
+
+_EXCLUDED_FILES = [
+    "src/core/strategy/features.py",
     "config/runtime.json",
     "config/runtime.seed.json",
 ]
 
 _EXCLUDED_PREFIXES = [
-    "src/core/api",
     "data",
 ]
 
@@ -22,10 +37,7 @@ _EXCLUDED_JSON_PAYLOAD_DIRS = [
 ]
 
 _EXCLUDED_MODULE_PREFIXES = [
-    "core.server",
-    "core.api",
     "core.strategy.features",
-    "core.config.validator",
 ]
 
 
@@ -36,7 +48,14 @@ def _is_excluded_module(module: str) -> bool:
     )
 
 
-def test_phase_one_seed_excludes_service_and_legacy_surfaces() -> None:
+def test_seed_contains_admitted_api_service_shell_slice() -> None:
+    repo_root = Path(__file__).resolve().parents[2]
+
+    for relative_path in _ADMITTED_FILES:
+        assert (repo_root / relative_path).exists(), relative_path
+
+
+def test_seed_excludes_legacy_and_stateful_surfaces() -> None:
     repo_root = Path(__file__).resolve().parents[2]
 
     for relative_path in _EXCLUDED_FILES:
@@ -57,7 +76,7 @@ def test_phase_one_seed_has_no_excluded_json_payloads() -> None:
         assert not leaked, relative_dir + "\n" + "\n".join(leaked)
 
 
-def test_runtime_source_has_no_service_or_legacy_imports() -> None:
+def test_runtime_source_has_no_excluded_imports() -> None:
     repo_root = Path(__file__).resolve().parents[2]
     src_root = repo_root / "src"
     assert src_root.exists()

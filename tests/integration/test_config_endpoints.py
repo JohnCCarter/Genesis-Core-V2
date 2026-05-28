@@ -1,0 +1,336 @@
+from pathlib import Path
+
+from fastapi.testclient import TestClient
+
+from core.config.authority import ConfigAuthority
+from core.config.validator import (
+    diff_legacy_config,
+    validate_legacy_config,
+)
+from core.server import app
+
+
+def test_legacy_config_validation_and_diff_helpers():
+    good = {"dry_run": True, "position_cap_pct": 20}
+    bad = {"dry_run": "yes"}
+    assert validate_legacy_config(good) == []
+    assert any("is not of type" in e for e in validate_legacy_config(bad))
+
+    a = {"x": 1}
+    b = {"x": 2, "y": 3}
+    d_legacy = diff_legacy_config(a, b)
+    legacy_keys = {c["key"] for c in d_legacy}
+    assert legacy_keys == {"x", "y"}
+
+
+def test_config_endpoints():
+    c = TestClient(app)
+
+    # runtime validate (new API)
+    good_rt = {"strategy_family": "legacy", "thresholds": {"entry_conf_overall": 0.6}}
+    bad_rt = {"strategy_family": "legacy", "ev": {"R_default": "invalid"}}
+
+    r = c.post("/config/runtime/validate", json=good_rt)
+    assert r.status_code == 200 and r.json().get("valid") is True
+
+    r = c.post("/config/runtime/validate", json=bad_rt)
+    assert r.status_code == 200 and r.json().get("valid") is False
+
+    good_authority_mode = {
+        "strategy_family": "ri",
+        "thresholds": {
+            "entry_conf_overall": 0.25,
+            "regime_proba": {"balanced": 0.36},
+            "signal_adaptation": {
+                "atr_period": 14,
+                "zones": {
+                    "low": {"entry_conf_overall": 0.16, "regime_proba": 0.33},
+                    "mid": {"entry_conf_overall": 0.40, "regime_proba": 0.51},
+                    "high": {"entry_conf_overall": 0.32, "regime_proba": 0.57},
+                },
+            },
+        },
+        "gates": {"hysteresis_steps": 3, "cooldown_bars": 2},
+        "multi_timeframe": {"regime_intelligence": {"authority_mode": "regime_module"}},
+    }
+    good_authority_mode_alias = {
+        "strategy_family": "ri",
+        "thresholds": {
+            "entry_conf_overall": 0.25,
+            "regime_proba": {"balanced": 0.36},
+            "signal_adaptation": {
+                "atr_period": 14,
+                "zones": {
+                    "low": {"entry_conf_overall": 0.16, "regime_proba": 0.33},
+                    "mid": {"entry_conf_overall": 0.40, "regime_proba": 0.51},
+                    "high": {"entry_conf_overall": 0.32, "regime_proba": 0.57},
+                },
+            },
+        },
+        "gates": {"hysteresis_steps": 3, "cooldown_bars": 2},
+        "regime_unified": {"authority_mode": "regime_module"},
+    }
+    good_regime_definition = {
+        **good_authority_mode,
+        "multi_timeframe": {
+            "regime_intelligence": {
+                "authority_mode": "regime_module",
+                "regime_definition": {
+                    "adx_trend_threshold": 25.0,
+                    "adx_range_threshold": 20.0,
+                    "slope_threshold": 0.001,
+                    "volatility_threshold": 0.05,
+                },
+            }
+        },
+    }
+    bad_authority_mode = {
+        "strategy_family": "legacy",
+        "multi_timeframe": {"regime_intelligence": {"authority_mode": "invalid_mode"}},
+    }
+    bad_authority_mode_alias_non_dict = {
+        "strategy_family": "legacy",
+        "regime_unified": "regime_module",
+    }
+    bad_authority_mode_alias_extra_key = {
+        "strategy_family": "legacy",
+        "regime_unified": {"authority_mode": "regime_module", "extra": 1},
+    }
+    bad_conflicting_authority_mode = {
+        "strategy_family": "legacy",
+        "multi_timeframe": {"regime_intelligence": {"authority_mode": "invalid_mode"}},
+        "regime_unified": {"authority_mode": "regime_module"},
+    }
+    bad_partial_regime_definition = {
+        **good_authority_mode,
+        "multi_timeframe": {
+            "regime_intelligence": {
+                "authority_mode": "regime_module",
+                "regime_definition": {
+                    "adx_trend_threshold": 25.0,
+                    "adx_range_threshold": 20.0,
+                },
+            }
+        },
+    }
+
+    r = c.post("/config/runtime/validate", json=good_authority_mode)
+    assert r.status_code == 200 and r.json().get("valid") is True
+    assert r.json().get("cfg", {}).get("strategy_family") == "ri"
+
+    r = c.post("/config/runtime/validate", json=good_authority_mode_alias)
+    assert r.status_code == 200 and r.json().get("valid") is True
+
+    r = c.post("/config/runtime/validate", json=good_regime_definition)
+    assert r.status_code == 200 and r.json().get("valid") is True
+
+    r = c.post("/config/runtime/validate", json=bad_authority_mode)
+    assert r.status_code == 200 and r.json().get("valid") is False
+
+    r = c.post("/config/runtime/validate", json=bad_authority_mode_alias_non_dict)
+    assert r.status_code == 200 and r.json().get("valid") is False
+
+    r = c.post("/config/runtime/validate", json=bad_authority_mode_alias_extra_key)
+    assert r.status_code == 200 and r.json().get("valid") is False
+
+    r = c.post("/config/runtime/validate", json=bad_conflicting_authority_mode)
+    assert r.status_code == 200 and r.json().get("valid") is False
+
+    r = c.post("/config/runtime/validate", json=bad_partial_regime_definition)
+    assert r.status_code == 200 and r.json().get("valid") is False
+
+    bad_legacy_with_regime_module = {
+        "strategy_family": "legacy",
+        "multi_timeframe": {"regime_intelligence": {"authority_mode": "regime_module"}},
+    }
+
+    r = c.post("/config/runtime/validate", json=bad_legacy_with_regime_module)
+    assert r.status_code == 200 and r.json().get("valid") is False
+
+    # runtime get
+    r = c.get("/config/runtime")
+    assert r.status_code == 200
+    assert set(r.json().keys()) >= {"cfg", "version", "hash"}
+
+
+def test_runtime_validate_uses_config_authority_validate(monkeypatch):
+    c = TestClient(app)
+
+    import core.api.config as api
+
+    calls = {"n": 0, "payload": None}
+
+    class _FakeCfg:
+        def model_dump_canonical(self):
+            return {"_source": "authority.validate"}
+
+    def _fake_validate(payload):
+        calls["n"] += 1
+        calls["payload"] = payload
+        return _FakeCfg()
+
+    monkeypatch.setattr(api.authority, "validate", _fake_validate)
+
+    payload = {"strategy_family": "legacy", "thresholds": {"entry_conf_overall": 0.61}}
+    r = c.post("/config/runtime/validate", json=payload)
+
+    assert r.status_code == 200
+    assert r.json() == {
+        "valid": True,
+        "errors": [],
+        "cfg": {"_source": "authority.validate"},
+    }
+    assert calls["n"] == 1
+    assert calls["payload"] == payload
+
+
+def test_runtime_endpoints_do_not_leak_exceptions(monkeypatch):
+    c = TestClient(app)
+
+    # validate should not echo exception details
+    r = c.post(
+        "/config/runtime/validate",
+        json={"strategy_family": "legacy", "ev": {"R_default": "SECRET_SHOULD_NOT_LEAK"}},
+    )
+    assert r.status_code == 200
+    assert r.json().get("valid") is False
+    assert "SECRET_SHOULD_NOT_LEAK" not in r.text
+
+    # propose should not leak runtime exceptions
+    import core.api.config as api
+
+    def _boom(*_args, **_kwargs):
+        raise RuntimeError("some internal SECRET_SHOULD_NOT_LEAK")
+
+    monkeypatch.setattr(api.authority, "propose_update", _boom)
+    monkeypatch.setenv("BEARER_TOKEN", "test-secret")
+    r = c.post(
+        "/config/runtime/propose",
+        headers={"Authorization": "Bearer test-secret"},
+        json={
+            "patch": {"thresholds": {"entry_conf_overall": 0.6}},
+            "actor": "test",
+            "expected_version": 0,
+        },
+    )
+    assert r.status_code == 500
+    assert "SECRET_SHOULD_NOT_LEAK" not in r.text
+
+
+def test_runtime_propose_nested_non_whitelisted_detail_is_coarse(monkeypatch):
+    c = TestClient(app)
+
+    r = c.get("/config/runtime")
+    assert r.status_code == 200
+    v0 = int(r.json().get("version") or 0)
+
+    monkeypatch.setenv("BEARER_TOKEN", "test-secret")
+    r = c.post(
+        "/config/runtime/propose",
+        headers={"Authorization": "Bearer test-secret"},
+        json={
+            "patch": {
+                "multi_timeframe": {
+                    "regime_intelligence": {
+                        "regime_definition": {
+                            "adx_trend_threshold": 25.0,
+                        }
+                    }
+                }
+            },
+            "actor": "test",
+            "expected_version": v0,
+        },
+    )
+
+    assert r.status_code == 400
+    assert r.json() == {"detail": "non_whitelisted_field"}
+    assert "regime_definition" not in r.text
+    assert "adx_trend_threshold" not in r.text
+    assert ":" not in r.json()["detail"]
+
+
+def test_runtime_propose_exit_enabled_singleton_is_admitted(monkeypatch, tmp_path: Path):
+    c = TestClient(app)
+
+    import core.api.config as api
+
+    monkeypatch.setattr(api, "authority", ConfigAuthority(tmp_path / "runtime.json"))
+
+    r = c.get("/config/runtime")
+    assert r.status_code == 200
+    v0 = int(r.json().get("version") or 0)
+
+    monkeypatch.setenv("BEARER_TOKEN", "test-secret")
+    r = c.post(
+        "/config/runtime/propose",
+        headers={"Authorization": "Bearer test-secret"},
+        json={
+            "patch": {"exit": {"enabled": False}},
+            "actor": "test",
+            "expected_version": v0,
+        },
+    )
+
+    assert r.status_code == 200
+    body = r.json()
+    assert int(body.get("version", -1)) == v0 + 1
+    assert body.get("cfg", {}).get("exit", {}).get("enabled") is False
+    assert body.get("cfg", {}).get("exit", {}).get("stop_loss_pct") == 0.02
+
+
+def test_runtime_propose_exit_mixed_patch_is_coarse_and_atomic(monkeypatch, tmp_path: Path):
+    c = TestClient(app)
+
+    import core.api.config as api
+
+    monkeypatch.setattr(api, "authority", ConfigAuthority(tmp_path / "runtime.json"))
+
+    r = c.get("/config/runtime")
+    assert r.status_code == 200
+    initial = r.json()
+    v0 = int(initial.get("version") or 0)
+    initial_cfg = initial.get("cfg", {})
+
+    monkeypatch.setenv("BEARER_TOKEN", "test-secret")
+    r = c.post(
+        "/config/runtime/propose",
+        headers={"Authorization": "Bearer test-secret"},
+        json={
+            "patch": {"exit": {"enabled": False, "stop_loss_pct": 0.01}},
+            "actor": "test",
+            "expected_version": v0,
+        },
+    )
+
+    assert r.status_code == 400
+    assert r.json() == {"detail": "non_whitelisted_field"}
+    assert "stop_loss_pct" not in r.text
+    assert "enabled" not in r.text
+
+    after = c.get("/config/runtime")
+    assert after.status_code == 200
+    assert int(after.json().get("version", -1)) == v0
+    assert after.json().get("cfg") == initial_cfg
+
+
+def test_runtime_propose_invalid_value_stays_bad_request(monkeypatch):
+    c = TestClient(app)
+
+    r = c.get("/config/runtime")
+    assert r.status_code == 200
+    v0 = int(r.json().get("version") or 0)
+
+    monkeypatch.setenv("BEARER_TOKEN", "test-secret")
+    r = c.post(
+        "/config/runtime/propose",
+        headers={"Authorization": "Bearer test-secret"},
+        json={
+            "patch": {"strategy_family": "not-a-valid-family"},
+            "actor": "test",
+            "expected_version": v0,
+        },
+    )
+
+    assert r.status_code == 400
+    assert r.json() == {"detail": "bad_request"}

@@ -177,6 +177,16 @@
     "config/models/tXTZUSD_6h.json",
     "config/timeframe_configs.py",
     "src/core/__init__.py",
+    "src/core/api/__init__.py",
+    "src/core/api/account.py",
+    "src/core/api/config.py",
+    "src/core/api/info.py",
+    "src/core/api/models.py",
+    "src/core/api/paper.py",
+    "src/core/api/public.py",
+    "src/core/api/status.py",
+    "src/core/api/strategy.py",
+    "src/core/api/ui.py",
     "src/core/backtest/__init__.py",
     "src/core/backtest/engine.py",
     "src/core/backtest/engine_precompute.py",
@@ -191,8 +201,13 @@
     "src/core/backtest/position_tracker.py",
     "src/core/backtest/trade_logger.py",
     "src/core/config/__init__.py",
+    "src/core/config/authority.py",
     "src/core/config/authority_mode_resolver.py",
+    "src/core/config/legacy_schema_v1.json",
     "src/core/config/merge_policy.py",
+    "src/core/config/schema.py",
+    "src/core/config/settings.py",
+    "src/core/config/validator.py",
     "src/core/indicators/adx.py",
     "src/core/indicators/atr.py",
     "src/core/indicators/bollinger.py",
@@ -213,11 +228,16 @@
     "src/core/intelligence/regime/contracts.py",
     "src/core/intelligence/regime/htf.py",
     "src/core/intelligence/regime/risk_state.py",
+    "src/core/io/__init__.py",
+    "src/core/io/bitfinex/__init__.py",
+    "src/core/io/bitfinex/exchange_client.py",
+    "src/core/io/bitfinex/read_helpers.py",
     "src/core/observability/metrics.py",
     "src/core/optimizer/__init__.py",
     "src/core/optimizer/champion.py",
     "src/core/optimizer/param_transforms.py",
     "src/core/pipeline.py",
+    "src/core/server.py",
     "src/core/strategy/champion_loader.py",
     "src/core/strategy/confidence.py",
     "src/core/strategy/decision.py",
@@ -226,6 +246,7 @@
     "src/core/strategy/decision_gates.py",
     "src/core/strategy/decision_sizing.py",
     "src/core/strategy/evaluate.py",
+    "src/core/strategy/family_registry.py",
     "src/core/strategy/features_asof.py",
     "src/core/strategy/features_asof_parts/__init__.py",
     "src/core/strategy/features_asof_parts/atr_percentile_utils.py",
@@ -254,7 +275,10 @@
     "src/core/strategy/regime.py",
     "src/core/strategy/regime_unified.py",
     "src/core/strategy/ri_policy_router.py",
+    "src/core/symbols/symbols.py",
     "src/core/utils/__init__.py",
+    "src/core/utils/backoff.py",
+    "src/core/utils/crypto.py",
     "src/core/utils/dict_merge.py",
     "src/core/utils/diffing/__init__.py",
     "src/core/utils/diffing/canonical.py",
@@ -264,16 +288,19 @@
     "src/core/utils/diffing/trial_cache.py",
     "src/core/utils/env_flags.py",
     "src/core/utils/logging_redaction.py",
+    "src/core/utils/nonce_manager.py",
     "src/core/utils/optuna_helpers.py",
     "tests/__init__.py",
     "tests/governance/__init__.py",
-    "tests/governance/test_no_legacy_feature_imports.py"
+    "tests/governance/test_no_legacy_feature_imports.py",
+    "tests/integration/test_config_endpoints.py"
   ],
   "destination_repo": "C:\\Users\\fa06662\\Projects\\Genesis-Core-V2",
   "entry_roots": [
     "src/core/pipeline.py",
     "src/core/backtest/engine.py",
     "src/core/backtest/engine_precompute.py",
+    "src/core/server.py",
     "src/core/strategy/evaluate.py",
     "src/core/strategy/features_asof.py",
     "src/core/strategy/decision.py",
@@ -283,22 +310,18 @@
     "src/core/strategy/regime.py",
     "config/__init__.py",
     "config/timeframe_configs.py",
+    "src/core/config/legacy_schema_v1.json",
+    "tests/integration/test_config_endpoints.py",
     "tests/governance/test_no_legacy_feature_imports.py"
   ],
   "excluded_modules": [
-    "core.api",
-    "core.server",
-    "core.strategy.features",
-    "core.config.validator"
+    "core.strategy.features"
   ],
   "excluded_path_prefixes": [
-    "src/core/api/",
     "results/",
     "docs/analysis/edge_topology/"
   ],
   "excluded_relative_paths": [
-    "src/core/config/validator.py",
-    "src/core/server.py",
     "src/core/strategy/features.py"
   ],
   "explicit_stateful_admissions": [
@@ -306,6 +329,7 @@
     "config/models/**"
   ],
   "generated_files": [
+    ".env",
     ".gitignore",
     "README.md",
     "config/backtest_defaults.yaml",
@@ -339,14 +363,14 @@
   ],
   "mode": "RESEARCH",
   "notes": [
-    "Runtime-only seed generated locally.",
-    "API/service shell intentionally excluded.",
-    "Legacy compatibility surfaces intentionally excluded.",
-    "Only explicitly admitted stateful artifacts were carried over; champions remained excluded."
+    "Runtime-first seed with API/service shell generated locally.",
+    "Legacy `core.strategy.features` surface intentionally excluded.",
+    "Only explicitly admitted stateful artifacts were carried over; champions and runtime state remained excluded.",
+    "Generated `.env` contains placeholder bearer and Bitfinex auth values only."
   ],
   "output_hashes": {
     ".gitignore": "8ee95e751b95b668510265f2fde549d9ad495c4059a77b348cb06a6df9a253f2",
-    "README.md": "41c18484aeaf4f00455640820af6c8503c0cc2833fe90b65c8063eb6f215863c",
+    "README.md": "81c9b98c5da90d33c1e6b40fa4517fe5d8b1badef4a1079f8afb27cf33d2f9da",
     "config/__init__.py": "8994ca2027dce1be71c006c42a3a6372fbbe93c547c0516a258499cf08142753",
     "config/backtest_defaults.yaml": "f3e7464975dbeaf6a27ec2119d0df325728ca2f68cececd16ebeb5c9f79addfe",
     "config/models/registry.json": "301308f31d2c2ea0b13fb159cda91e2087d682b8e2bb580fea61598e17fbad5b",
@@ -521,7 +545,7 @@
     "registry/fixtures/model_registry/config/models/registry.json": "bfe66726cf8938c3b4d187929f9b259ebad28509fbf0705cba8f5d4629bd7469",
     "registry/fixtures/model_registry/config/models/tBTCUSD_1h.json": "3e6d5b0700cd6afb9e4ada5f2cd1ebc6d6d892ce42bab7321b7a439fefc84d2f",
     "registry/fixtures/runtime_fixture_smoke_minimal.json": "baa7ac8642e1c1a76580d897711c9b74a62e003b8ef4a3848ae39f6af5fa52af",
-    "seed_manifest.json": "d752a943dc4da1aa45d63ed8fb2f7e39f52183305482373d2321e7cd497f700f",
+    "seed_manifest.json": "faf88d81b828571b1df52e1340868beaf3313830b371d6025b332791140210d9",
     "src/core/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "src/core/backtest/__init__.py": "c8638f49d330bce058a490cc3f03c5e107eb85315b2c2dcb6c318856ea4f59c5",
     "src/core/backtest/engine.py": "94ddbb8fa722acfa7acc77667a0de634f0ef6061dbeca58719b6564b9a19bc26",
@@ -635,7 +659,7 @@
     "tests/runtime/test_runtime_fixture_smoke.py": "229e71ec3c803bbedad884e9302dc7308db5906384d0b2700295c86a280eb6c6",
     "tests/runtime/test_smoke_suite.py": "520826d830356a2979113586a0c7ad6137fe24bc1b6edca48766ce4dd39407b9"
   },
-  "phase": "runtime_only_seed",
+  "phase": "runtime_seed_with_api_shell",
   "smoke_entrypoints": {
     "console_scripts": [
       "genesis-v2-fixture-smoke",
@@ -652,7 +676,7 @@
       "python -m core.bootstrap.smoke_suite"
     ]
   },
-  "source_head": "c9e42b21",
+  "source_head": "eb29d88a",
   "source_repo": "C:\\Users\\fa06662\\Projects\\Genesis-Core",
   "status": "genesis_core_v2_runtime_seed_local_materialization",
   "verify_before_include_paths": [
