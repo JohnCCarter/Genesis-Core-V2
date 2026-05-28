@@ -342,6 +342,7 @@
     ".gitignore",
     ".vscode/launch.json",
     ".vscode/mcp.json",
+    ".vscode/settings.json",
     ".vscode/tasks.json",
     "AGENTS.md",
     "README.md",
@@ -375,6 +376,7 @@
     "tests/runtime/test_installed_console_scripts.py",
     "tests/runtime/test_local_mcp_setup.py",
     "tests/runtime/test_local_vscode_launch.py",
+    "tests/runtime/test_local_vscode_settings.py",
     "tests/runtime/test_local_vscode_tasks.py",
     "tests/runtime/test_model_smoke.py",
     "tests/runtime/test_runtime_fixture_smoke.py",
@@ -383,6 +385,7 @@
   "local_tooling_surfaces": [
     ".vscode/launch.json",
     ".vscode/mcp.json",
+    ".vscode/settings.json",
     ".vscode/tasks.json",
     "config/mcp_settings.json",
     "mcp_server/server.py"
@@ -393,6 +396,7 @@
     "Workflow files make the V2 seed self-describing as a skeleton-first repository.",
     "Local stdio MCP tooling is admitted with a safe V2-specific config; remote MCP surfaces remain excluded.",
     "Generated `.vscode/tasks.json` and `.vscode/launch.json` provide repeatable local API/smoke/test loops via `PYTHONPATH=${workspaceFolder}/src`.",
+    "Generated `.vscode/settings.json` aligns Python analysis and pytest discovery with the V2 `src` layout.",
     "Exchange-facing, paper, public-data, and UI service edges are intentionally excluded.",
     "Pipeline, Optuna, and optimizer-only closure are intentionally excluded.",
     "Legacy `core.strategy.features` surface intentionally excluded.",
@@ -401,13 +405,14 @@
   ],
   "output_hashes": {
     ".env": "369a0ce352acd15713e7da5ec1bf9d11d61dd68409e7b58ab1c04a0fc424d7d0",
-    ".github/copilot-instructions.md": "4377fde8e1c400272af22825073af88a61ae2660b4b734e3a0053ec938cffa03",
+    ".github/copilot-instructions.md": "33cfa0d69b758a1a4ac32bd35de0cdd5e12b995bfbfaca781e2760bfcac5399f",
     ".gitignore": "8ee95e751b95b668510265f2fde549d9ad495c4059a77b348cb06a6df9a253f2",
     ".vscode/launch.json": "28fef0fd520aea9e12129b5bd8dbf87bac9e42e6c9cbdfd8e13f444b4482c488",
     ".vscode/mcp.json": "0ff40c8e08a3b9e95effbcce810154486c23cf6f1e3f11590fd801c9c2e8de60",
+    ".vscode/settings.json": "e74b59b003fce766ae7c842d5822ddd7557b4498812ccc62275fca2789a27b26",
     ".vscode/tasks.json": "2e25f022e5cbb918e3bd71476ec1246e9c5a8c5a958a4c24785781b78b6bd046",
-    "AGENTS.md": "8b0f5e818e5465600ed6472f40f24a9a89f1d730ae5ab95b48eca65b24677ca4",
-    "README.md": "1b9479714005246b928da766218035775b0c75e8a678c4f7849238655a9d034b",
+    "AGENTS.md": "ac8a7d90ed970fa480aaee85b4e57f2d9af34d44e0641f24951b3582e3816311",
+    "README.md": "507396c52b118396c55f0694fbdc1e957e8778503ed777db89798a29d67c467f",
     "config/__init__.py": "8994ca2027dce1be71c006c42a3a6372fbbe93c547c0516a258499cf08142753",
     "config/backtest_defaults.yaml": "f3e7464975dbeaf6a27ec2119d0df325728ca2f68cececd16ebeb5c9f79addfe",
     "config/mcp_settings.json": "adb044b017c15b79cd5e3a98bb28af7e831ef0ab4206f1d8bed3fc764191d312",
@@ -578,7 +583,7 @@
     "config/models/tXTZUSD_5m.json": "a6df5e580bdde9cd982947c47e97c1af4feafc969e8964e7b811ccb8c870a586",
     "config/models/tXTZUSD_6h.json": "a6df5e580bdde9cd982947c47e97c1af4feafc969e8964e7b811ccb8c870a586",
     "config/timeframe_configs.py": "18469ea5de4609c626ce07d00c5cb13cc6c930f34662aa17008488af935582fa",
-    "docs/SKELETON_SCOPE.md": "b08870a8dbe7894f501e9936acd19270815f17f3225272896e34350c18276602",
+    "docs/SKELETON_SCOPE.md": "046b65c0096e0fc6ec73fddea9fe527cb6d212dbeca36f26a7687f96a237a580",
     "mcp_server/__init__.py": "f80803af0867fe2f671c072d1348f335fef5332f4d43c208479dfe519e1702a8",
     "mcp_server/config.py": "d21d266978d95d7483347b81abd34122cfc63b954244acbf7e998f7d366b117d",
     "mcp_server/resources.py": "aeb64bb170ef223c09675742d8da90a501a8ee0074d775f4915506bd6d321204",
@@ -590,7 +595,7 @@
     "registry/fixtures/model_registry/config/models/registry.json": "bfe66726cf8938c3b4d187929f9b259ebad28509fbf0705cba8f5d4629bd7469",
     "registry/fixtures/model_registry/config/models/tBTCUSD_1h.json": "3e6d5b0700cd6afb9e4ada5f2cd1ebc6d6d892ce42bab7321b7a439fefc84d2f",
     "registry/fixtures/runtime_fixture_smoke_minimal.json": "baa7ac8642e1c1a76580d897711c9b74a62e003b8ef4a3848ae39f6af5fa52af",
-    "seed_manifest.json": "8b528e3199add940d672b743f6e154c7dacbc95eae31f2fc718649b2d86def50",
+    "seed_manifest.json": "e778eda752f05d2fd815dc0d5407516e44016e74226045ceff58ba89412e88c1",
     "src/core/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "src/core/api/__init__.py": "9e141c9574a06d3ca44c17148afa758dfa9e17480bb422c6762a15ce9b47e555",
     "src/core/api/config.py": "c09e6116eacc63445b54e33b05eee90554861f8ea0ac1eb690134ca869ac06e0",
@@ -698,7 +703,7 @@
     "tests/governance/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "tests/governance/test_no_legacy_feature_imports.py": "dcee377048d91888d23f389b869e5bc2238b366308c86f8fb5260da997f8c26c",
     "tests/governance/test_pyproject_console_scripts.py": "bdb65384930eacd75bfc08de7a861107042f60eecc88ba0744dab7e9c01f578b",
-    "tests/governance/test_v2_seed_boundaries.py": "c4047261994bf4d7e01dfd0bcfd0e1ba5f2c35d60bb54fa575aa4f6846a3cec2",
+    "tests/governance/test_v2_seed_boundaries.py": "39b711fd5523ae2b598241dc559b8325ce84127bab30b57e5eb7f508623e5e7f",
     "tests/integration/test_config_endpoints.py": "28059e71553716539edb23924a26951e2687f580703507843d5029335afcf310",
     "tests/runtime/test_backtest_bootstrap_smoke.py": "2e557462e03d83f775d31510654223bc3812556b9547dce5e528440174e685ce",
     "tests/runtime/test_backtest_engine_fixture_smoke.py": "54f837ed9437bb32b347143508f2afd18d80d6167209a89f4c14b4234ed30753",
@@ -708,6 +713,7 @@
     "tests/runtime/test_installed_console_scripts.py": "5d4c0c7909d4b66e50b968c729d6757626fddcdee96cba0018175f824bf64857",
     "tests/runtime/test_local_mcp_setup.py": "589fdfee1a26f2d4dc79f8e4a36c96a4b1187634e9eb18557c8001c9ae0cf45c",
     "tests/runtime/test_local_vscode_launch.py": "c8ef1b0fb5a6601b9d672a471eaa08cac16b2a70f87e5ec5e641f0a59803d298",
+    "tests/runtime/test_local_vscode_settings.py": "86b4856466544e4783ab4ef441ccd5bd3081bfd7c33cd33a3fc05fe52539b360",
     "tests/runtime/test_local_vscode_tasks.py": "668f37ee5eeb6b6131ddfff1d62a71a9adf25692a8fe7c5c92f05534619e5201",
     "tests/runtime/test_model_smoke.py": "2290517c2bea5b931c36820f078cce3a137a06f5a7435319c50b3197c4fc7a7f",
     "tests/runtime/test_runtime_fixture_smoke.py": "229e71ec3c803bbedad884e9302dc7308db5906384d0b2700295c86a280eb6c6",
@@ -731,7 +737,7 @@
       "python -m core.bootstrap.smoke_suite"
     ]
   },
-  "source_head": "5e0114a4",
+  "source_head": "0d667e72",
   "source_of_truth_repo": "Genesis-Core",
   "source_repo": "C:\\Users\\fa06662\\Projects\\Genesis-Core",
   "status": "genesis_core_v2_runtime_seed_local_materialization",
@@ -754,6 +760,14 @@
   "workspace_loop_env": {
     "PYTHONPATH": "${workspaceFolder}/src"
   },
+  "workspace_settings_keys": [
+    "python.analysis.extraPaths",
+    "python.envFile",
+    "python.testing.cwd",
+    "python.testing.pytestArgs",
+    "python.testing.pytestEnabled",
+    "python.testing.unittestEnabled"
+  ],
   "workspace_task_labels": [
     "genesis-v2: api shell",
     "genesis-v2: smoke suite",

@@ -11,7 +11,7 @@ Read `AGENTS.md` and `docs/SKELETON_SCOPE.md` before widening scope.
 - Prefer generator-driven changes in `Genesis-Core` over manual drift in this repo.
 - Keep the local-only API shell runnable and tested.
 - Keep the local MCP stdio shell local-first and safe by default.
-- Prefer the generated local VS Code tasks and debug profiles for repeatable API/smoke/test loops when working interactively.
+- Prefer the generated local VS Code tasks, debug profiles, and settings for repeatable API/smoke/test loops when working interactively.
 - Prefer fixture-backed smoke tests before moving wider runtime content.
 
 ## Out of scope by default
