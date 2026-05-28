@@ -3,7 +3,7 @@
 Runtime-first seed with admitted local-only API shell generated from the current
 `Genesis-Core` repository.
 
-Source Genesis-Core HEAD: `b19760ff`
+Source Genesis-Core HEAD: `715c71bb`
 
 ## What is included
 
@@ -104,6 +104,10 @@ editor-specific tasks or an editable install first.
 - `scripts/smoke/*.py` wraps the admitted core smoke modules with local `src/` bootstrapping so the seed is runnable before install.
 
 After editable install, local module commands:
+
+Local API shell: `python -m uvicorn core.server:app --app-dir src --reload`
+Local MCP stdio shell: `python -m mcp_server.server`
+Local pytest suite: `python -m pytest -q`
 
 Local model smoke: `python -m core.bootstrap.model_smoke`
 Local champion smoke: `python -m core.bootstrap.champion_smoke`

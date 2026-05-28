@@ -59,4 +59,6 @@ Deferred to separate verified slices:
 - Non-installed local smoke scripts: `python scripts/smoke/fixture_smoke.py`, `python scripts/smoke/backtest_smoke.py`, `python scripts/smoke/champion_smoke.py`, `python scripts/smoke/evaluate_champion_smoke.py`, `python scripts/smoke/model_smoke.py`, `python scripts/smoke/smoke_suite.py`
 - Installable local console scripts: `genesis-v2-api-shell`, `genesis-v2-mcp-stdio`, `genesis-v2-pytest`, `genesis-v2-champion-smoke`, `genesis-v2-evaluate-champion-smoke`, `genesis-v2-fixture-smoke`, `genesis-v2-backtest-smoke`, `genesis-v2-model-smoke`, `genesis-v2-smoke-suite`
 - Installable console-script verification: `python -m pip install -e ".[dev,mcp]"`, then `pytest tests/runtime/test_installed_console_scripts.py -q`
+- Editable-install module loop: `python -m uvicorn core.server:app --app-dir src --reload`, `python -m mcp_server.server`, `python -m pytest -q`
+- Editable-install smoke module loop: `python -m core.bootstrap.model_smoke`, `python -m core.bootstrap.champion_smoke`, `python -m core.bootstrap.evaluate_champion_smoke`, `python -m core.bootstrap.fixture_smoke`, `python -m core.bootstrap.backtest_smoke`, `python -m core.bootstrap.smoke_suite`
 - Optional local MCP install: `python -m pip install -e ".[mcp]"`
