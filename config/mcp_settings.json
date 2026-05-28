@@ -1,0 +1,40 @@
+{
+  "features": {
+    "code_execution": false,
+    "file_operations": true,
+    "git_integration": true
+  },
+  "log_file": "logs/mcp_server.log",
+  "log_level": "INFO",
+  "security": {
+    "allowed_paths": [
+      ".github",
+      ".vscode",
+      "AGENTS.md",
+      "README.md",
+      "config",
+      "docs",
+      "mcp_server",
+      "pyproject.toml",
+      "registry",
+      "seed_manifest.json",
+      "src",
+      "tests"
+    ],
+    "blocked_patterns": [
+      ".git",
+      "__pycache__",
+      "*.pyc",
+      "node_modules",
+      ".env",
+      "config/runtime.json",
+      "config/runtime.seed.json",
+      ".nonce_tracker.json",
+      "dev.overrides.local.json"
+    ],
+    "execution_timeout_seconds": 15,
+    "max_file_size_mb": 5
+  },
+  "server_name": "genesis-core-v2",
+  "version": "0.1.0"
+}

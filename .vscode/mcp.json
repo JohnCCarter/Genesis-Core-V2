@@ -1,0 +1,14 @@
+{
+  "servers": {
+    "genesis-core-v2": {
+      "args": [
+        "-m",
+        "mcp_server.server"
+      ],
+      "command": "python",
+      "env": {
+        "GENESIS_MCP_CONFIG_PATH": "config/mcp_settings.json"
+      }
+    }
+  }
+}

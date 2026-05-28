@@ -3,7 +3,7 @@
 Runtime-first seed with admitted local-only API shell generated from the current
 `Genesis-Core` repository.
 
-Source Genesis-Core HEAD: `e57e3700`
+Source Genesis-Core HEAD: `a5826a7e`
 
 ## What is included
 
@@ -16,6 +16,7 @@ Source Genesis-Core HEAD: `e57e3700`
 - source-backed config endpoint integration smoke (`tests/integration/test_config_endpoints.py`)
 - narrow config bootstrap (`config/__init__.py`, `config/timeframe_configs.py`,
     `config/backtest_defaults.yaml`)
+- local MCP stdio shell (`mcp_server/*.py`, `.vscode/mcp.json`, `config/mcp_settings.json`)
 - runtime-only governance guardrails
 - admitted source model payloads under `config/models/**`
 - deterministic fixture model-registry/prob-model smoke
@@ -43,6 +44,9 @@ Source Genesis-Core HEAD: `e57e3700`
 - `config/runtime.json`
 - `config/runtime.seed.json`
 - `config/strategy/champions/**`
+- `mcp_server/remote_server.py`
+- `config/mcp_settings.remote_safe.json`
+- `config/mcp_settings.remote_git.json`
 - `data/**`
 - branch-local research corpora and historical explanation surfaces
 
@@ -61,12 +65,15 @@ Runtime state and champion authority payloads remain excluded; generated `.env` 
 local-shell placeholders.
 Unneeded Optuna/optimizer closure is intentionally pruned from the seed until and unless a later
 explicit slice admits those higher-sensitivity surfaces.
+Local MCP support is admitted for stdio-only workspace usage; remote MCP entrypoints and remote
+allowlist variants remain deferred.
 
 ## Skeleton workflow
 
 - `AGENTS.md` defines the skeleton-first repo contract.
 - `.github/copilot-instructions.md` keeps local agent work aligned with generator-driven slices.
 - `docs/SKELETON_SCOPE.md` records Track A vs Track B and the verification loop.
+- `.vscode/mcp.json` wires VS Code to the local stdio MCP server using `config/mcp_settings.json`.
 
 Local model smoke: `python -m core.bootstrap.model_smoke`
 Local champion smoke: `python -m core.bootstrap.champion_smoke`
@@ -81,3 +88,7 @@ Console scripts after editable install:
 Suggested install verification:
 `python -m pip install -e ".[dev]"`
 then run `pytest tests/runtime/test_installed_console_scripts.py -q`
+
+Optional local MCP install:
+`python -m pip install -e ".[mcp]"`
+then connect the `genesis-core-v2` server from `.vscode/mcp.json`

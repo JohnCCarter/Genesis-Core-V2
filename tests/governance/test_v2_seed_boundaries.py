@@ -23,7 +23,23 @@ _WORKFLOW_FILES = [
 ]
 
 
+_MCP_FILES = [
+    ".vscode/mcp.json",
+    "config/mcp_settings.json",
+    "mcp_server/__init__.py",
+    "mcp_server/config.py",
+    "mcp_server/resources.py",
+    "mcp_server/server.py",
+    "mcp_server/tools.py",
+    "mcp_server/utils.py",
+    "tests/runtime/test_local_mcp_setup.py",
+]
+
+
 _EXCLUDED_FILES = [
+    "config/mcp_settings.remote_git.json",
+    "config/mcp_settings.remote_safe.json",
+    "mcp_server/remote_server.py",
     "src/core/api/account.py",
     "src/core/api/info.py",
     "src/core/api/paper.py",
@@ -96,6 +112,17 @@ def test_seed_contains_skeleton_workflow_guidance() -> None:
     assert "Prefer generator-driven changes in `Genesis-Core` over manual drift in this repo." in instructions_text
     assert "Track A — skeleton completeness" in scope_text
     assert "Track B — authority migration" in scope_text
+
+
+def test_seed_contains_local_mcp_shell() -> None:
+    repo_root = Path(__file__).resolve().parents[2]
+
+    for relative_path in _MCP_FILES:
+        assert (repo_root / relative_path).exists(), relative_path
+
+    scope_text = (repo_root / "docs" / "SKELETON_SCOPE.md").read_text(encoding="utf-8")
+    assert "local MCP stdio shell" in scope_text
+    assert "remote MCP surfaces remain deferred" in scope_text
 
 
 def test_seed_excludes_legacy_and_stateful_surfaces() -> None:

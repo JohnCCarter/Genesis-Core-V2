@@ -14,6 +14,7 @@ Prioritize V2 skeleton completeness before content migration.
 Use this track for:
 
 - repo structure and generated workflow files
+- local MCP stdio shell and safe editor hookup
 - local-only API shell
 - fixture-backed smoke tests
 - README/docs that explain the current admitted boundary
@@ -26,6 +27,7 @@ Defer these to separate verified slices:
 - strategy authority expansion
 - config semantics and runtime authority
 - backtest authority, comparison, readiness, and promotion surfaces
+- remote MCP exposure and remote Git workflow surfaces
 - exchange, paper, UI, and other private/live-adjacent edges
 - freeze-sensitive surfaces
 
