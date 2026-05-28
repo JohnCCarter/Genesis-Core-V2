@@ -17,6 +17,7 @@
       "mcp_server",
       "pyproject.toml",
       "registry",
+      "scripts",
       "seed_manifest.json",
       "src",
       "tests"

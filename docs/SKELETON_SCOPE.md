@@ -22,6 +22,7 @@ Included in the current priority lane:
 - `.vscode/mcp.json`, `.vscode/tasks.json`, `.vscode/launch.json`, `.vscode/settings.json`, and `.vscode/extensions.json` for local editor workflow
 - tracked local env bootstrap template (`.env.example`) plus ignored local placeholder `.env`
 - narrow local pytest/ruff/black defaults in `pyproject.toml`
+- repo-local smoke scripts (`scripts/smoke/*.py`) for non-installed execution
 - `config/mcp_settings.json` and `mcp_server/**` for local MCP use
 - local-only API shell (`config`, `status`, `models`, `strategy`)
 - fixture-backed smoke tests and console scripts
@@ -49,4 +50,5 @@ Deferred to separate verified slices:
 - Local editor recommendations: `ms-python.python`, `ms-python.vscode-pylance`, `charliermarsh.ruff`
 - Local pre-commit workflow: `pre-commit install`, then `pre-commit run --all-files`
 - Local QA defaults: `pytest` recursion guards plus narrow `ruff`/`black` excludes in `pyproject.toml`
+- Non-installed local smoke scripts: `python scripts/smoke/fixture_smoke.py`, `python scripts/smoke/backtest_smoke.py`, `python scripts/smoke/smoke_suite.py`
 - Optional local MCP install: `python -m pip install -e ".[mcp]"`

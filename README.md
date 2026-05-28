@@ -3,7 +3,7 @@
 Runtime-first seed with admitted local-only API shell generated from the current
 `Genesis-Core` repository.
 
-Source Genesis-Core HEAD: `97b12c41`
+Source Genesis-Core HEAD: `0db94252`
 
 ## What is included
 
@@ -23,6 +23,7 @@ Source Genesis-Core HEAD: `97b12c41`
 - tracked env bootstrap template (`.env.example`)
 - local pre-commit hook config (`.pre-commit-config.yaml`)
 - narrow local QA defaults in `pyproject.toml`
+- repo-local smoke scripts (`scripts/smoke/{fixture_smoke,backtest_smoke,smoke_suite}.py`)
 - runtime-only governance guardrails
 - admitted source model payloads under `config/models/**`
 - deterministic fixture model-registry/prob-model smoke
@@ -73,6 +74,8 @@ Unneeded Optuna/optimizer closure is intentionally pruned from the seed until an
 explicit slice admits those higher-sensitivity surfaces.
 Local MCP support is admitted for stdio-only workspace usage; remote MCP entrypoints and remote
 allowlist variants remain deferred.
+Repo-local smoke scripts are generated so the seed can run its core smoke loops without relying on
+editor-specific tasks or an editable install first.
 
 ## Skeleton workflow
 
@@ -86,6 +89,7 @@ allowlist variants remain deferred.
 - `.env.example` keeps the narrow local placeholder values tracked even though `.env` stays ignored.
 - `.pre-commit-config.yaml` keeps a narrow local formatting/lint/sanity hook loop tracked in the seed.
 - `pyproject.toml` carries narrow local pytest/ruff/black defaults for the generated V2 workspace.
+- `scripts/smoke/*.py` wraps the core smoke modules with local `src/` bootstrapping so the seed is runnable before install.
 
 After editable install, local module commands:
 
@@ -95,6 +99,11 @@ Local champion-backed evaluate smoke: `python -m core.bootstrap.evaluate_champio
 Local bootstrap smoke: `python -m core.bootstrap.fixture_smoke`
 Local backtest bootstrap smoke: `python -m core.bootstrap.backtest_smoke`
 Local runtime smoke suite: `python -m core.bootstrap.smoke_suite`
+
+Non-installed local smoke scripts:
+`python scripts/smoke/fixture_smoke.py`
+`python scripts/smoke/backtest_smoke.py`
+`python scripts/smoke/smoke_suite.py`
 
 Local VS Code tasks:
 `genesis-v2: api shell`, `genesis-v2: smoke suite`, `genesis-v2: pytest`
