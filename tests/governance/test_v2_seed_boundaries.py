@@ -53,6 +53,12 @@ _EXTENSIONS_FILES = [
 ]
 
 
+_API_SCRIPT_FILES = [
+    "scripts/api/api_shell.py",
+    "tests/runtime/test_local_api_shell_script.py",
+]
+
+
 _SCRIPT_FILES = [
     "scripts/smoke/backtest_smoke.py",
     "scripts/smoke/fixture_smoke.py",
@@ -237,6 +243,20 @@ def test_seed_contains_local_vscode_extensions() -> None:
     assert ".vscode/extensions.json" in readme
     assert "Suggested VS Code extensions" in readme
     assert ".vscode/extensions.json" in scope_text
+
+
+def test_seed_contains_local_api_shell_script() -> None:
+    repo_root = Path(__file__).resolve().parents[2]
+
+    for relative_path in _API_SCRIPT_FILES:
+        assert (repo_root / relative_path).exists(), relative_path
+
+    readme = (repo_root / "README.md").read_text(encoding="utf-8")
+    scope_text = (repo_root / "docs" / "SKELETON_SCOPE.md").read_text(encoding="utf-8")
+
+    assert "Non-installed local API launcher:" in readme
+    assert "scripts/api/api_shell.py" in readme
+    assert "scripts/api/api_shell.py" in scope_text
 
 
 def test_seed_contains_local_smoke_scripts() -> None:
