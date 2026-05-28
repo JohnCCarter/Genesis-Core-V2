@@ -3,7 +3,7 @@
 Runtime-first seed with admitted local-only API shell generated from the current
 `Genesis-Core` repository.
 
-Source Genesis-Core HEAD: `de3e9aa7`
+Source Genesis-Core HEAD: `a0f9782e`
 
 ## What is included
 
@@ -11,7 +11,7 @@ Source Genesis-Core HEAD: `de3e9aa7`
 - runtime pipeline orchestration (`src/core/pipeline.py`)
 - local dependency closure required by those roots
 - admitted local-only API shell (`src/core/server.py`,
-  `src/core/api/{config,models,status,strategy}.py`)
+    `src/core/api/{config,info,models,status,strategy}.py`)
 - source-backed config validation seam (`src/core/config/validator.py`,
   `src/core/config/legacy_schema_v1.json`)
 - source-backed config endpoint integration smoke (`tests/integration/test_config_endpoints.py`)
@@ -45,7 +45,7 @@ Source Genesis-Core HEAD: `de3e9aa7`
 
 ## What is intentionally excluded
 
-- `src/core/api/{account,info,paper,public,ui}.py`
+- `src/core/api/{account,paper,public,ui}.py`
 - `src/core/io/**`
 - `src/core/optimizer/**`
 - `src/core/strategy/features.py`
@@ -69,7 +69,7 @@ Source `config/models/**` payloads are copied into the seed, while deterministic
 paths use fixture-backed model registry payloads under `registry/fixtures/model_registry/**`.
 Phase 1 intentionally excludes `config/strategy/champions/**`; runtime falls back to
 `config/timeframe_configs.py` through `ChampionLoader` when champion payloads are absent.
-The admitted API shell is local-only (`config/status/models/strategy`); exchange-facing,
+The admitted API shell is local-only (`config/info/status/models/strategy`); exchange-facing,
 paper, public-data, and UI surfaces remain excluded for a later slice.
 Runtime state and champion authority payloads remain excluded; generated `.env` contains only
 local-shell placeholders. Tracked `.env.example` mirrors the same narrow values for copy-forward bootstrap.

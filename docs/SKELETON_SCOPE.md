@@ -28,7 +28,7 @@ Included in the current priority lane:
 - repo-local pytest launcher (`scripts/validate/pytest_suite.py`) for non-installed test execution
 - repo-local smoke scripts (`scripts/smoke/*.py`) for non-installed execution
 - `config/mcp_settings.json` and `mcp_server/**` for local MCP use
-- local-only API shell (`config`, `status`, `models`, `strategy`)
+- local-only API shell (`config`, `info`, `status`, `models`, `strategy`)
 - `src/core/pipeline.py` plus narrow deterministic seeding helper `src/core/utils/random_seeds.py`
 - fixture-backed smoke tests and console scripts
 - explicitly admitted non-sensitive config/model artifacts already carried into the seed

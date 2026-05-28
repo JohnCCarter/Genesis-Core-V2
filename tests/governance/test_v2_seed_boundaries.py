@@ -8,6 +8,7 @@ from pathlib import Path
 _ADMITTED_FILES = [
     "src/core/server.py",
     "src/core/api/config.py",
+    "src/core/api/info.py",
     "src/core/api/models.py",
     "src/core/api/status.py",
     "src/core/api/strategy.py",
@@ -57,6 +58,12 @@ _EXTENSIONS_FILES = [
 _API_SCRIPT_FILES = [
     "scripts/api/api_shell.py",
     "tests/runtime/test_local_api_shell_script.py",
+]
+
+
+_INFO_ROUTE_FILES = [
+    "src/core/api/info.py",
+    "tests/runtime/test_local_info_endpoints.py",
 ]
 
 
@@ -177,7 +184,6 @@ _EXCLUDED_FILES = [
     "config/mcp_settings.remote_safe.json",
     "mcp_server/remote_server.py",
     "src/core/api/account.py",
-    "src/core/api/info.py",
     "src/core/api/paper.py",
     "src/core/api/public.py",
     "src/core/api/ui.py",
@@ -202,7 +208,6 @@ _EXCLUDED_JSON_PAYLOAD_DIRS = [
 
 _EXCLUDED_MODULE_PREFIXES = [
     "core.api.account",
-    "core.api.info",
     "core.api.paper",
     "core.api.public",
     "core.api.ui",
@@ -358,6 +363,19 @@ def test_seed_contains_local_api_shell_script() -> None:
     assert "Non-installed local API launcher:" in readme
     assert "scripts/api/api_shell.py" in readme
     assert "scripts/api/api_shell.py" in scope_text
+
+
+def test_seed_contains_local_info_routes() -> None:
+    repo_root = Path(__file__).resolve().parents[2]
+
+    for relative_path in _INFO_ROUTE_FILES:
+        assert (repo_root / relative_path).exists(), relative_path
+
+    readme = (repo_root / "README.md").read_text(encoding="utf-8")
+    scope_text = (repo_root / "docs" / "SKELETON_SCOPE.md").read_text(encoding="utf-8")
+
+    assert "src/core/api/{config,info,models,status,strategy}.py" in readme
+    assert "local-only API shell (`config`, `info`, `status`, `models`, `strategy`)" in scope_text
 
 
 def test_seed_contains_local_pytest_script() -> None:

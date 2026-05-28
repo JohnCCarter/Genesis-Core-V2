@@ -3,6 +3,12 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from core.api.config import router as config_router
+from core.api.info import (
+    TEST_SPOT_WHITELIST,
+    observability_dashboard,
+    paper_whitelist,
+    router as info_router,
+)
 from core.api.models import reload_models, router as models_router
 from core.api.status import _AUTH, debug_auth, health, router as status_router
 from core.api.strategy import router as strategy_router
@@ -22,6 +28,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 app.include_router(config_router)
+app.include_router(info_router)
 app.include_router(status_router)
 app.include_router(models_router)
 app.include_router(strategy_router)
@@ -30,8 +37,12 @@ __all__ = [
     "app",
     "debug_auth",
     "health",
+    "info_router",
     "models_router",
+    "observability_dashboard",
+    "paper_whitelist",
     "reload_models",
     "status_router",
     "strategy_router",
+    "TEST_SPOT_WHITELIST",
 ]
