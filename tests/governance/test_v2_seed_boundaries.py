@@ -82,6 +82,14 @@ _SCRIPT_FILES = [
 ]
 
 
+_CONSOLE_SCRIPT_FILES = [
+    "pyproject.toml",
+    "src/genesis_core_v2_cli/console_scripts.py",
+    "tests/governance/test_pyproject_console_scripts.py",
+    "tests/runtime/test_installed_console_scripts.py",
+]
+
+
 _LAUNCH_FILES = [
     ".vscode/launch.json",
     "tests/runtime/test_local_vscode_launch.py",
@@ -320,6 +328,24 @@ def test_seed_contains_local_smoke_scripts() -> None:
     assert "scripts/smoke/smoke_suite.py" in readme
     assert "scripts/smoke/model_smoke.py" in scope_text
     assert "scripts/smoke/*.py" in scope_text
+
+
+def test_seed_contains_installed_console_script_loop() -> None:
+    repo_root = Path(__file__).resolve().parents[2]
+
+    for relative_path in _CONSOLE_SCRIPT_FILES:
+        assert (repo_root / relative_path).exists(), relative_path
+
+    readme = (repo_root / "README.md").read_text(encoding="utf-8")
+    scope_text = (repo_root / "docs" / "SKELETON_SCOPE.md").read_text(encoding="utf-8")
+
+    assert "Console scripts after editable install:" in readme
+    assert "genesis-v2-api-shell" in readme
+    assert "genesis-v2-model-smoke" in readme
+    assert "genesis-v2-api-shell" in scope_text
+    assert "genesis-v2-model-smoke" in scope_text
+    assert 'python -m pip install -e ".[dev,mcp]"' in scope_text
+    assert "tests/runtime/test_installed_console_scripts.py" in scope_text
 
 
 def test_seed_contains_local_vscode_launch_loop() -> None:
