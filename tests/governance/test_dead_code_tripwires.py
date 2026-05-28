@@ -1,0 +1,180 @@
+from __future__ import annotations
+
+import ast
+from datetime import UTC, datetime
+from pathlib import Path
+
+import pytest
+
+
+def test_position_tracker_does_not_use_legacy_close_method(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Runtime-bevis: legacy-symbolen finns inte och _close_position är enda close-path.
+
+    Testet verifierar explicit att `_close_position_legacy` inte längre existerar,
+    samt att opposite-signal close går via `_close_position` och därefter
+    `close_position_with_reason(..., reason="OPPOSITE_SIGNAL")`.
+    """
+
+    from core.backtest.position_tracker import PositionTracker
+
+    assert not hasattr(PositionTracker, "_close_position_legacy")
+
+    pt = PositionTracker(initial_capital=1000.0)
+
+    calls = {
+        "_close_position": 0,
+        "close_position_with_reason": 0,
+        "reasons": [],
+    }
+
+    original_close_position = pt._close_position
+    original_close_with_reason = pt.close_position_with_reason
+
+    def _wrapped_close_position(price: float, timestamp: datetime):
+        calls["_close_position"] += 1
+        return original_close_position(price, timestamp)
+
+    def _wrapped_close_with_reason(price: float, timestamp: datetime, reason: str = "MANUAL"):
+        calls["close_position_with_reason"] += 1
+        calls["reasons"].append(reason)
+        return original_close_with_reason(price, timestamp, reason=reason)
+
+    monkeypatch.setattr(pt, "_close_position", _wrapped_close_position)
+    monkeypatch.setattr(pt, "close_position_with_reason", _wrapped_close_with_reason)
+
+    ts0 = datetime(2020, 1, 1, tzinfo=UTC)
+    ts1 = datetime(2020, 1, 2, tzinfo=UTC)
+
+    # Open LONG
+    r0 = pt.execute_action("LONG", size=1.0, price=100.0, timestamp=ts0, symbol="tTESTBTC:TESTUSD")
+    assert r0["executed"] is True
+
+    # Close by opposite signal (this uses _close_position -> close_position_with_reason)
+    r1 = pt.execute_action("SHORT", size=1.0, price=101.0, timestamp=ts1, symbol="tTESTBTC:TESTUSD")
+    assert r1["executed"] is True
+
+    # execute_action() overwrites the intermediate close reason with "opened" after opening the new position.
+    assert pt.position is not None
+    assert pt.position.side == "SHORT"
+
+    # Ensure we recorded at least one trade
+    assert len(pt.trades) >= 1
+    assert any(t.exit_reason == "OPPOSITE_SIGNAL" for t in pt.trades)
+    assert calls["_close_position"] == 1
+    assert calls["close_position_with_reason"] == 1
+    assert calls["reasons"] == ["OPPOSITE_SIGNAL"]
+
+
+def test_backtest_engine_prefers_new_htf_exit_engine_when_config_present_and_env_unset(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Tripwire: Om GENESIS_HTF_EXITS saknas men htf_exit_config är satt ska NEW-engine väljas.
+
+    Detta minskar risken för "spökkod" där manual backtest råkar gå en annan väg än optimizer.
+    """
+
+    import core.backtest.engine as engine_mod
+
+    if engine_mod.NewExitEngine is None:
+        pytest.skip("NewExitEngine not available in this environment")
+
+    monkeypatch.delenv("GENESIS_HTF_EXITS", raising=False)
+
+    engine = engine_mod.BacktestEngine(
+        symbol="tBTCUSD",
+        timeframe="1h",
+        start_date="2020-01-01",
+        end_date="2020-01-02",
+        htf_exit_config={"enable_partials": True},
+        fast_window=False,
+    )
+
+    assert getattr(engine, "_use_new_exit_engine", False) is True
+
+
+def test_backtest_engine_warns_on_unknown_htf_exit_env_flag(
+    caplog: pytest.LogCaptureFixture,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Tripwire: Okända GENESIS_HTF_EXITS-värden ska ge varning (typo-skydd)."""
+
+    import core.backtest.engine as engine_mod
+
+    caplog.set_level("WARNING")
+    monkeypatch.setenv("GENESIS_HTF_EXITS", "true")
+
+    _ = engine_mod.BacktestEngine(
+        symbol="tBTCUSD",
+        timeframe="1h",
+        start_date="2020-01-01",
+        end_date="2020-01-02",
+        htf_exit_config={"enable_partials": True},
+        fast_window=False,
+    )
+
+    assert any("GENESIS_HTF_EXITS expected '0' or '1'" in rec.message for rec in caplog.records)
+
+
+def test_runtime_source_must_not_import_core_config_validator() -> None:
+    """Tripwire: runtime source får inte bero på core.config.validator."""
+
+    repo_root = Path(__file__).resolve().parents[2]
+    src_root = repo_root / "src"
+    assert src_root.exists(), f"Expected source root to exist: {src_root}"
+
+    py_files = list(src_root.rglob("*.py"))
+    assert py_files, f"Expected at least one Python file under: {src_root}"
+
+    validator_path = (src_root / "core" / "config" / "validator.py").resolve()
+
+    violations: list[str] = []
+
+    for py_file in py_files:
+        resolved = py_file.resolve()
+        if resolved == validator_path:
+            continue
+
+        tree = ast.parse(py_file.read_text(encoding="utf-8"), filename=str(py_file))
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Import):
+                for alias in node.names:
+                    if alias.name == "core.config.validator" or alias.name.startswith(
+                        "core.config.validator."
+                    ):
+                        violations.append(f"{py_file}:{node.lineno} imports {alias.name}")
+            elif isinstance(node, ast.ImportFrom):
+                module = node.module or ""
+                if module == "core.config.validator" or module.startswith("core.config.validator."):
+                    violations.append(f"{py_file}:{node.lineno} imports from {module}")
+                elif module == "core.config":
+                    for alias in node.names:
+                        if alias.name == "validator":
+                            violations.append(
+                                f"{py_file}:{node.lineno} imports validator from core.config"
+                            )
+                elif node.level > 0 and module == "config":
+                    for alias in node.names:
+                        if alias.name == "validator":
+                            violations.append(
+                                f"{py_file}:{node.lineno} imports validator from relative {'.' * node.level}{module}"
+                            )
+
+    assert not violations, "Runtime source must not import core.config.validator:\n" + "\n".join(
+        violations
+    )
+
+
+def test_legacy_validator_exports_only_legacy_named_helpers() -> None:
+    """Tripwire: legacy-validatorn ska inte exponera generiska alias igen."""
+
+    import core.config.validator as validator
+
+    assert getattr(validator, "__all__", ()) == [
+        "LEGACY_SCHEMA_PATH",
+        "validate_legacy_config",
+        "diff_legacy_config",
+    ]
+
+    for alias in ("SCHEMA_PATH", "validate_config", "diff_config"):
+        assert alias not in getattr(validator, "__all__", ())
+        assert not hasattr(validator, alias)

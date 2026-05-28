@@ -298,6 +298,7 @@
     "src/core/utils/random_seeds.py",
     "tests/__init__.py",
     "tests/governance/__init__.py",
+    "tests/governance/test_dead_code_tripwires.py",
     "tests/governance/test_no_legacy_feature_imports.py",
     "tests/integration/test_config_endpoints.py"
   ],
@@ -319,7 +320,8 @@
     "config/timeframe_configs.py",
     "src/core/config/legacy_schema_v1.json",
     "tests/integration/test_config_endpoints.py",
-    "tests/governance/test_no_legacy_feature_imports.py"
+    "tests/governance/test_no_legacy_feature_imports.py",
+    "tests/governance/test_dead_code_tripwires.py"
   ],
   "excluded_modules": [
     "core.api.account",
@@ -399,6 +401,7 @@
     "src/core/utils/diffing/__init__.py",
     "src/genesis_core_v2_cli/__init__.py",
     "src/genesis_core_v2_cli/console_scripts.py",
+    "tests/governance/test_dead_code_tripwires.py",
     "tests/governance/test_pyproject_console_scripts.py",
     "tests/governance/test_v2_seed_boundaries.py",
     "tests/runtime/test_backtest_bootstrap_smoke.py",
@@ -499,7 +502,7 @@
     ".vscode/settings.json": "e74b59b003fce766ae7c842d5822ddd7557b4498812ccc62275fca2789a27b26",
     ".vscode/tasks.json": "ac998b8a5f78b05bca7d7e5bdcbc19b368bb06c822e2690bfd509b0245ae2bb4",
     "AGENTS.md": "71eaaeabd1163498adb37fc00dcaac640e91ee7a9f8e92f78857a399fa61e4e3",
-    "README.md": "c4f8d3b1aaca0237f2b86e1b9bb6eb8500f2015369ff85c1e2ce26067ee5e037",
+    "README.md": "c8734fc32270b3b8c769fc52e9b093f2abdbed02ea1e184d755129b040ed7dc6",
     "config/__init__.py": "8994ca2027dce1be71c006c42a3a6372fbbe93c547c0516a258499cf08142753",
     "config/backtest_defaults.yaml": "f3e7464975dbeaf6a27ec2119d0df325728ca2f68cececd16ebeb5c9f79addfe",
     "config/mcp_settings.json": "2e70225f77b5c0754cd55d97b3f6fa3135dc6d9f00d2eabcfc2fb86dfce63bbb",
@@ -691,7 +694,7 @@
     "scripts/smoke/model_smoke.py": "e6b010d000355d4ea36bdf1a74c65f4048b87101d9d6488714b5c7deb293f52e",
     "scripts/smoke/smoke_suite.py": "7a3024915117b72ad51b8aebff97858a45ac0acea89a5371d4b0a6015ccc0439",
     "scripts/validate/pytest_suite.py": "3470549cbe64fcb0f7648a4e1d7dbfdf8de4136087a61b0109ff6a8706d5e262",
-    "seed_manifest.json": "3ad9581261d3b23d846b78c634d1c38eda6b833f2a0f6c2d865668a527987d70",
+    "seed_manifest.json": "0d7cb93e100923cfc009df3774be6cbb7b158a3f671bc20a58142e272fcf047f",
     "src/core/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "src/core/api/__init__.py": "9e141c9574a06d3ca44c17148afa758dfa9e17480bb422c6762a15ce9b47e555",
     "src/core/api/config.py": "c09e6116eacc63445b54e33b05eee90554861f8ea0ac1eb690134ca869ac06e0",
@@ -799,9 +802,10 @@
     "src/genesis_core_v2_cli/console_scripts.py": "e6b50cb1356650e8ec4262276373c7d914f915100dfd4d370c58322c3037a2a6",
     "tests/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "tests/governance/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-    "tests/governance/test_no_legacy_feature_imports.py": "dcee377048d91888d23f389b869e5bc2238b366308c86f8fb5260da997f8c26c",
+    "tests/governance/test_dead_code_tripwires.py": "3631eee07f9f58946c486969397723beb969e1d626e845fb67417b27711f8ed8",
+    "tests/governance/test_no_legacy_feature_imports.py": "f3aeb21da5e113a87fd458a70aea1ce1dda904d7f878e39c49a428cd10138259",
     "tests/governance/test_pyproject_console_scripts.py": "bae048f52db088076f4844e0ccf08d561468d6c73cb627b56d646c8f29c42194",
-    "tests/governance/test_v2_seed_boundaries.py": "0c2d27e738dbbac1b142b065447595b97f59d209640a3b9cd00d8ffb7ab1965e",
+    "tests/governance/test_v2_seed_boundaries.py": "bb6daf6d11d45c31c2b18f93972e39db46154b6b3c20e86805c499bc084b6184",
     "tests/integration/test_config_endpoints.py": "28059e71553716539edb23924a26951e2687f580703507843d5029335afcf310",
     "tests/runtime/test_backtest_bootstrap_smoke.py": "2e557462e03d83f775d31510654223bc3812556b9547dce5e528440174e685ce",
     "tests/runtime/test_backtest_engine_fixture_smoke.py": "54f837ed9437bb32b347143508f2afd18d80d6167209a89f4c14b4234ed30753",
@@ -885,7 +889,7 @@
       "python scripts/smoke/smoke_suite.py"
     ]
   },
-  "source_head": "9b710249",
+  "source_head": "de3e9aa7",
   "source_of_truth_repo": "Genesis-Core",
   "source_repo": "C:\\Users\\fa06662\\Projects\\Genesis-Core",
   "status": "genesis_core_v2_runtime_seed_local_materialization",
