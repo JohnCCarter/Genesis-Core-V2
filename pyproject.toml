@@ -30,7 +30,8 @@ genesis-v2-smoke-suite = "genesis_core_v2_cli.console_scripts:smoke_suite_main"
 dev = [
   "pytest>=8",
   "black>=24.10",
-  "ruff>=0.6"
+  "ruff>=0.6",
+  "pre-commit>=3.0"
 ]
 mcp = [
   "mcp>=0.9,<1"

@@ -3,7 +3,7 @@
 Runtime-first seed with admitted local-only API shell generated from the current
 `Genesis-Core` repository.
 
-Source Genesis-Core HEAD: `2fee9429`
+Source Genesis-Core HEAD: `c5d70e85`
 
 ## What is included
 
@@ -21,6 +21,7 @@ Source Genesis-Core HEAD: `2fee9429`
 - local VS Code Python analysis/test settings (`.vscode/settings.json`)
 - local VS Code extension recommendations (`.vscode/extensions.json`)
 - tracked env bootstrap template (`.env.example`)
+- local pre-commit hook config (`.pre-commit-config.yaml`)
 - runtime-only governance guardrails
 - admitted source model payloads under `config/models/**`
 - deterministic fixture model-registry/prob-model smoke
@@ -82,6 +83,7 @@ allowlist variants remain deferred.
 - `.vscode/settings.json` aligns Python analysis/test discovery with the `src/` layout and local `.env` placeholder.
 - `.vscode/extensions.json` recommends the Python/Pylance/Ruff stack for local skeleton work.
 - `.env.example` keeps the narrow local placeholder values tracked even though `.env` stays ignored.
+- `.pre-commit-config.yaml` keeps a narrow local formatting/lint/sanity hook loop tracked in the seed.
 
 After editable install, local module commands:
 
@@ -110,6 +112,10 @@ Console scripts after editable install:
 Suggested install verification:
 `python -m pip install -e ".[dev]"`
 then run `pytest tests/runtime/test_installed_console_scripts.py -q`
+
+Local pre-commit workflow:
+`pre-commit install`
+then run `pre-commit run --all-files`
 
 Optional local MCP install:
 `python -m pip install -e ".[mcp]"`

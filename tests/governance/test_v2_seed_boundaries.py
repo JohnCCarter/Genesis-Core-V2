@@ -41,6 +41,12 @@ _ENV_TEMPLATE_FILES = [
 ]
 
 
+_PRECOMMIT_FILES = [
+    ".pre-commit-config.yaml",
+    "tests/runtime/test_local_precommit_config.py",
+]
+
+
 _EXTENSIONS_FILES = [
     ".vscode/extensions.json",
     "tests/runtime/test_local_vscode_extensions.py",
@@ -195,6 +201,20 @@ def test_seed_contains_local_env_template() -> None:
     assert ".env.example" in readme
     assert "tracked env bootstrap template" in readme
     assert ".env.example" in scope_text
+
+
+def test_seed_contains_local_precommit_workflow() -> None:
+    repo_root = Path(__file__).resolve().parents[2]
+
+    for relative_path in _PRECOMMIT_FILES:
+        assert (repo_root / relative_path).exists(), relative_path
+
+    readme = (repo_root / "README.md").read_text(encoding="utf-8")
+    scope_text = (repo_root / "docs" / "SKELETON_SCOPE.md").read_text(encoding="utf-8")
+
+    assert ".pre-commit-config.yaml" in readme
+    assert "Local pre-commit workflow" in readme
+    assert ".pre-commit-config.yaml" in scope_text
 
 
 def test_seed_contains_local_vscode_extensions() -> None:
