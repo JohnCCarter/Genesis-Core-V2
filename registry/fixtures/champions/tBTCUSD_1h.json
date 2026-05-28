@@ -1,0 +1,41 @@
+{
+  "created_at": "seed_champion_fixture_v1",
+  "merged_config": {
+    "ev": {
+      "R_default": 1.5
+    },
+    "exit": {
+      "enabled": false
+    },
+    "gates": {
+      "cooldown_bars": 0,
+      "hysteresis_steps": 2
+    },
+    "meta": {
+      "note": "seed_fixture_champion"
+    },
+    "risk": {
+      "risk_map": [
+        [
+          0.6,
+          0.005
+        ],
+        [
+          0.7,
+          0.01
+        ]
+      ]
+    },
+    "thresholds": {
+      "entry_conf_overall": 0.7,
+      "regime_proba": {
+        "balanced": 0.55
+      }
+    }
+  },
+  "metadata": {
+    "note": "Synthetic local champion fixture for the runtime-only V2 seed."
+  },
+  "symbol": "tBTCUSD",
+  "timeframe": "1h"
+}

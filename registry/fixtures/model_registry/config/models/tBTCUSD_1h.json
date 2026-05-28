@@ -1,0 +1,41 @@
+{
+  "buy": {
+    "b": 0.2,
+    "calib": {
+      "a": 1.0,
+      "b": 0.0
+    },
+    "w": [
+      0.0
+    ]
+  },
+  "calibration_by_regime": {
+    "buy": {
+      "balanced": {
+        "a": 1.0,
+        "b": 0.1
+      }
+    },
+    "sell": {
+      "balanced": {
+        "a": 1.0,
+        "b": -0.1
+      }
+    }
+  },
+  "calibration_version": "seed_model_fixture_v1",
+  "schema": [
+    "ema_50"
+  ],
+  "sell": {
+    "b": -0.2,
+    "calib": {
+      "a": 1.0,
+      "b": 0.0
+    },
+    "w": [
+      0.0
+    ]
+  },
+  "version": "seed_model_fixture_v1"
+}

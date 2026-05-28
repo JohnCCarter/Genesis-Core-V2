@@ -1,0 +1,1693 @@
+"""
+Backtest engine for Genesis-Core.
+
+Replays historical candle data bar-by-bar through the existing strategy pipeline.
+"""
+
+import hashlib
+import json
+import math
+import os
+import warnings
+from datetime import datetime
+from pathlib import Path
+from typing import Any
+
+import pandas as pd
+from tqdm import tqdm
+
+from core.backtest.engine_precompute import (
+    get_persisted_precompute_spec,
+    prepare_precomputed_features,
+)
+from core.backtest.engine_results import _build_backtest_results_payload
+from core.backtest.htf_exit_engine import ExitAction
+from core.backtest.htf_exit_engine import HTFFibonacciExitEngine as LegacyExitEngine
+from core.config.merge_policy import resolve_champion_merge_for_engine
+from core.utils.dict_merge import deep_merge_dicts
+from core.utils.env_flags import env_flag_enabled
+from core.utils.logging_redaction import get_logger
+
+try:
+    from core.strategy.htf_exit_engine import HTFFibonacciExitEngine as NewExitEngine
+except ImportError:
+    NewExitEngine = None  # Fallback if not found
+
+from core.backtest.position_tracker import PositionTracker
+from core.indicators.exit_fibonacci import calculate_exit_fibonacci_levels
+from core.strategy.champion_loader import ChampionLoader
+from core.strategy.evaluate import evaluate_pipeline
+
+_LOGGER = get_logger(__name__)
+_PER_BAR_ERROR_POLICY = "continue_collect_raise_after_loop"
+_VALID_PER_BAR_ERROR_POLICIES = (_PER_BAR_ERROR_POLICY, "fail_fast")
+
+
+# B1: On-disk precompute cache versioning.
+#
+# This guards against silently reusing stale cached indicators/swings after code or
+# configuration changes that affect the precomputed outputs.
+# Bump this when the persisted meaning or shape of the on-disk precompute artifact
+# changes (for example: indicator periods/spec, swing-detection payload semantics,
+# HTF mapping payload semantics, or metadata-bearing cache contract expectations).
+# Do not bump it for comments, logging, tests, or refactors that leave the serialized
+# cache artifact unchanged.
+PRECOMPUTE_SCHEMA_VERSION = 3
+_PRECOMPUTE_CACHE_METADATA_KEY = "cache_meta_json"
+_PRECOMPUTE_CACHE_DENSE_KEYS = (
+    "atr_14",
+    "atr_50",
+    "ema_20",
+    "ema_50",
+    "rsi_14",
+    "bb_position_20_2",
+    "adx_14",
+)
+_PRECOMPUTE_CACHE_SWING_KEY_PAIRS = (
+    ("fib_high_idx", "fib_high_px"),
+    ("fib_low_idx", "fib_low_px"),
+)
+
+
+def _precompute_cache_key_material() -> str:
+    """Return stable cache key material for precomputed features.
+
+    Includes a schema version and the effective precompute feature spec.
+    """
+
+    spec = {
+        "schema_version": int(PRECOMPUTE_SCHEMA_VERSION),
+        "persisted_precompute_spec": get_persisted_precompute_spec(),
+    }
+    canon = json.dumps(spec, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+    digest12 = hashlib.sha256(canon.encode("utf-8")).hexdigest()[:12]
+    return f"v{int(PRECOMPUTE_SCHEMA_VERSION)}_{digest12}"
+
+
+def _build_precompute_cache_metadata(*, candle_count: int) -> dict[str, Any]:
+    return {
+        "schema_version": int(PRECOMPUTE_SCHEMA_VERSION),
+        "material": _precompute_cache_key_material(),
+        "candle_count": int(candle_count),
+    }
+
+
+def _extract_precompute_cache_metadata(npz: Any) -> tuple[bool, dict[str, Any] | None]:
+    files = tuple(getattr(npz, "files", ()))
+    if _PRECOMPUTE_CACHE_METADATA_KEY not in files:
+        return True, None
+
+    try:
+        raw = npz[_PRECOMPUTE_CACHE_METADATA_KEY]
+        if hasattr(raw, "tolist"):
+            raw = raw.tolist()
+        if isinstance(raw, bytes):
+            raw = raw.decode("utf-8")
+        if not isinstance(raw, str):
+            return False, None
+        parsed = json.loads(raw)
+    except Exception:
+        return False, None
+
+    if not isinstance(parsed, dict):
+        return False, None
+    return True, parsed
+
+
+def _validate_metadata_bearing_precompute_cache(
+    npz: Any, *, candle_count: int
+) -> tuple[bool, str | None]:
+    metadata_ok, metadata = _extract_precompute_cache_metadata(npz)
+    if not metadata_ok:
+        return False, "invalid_metadata"
+    if metadata is None:
+        return True, None
+
+    expected_metadata = _build_precompute_cache_metadata(candle_count=candle_count)
+    for key, expected_value in expected_metadata.items():
+        if metadata.get(key) != expected_value:
+            return False, f"metadata_mismatch:{key}"
+
+    files = tuple(getattr(npz, "files", ()))
+    for dense_key in _PRECOMPUTE_CACHE_DENSE_KEYS:
+        if dense_key not in files:
+            return False, f"missing_field:{dense_key}"
+        dense_size = int(getattr(npz[dense_key], "size", 0))
+        if dense_size != candle_count:
+            return False, f"invalid_length:{dense_key}"
+
+    for idx_key, px_key in _PRECOMPUTE_CACHE_SWING_KEY_PAIRS:
+        if idx_key not in files or px_key not in files:
+            missing_key = idx_key if idx_key not in files else px_key
+            return False, f"missing_field:{missing_key}"
+        idx_size = int(getattr(npz[idx_key], "size", 0))
+        px_size = int(getattr(npz[px_key], "size", 0))
+        if idx_size != px_size:
+            return False, f"misaligned_swing_pair:{idx_key}"
+
+    return True, None
+
+
+def _load_precompute_cache_payload(npz: Any) -> dict[str, list[float]]:
+    pre: dict[str, list[float]] = {}
+    files = tuple(getattr(npz, "files", ()))
+    for name in files:
+        if name == _PRECOMPUTE_CACHE_METADATA_KEY:
+            continue
+        pre[name] = npz[name].astype(float).tolist()
+    for swing_key in ("fib_high_idx", "fib_low_idx"):
+        if swing_key in files:
+            pre[swing_key] = npz[swing_key].astype(int).tolist()
+    return pre
+
+
+def _debug_backtest_enabled() -> bool:
+    """Return whether verbose error output should be enabled for backtests."""
+
+    return env_flag_enabled(os.getenv("GENESIS_DEBUG_BACKTEST"), default=False)
+
+
+def _precompute_cache_write_enabled() -> bool:
+    """Return whether precompute cache writes are enabled for this process.
+
+    Default behavior remains unchanged: when the variable is absent, on-disk
+    cache writes stay enabled. Setting `GENESIS_PRECOMPUTE_CACHE_WRITE=0`
+    suppresses directory creation and `.npz` writes on cache miss while still
+    allowing cache reads and in-memory precompute for the current run.
+    """
+
+    return env_flag_enabled(os.getenv("GENESIS_PRECOMPUTE_CACHE_WRITE"), default=True)
+
+
+VALID_DATA_SOURCE_POLICIES = ("frozen_first", "curated_only")
+
+
+def _describe_per_bar_error(error: Exception) -> str:
+    return f"{type(error).__name__}: {error}"
+
+
+def _record_per_bar_error(
+    *,
+    bar_index: int,
+    error: Exception,
+    error_count: int,
+    first_error: tuple[int, str] | None,
+) -> tuple[int, tuple[int, str] | None]:
+    updated_count = error_count + 1
+    if first_error is None:
+        first_error = (bar_index, _describe_per_bar_error(error))
+    return updated_count, first_error
+
+
+def _raise_if_per_bar_errors(
+    *,
+    error_count: int,
+    first_error: tuple[int, str] | None,
+    error_policy: str,
+) -> None:
+    if error_count <= 0:
+        return
+
+    first_bar = first_error[0] if first_error else -1
+    first_message = first_error[1] if first_error else "unknown error"
+    error_msg = (
+        "Backtest aborted due to per-bar evaluation errors: "
+        f"count={error_count}, first_at_bar={first_bar}, first_error={first_message}"
+    )
+    _LOGGER.error("%s | policy=%s", error_msg, error_policy)
+    raise RuntimeError(error_msg)
+
+
+def _normalize_data_source_policy(policy: str | None) -> str:
+    """Return a validated backtest data-source policy."""
+
+    normalized = str(policy or "frozen_first").strip().lower()
+    if normalized not in VALID_DATA_SOURCE_POLICIES:
+        allowed = ", ".join(VALID_DATA_SOURCE_POLICIES)
+        raise ValueError(f"Invalid data_source_policy={policy!r}. Expected one of: {allowed}")
+    return normalized
+
+
+def _normalize_per_bar_error_policy(policy: str) -> str:
+    """Return a validated per-bar error policy."""
+
+    normalized = str(policy).strip()
+    if normalized not in _VALID_PER_BAR_ERROR_POLICIES:
+        allowed = ", ".join(_VALID_PER_BAR_ERROR_POLICIES)
+        raise ValueError(f"Invalid error_policy={policy!r}. Expected one of: {allowed}")
+    return normalized
+
+
+def _resolve_htf_exit_engine_selection(
+    *, env_flag: str | None, htf_exit_config: dict | None
+) -> bool:
+    """Return the current HTF exit-engine selection predicate unchanged.
+
+    Precedence is intentionally explicit and parity-locked:
+    - an explicit ``GENESIS_HTF_EXITS`` setting is authoritative;
+    - otherwise the existing truthiness of ``htf_exit_config`` is used.
+    """
+
+    if env_flag is not None:
+        return env_flag == "1"
+    return isinstance(htf_exit_config, dict) and bool(htf_exit_config)
+
+
+class CandleCache:
+    def __init__(self, max_size: int = 4):
+        self._max_size = max_size
+        self._store: dict[tuple[str, str, str], pd.DataFrame] = {}
+
+    def get(self, key: tuple[str, str, str]) -> pd.DataFrame | None:
+        return self._store.get(key)
+
+    def put(self, key: tuple[str, str, str], value: pd.DataFrame) -> None:
+        if key in self._store:
+            self._store[key] = value
+            return
+        if len(self._store) >= self._max_size:
+            oldest_key = next(iter(self._store))
+            del self._store[oldest_key]
+        self._store[key] = value
+
+    def clear(self) -> None:
+        self._store.clear()
+
+
+class BacktestEngine:
+    _candles_cache = CandleCache(max_size=4)
+
+    """
+    Core backtest engine.
+
+    Loads historical candles from Parquet and replays them bar-by-bar,
+    executing the strategy pipeline for each bar.
+
+    Features:
+    - Bar-by-bar replay (no lookahead bias)
+    - State persistence between bars
+    - Integration with existing pipeline (evaluate_pipeline)
+    - Position tracking with PnL
+    - Progress tracking
+    """
+
+    def __init__(
+        self,
+        symbol: str,
+        timeframe: str,
+        start_date: str | None = None,
+        end_date: str | None = None,
+        initial_capital: float = 10000.0,
+        commission_rate: float = 0.001,
+        slippage_rate: float = 0.0005,
+        warmup_bars: int = 120,  # Bars needed for indicators (EMA, RSI, etc.)
+        htf_exit_config: dict | None = None,  # HTF Exit Engine configuration
+        fast_window: bool = False,  # Use precomputed NumPy arrays for window building
+        evaluation_hook: (
+            Any | None
+        ) = None,  # Optional hook(result, meta, candles) -> (result, meta)
+        post_execution_hook: (
+            Any | None
+        ) = None,  # Optional hook(symbol, bar_index, action, executed)
+        data_source_policy: str = "frozen_first",
+    ):
+        """
+        Initialize backtest engine.
+
+        Args:
+            symbol: Trading symbol (e.g., 'tBTCUSD')
+            timeframe: Candle timeframe (e.g., '15m', '1h')
+            start_date: Start date for backtest (YYYY-MM-DD) or None for all
+            end_date: End date for backtest (YYYY-MM-DD) or None for all
+            initial_capital: Starting capital in USD
+            commission_rate: Commission per trade (e.g., 0.001 = 0.1%)
+            slippage_rate: Slippage per trade (e.g., 0.0005 = 0.05%)
+            warmup_bars: Number of bars to skip for indicator warmup
+            evaluation_hook: Optional callable(result, meta, candles) -> (result, meta)
+                           Called after evaluate_pipeline, can modify result/meta
+            post_execution_hook: Optional callable(symbol, bar_index, action, executed)
+                           Called after execute_action, executed=True means trade opened
+        """
+        self.symbol = symbol
+        self.timeframe = timeframe
+        self.start_date = start_date
+        self.end_date = end_date
+        self.warmup_bars = warmup_bars
+        self.fast_window = bool(fast_window)
+        self.evaluation_hook = evaluation_hook
+        self.post_execution_hook = post_execution_hook
+        self.data_source_policy = _normalize_data_source_policy(data_source_policy)
+
+        # Validate mode consistency to prevent mixed-mode bugs
+        self._validate_mode_consistency()
+
+        self.candles_df: pd.DataFrame | None = None
+        self.candles_source: str | None = None
+        self.htf_candles_df: pd.DataFrame | None = None
+        self.htf_candles_source: str | None = None
+        self._htf_context_seen: bool = False
+        # Precomputed column arrays (initialized on demand when fast_window=True)
+        self._col_open = None
+        self._col_high = None
+        self._col_low = None
+        self._col_close = None
+        self._col_volume = None
+        self._col_timestamp = None
+        # Numpy arrays for fast window extraction (populated in load_data/_prepare_numpy_arrays)
+        self._np_arrays: dict | None = None
+
+        # Precomputed features (set in load_data when precompute is enabled).
+        # Must exist even when tests inject candles_df directly (bypassing load_data).
+        self._precomputed_features: dict[str, list[float]] | None = None
+        self.precompute_features = False
+        self.position_tracker = PositionTracker(
+            initial_capital=initial_capital,
+            commission_rate=commission_rate,
+            slippage_rate=slippage_rate,
+        )
+
+        self.state: dict = {}
+        self.bar_count = 0
+
+        self.champion_loader = ChampionLoader()
+        # Initialize HTF exit engine configuration (moved out of _deep_merge)
+        self._init_htf_exit_engine(htf_exit_config)
+
+    def _validate_mode_consistency(self) -> None:
+        """Validate that fast_window and GENESIS_PRECOMPUTE_FEATURES are consistent."""
+        precompute = os.getenv("GENESIS_PRECOMPUTE_FEATURES") == "1"
+        mode_explicit = os.getenv("GENESIS_MODE_EXPLICIT") == "1"
+
+        if self.fast_window and not precompute:
+            raise ValueError(
+                "BacktestEngine: fast_window=True requires GENESIS_PRECOMPUTE_FEATURES=1. "
+                "Set the environment variable or use fast_window=False.\n"
+                'Tip: Add \'os.environ["GENESIS_PRECOMPUTE_FEATURES"] = "1"\' before creating engine.'
+            )
+
+        if not self.fast_window and precompute:
+            if not mode_explicit:
+                raise ValueError(
+                    "BacktestEngine: GENESIS_PRECOMPUTE_FEATURES=1 with fast_window=False is "
+                    "not allowed unless GENESIS_MODE_EXPLICIT=1. "
+                    "Use fast_window=True for canonical mode, or set GENESIS_MODE_EXPLICIT=1 "
+                    "to acknowledge non-canonical execution."
+                )
+
+            warnings.warn(
+                "BacktestEngine: GENESIS_PRECOMPUTE_FEATURES=1 is set but fast_window=False. "
+                "Running in explicit non-canonical mode (GENESIS_MODE_EXPLICIT=1).",
+                UserWarning,
+                stacklevel=3,
+            )
+
+    def _deep_merge(self, base: dict, override: dict) -> dict:
+        """Deep merge override dict into base dict, preserving nested structures."""
+        return deep_merge_dicts(base, override)
+
+    def _config_fingerprint(self, configs: dict[str, Any]) -> str:
+        """Return a stable fingerprint of the effective config used by the backtest.
+
+        Notes:
+        - Excludes volatile/large keys (e.g. precomputed feature arrays and _global_index).
+        - Scrubs non-deterministic meta fields like champion_loaded_at timestamps.
+        """
+
+        from core.utils.diffing.canonical import scrub_volatile
+
+        scrubbed_any = scrub_volatile(dict(configs or {}))
+        scrubbed: dict[str, Any] = scrubbed_any if isinstance(scrubbed_any, dict) else {}
+        scrubbed.pop("precomputed_features", None)
+        scrubbed.pop("_global_index", None)
+
+        payload = json.dumps(scrubbed, sort_keys=True, separators=(",", ":"), default=str)
+        return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+    def _init_htf_exit_engine(self, htf_exit_config: dict | None) -> None:
+        """Initialize HTF Fibonacci Exit Engine with defaults + optional override."""
+        default_htf_config = {
+            "partial_1_pct": 0.50,
+            "partial_2_pct": 0.30,
+            "fib_threshold_atr": 0.3,
+            "trail_atr_multiplier": 1.6,
+            "enable_partials": True,
+            "enable_trailing": True,
+            "enable_structure_breaks": True,
+        }
+        self.htf_exit_config = {**default_htf_config, **(htf_exit_config or {})}
+
+        # Engine selection policy:
+        # - If GENESIS_HTF_EXITS is explicitly set, it is authoritative ("1"=new, otherwise legacy).
+        # - Otherwise, if the effective config contains a non-empty htf_exit_config, assume the
+        #   caller intends to use HTF exits (prevents runner vs manual-backtest mismatches).
+        env_flag = os.environ.get("GENESIS_HTF_EXITS")
+        if env_flag is not None and env_flag not in {"0", "1"}:
+            _LOGGER.warning(
+                "GENESIS_HTF_EXITS expected '0' or '1'; got %r. Treating as legacy.",
+                env_flag,
+            )
+        use_new_engine = _resolve_htf_exit_engine_selection(
+            env_flag=env_flag,
+            htf_exit_config=htf_exit_config,
+        )
+        if use_new_engine and NewExitEngine:
+            _LOGGER.info("Using NEW HTF Exit Engine (Phase 1)")
+            self.htf_exit_engine = NewExitEngine(self.htf_exit_config)
+            # Backtest layer expects these feature flags to exist and be configurable.
+            # The strategy-level engine may not expose them; set defaults here.
+            for _flag in ("enable_partials", "enable_trailing", "enable_structure_breaks"):
+                if not hasattr(self.htf_exit_engine, _flag):
+                    setattr(
+                        self.htf_exit_engine, _flag, bool(self.htf_exit_config.get(_flag, True))
+                    )
+            self._use_new_exit_engine = True
+        else:
+            _LOGGER.info("Using LEGACY HTF Exit Engine")
+            self.htf_exit_engine = LegacyExitEngine(self.htf_exit_config)
+            self._use_new_exit_engine = False
+
+    def _build_data_candidates(self, base_dir: Path, timeframe: str) -> list[Path]:
+        """Return candidate candle files for the configured data-source policy."""
+
+        frozen = base_dir / "raw" / f"{self.symbol}_{timeframe}_frozen.parquet"
+        curated = base_dir / "curated" / "v1" / "candles" / f"{self.symbol}_{timeframe}.parquet"
+        legacy = base_dir / "candles" / f"{self.symbol}_{timeframe}.parquet"
+
+        if self.data_source_policy == "curated_only":
+            return [curated]
+
+        return [frozen, curated, legacy]
+
+    def load_data(self) -> bool:
+        """
+        Load historical candle data from Parquet (two-layer structure support).
+
+        Returns:
+            True if data loaded successfully, False otherwise
+        """
+        # Find data file according to the selected backtest data-source policy.
+        base_dir = Path(__file__).parent.parent.parent.parent / "data"
+
+        self.candles_source = None
+        self.htf_candles_df = None
+        self.htf_candles_source = None
+
+        data_candidates = self._build_data_candidates(base_dir, self.timeframe)
+
+        data_file: Path | None = None
+        for candidate in data_candidates:
+            if candidate.exists():
+                data_file = candidate
+                break
+
+        if data_file is None:
+            # Defensive fallback: even if exists() returns False (e.g. during tests with monkeypatch
+            # or odd FS semantics), reading may still succeed. Only fail if all read attempts fail.
+            for candidate in data_candidates:
+                try:
+                    # Minimal read probe; if it works, we use that candidate.
+                    pd.read_parquet(candidate, columns=["timestamp"], engine="pyarrow")
+                    data_file = candidate
+                    break
+                except Exception:  # nosec B110
+                    continue
+
+            if data_file is None:
+                _LOGGER.error(
+                    "Data file not found for policy=%s. Tried: %s",
+                    self.data_source_policy,
+                    ", ".join(str(candidate) for candidate in data_candidates),
+                )
+                return False
+
+        self.candles_source = str(data_file)
+
+        cache_key = (self.symbol, self.timeframe, self.candles_source)
+        base_df = self._candles_cache.get(cache_key)
+        if base_df is None:
+            # Read only required columns, prefer pyarrow engine and memory-mapped IO for speed
+            read_columns = ["timestamp", "open", "high", "low", "close", "volume"]
+            try:
+                base_df = pd.read_parquet(
+                    data_file, columns=read_columns, engine="pyarrow", memory_map=True
+                )
+            except Exception:
+                # Fallback: retry without memory-mapped IO (keep engine deterministic).
+                base_df = pd.read_parquet(data_file, columns=read_columns, engine="pyarrow")
+            self._candles_cache.put(cache_key, base_df)
+            _LOGGER.debug("Loaded %s candles from %s", f"{len(base_df):,}", data_file.name)
+        else:
+            _LOGGER.debug(
+                "Reusing %s candles for %s %s from %s",
+                f"{len(base_df):,}",
+                self.symbol,
+                self.timeframe,
+                data_file.name,
+            )
+
+        # Normalize timestamps to UTC to avoid tz-naive vs tz-aware comparison bugs
+        # when applying start/end filters (and to keep behavior deterministic across
+        # different Parquet engines / pandas versions).
+        if "timestamp" in base_df.columns:
+            ts = base_df["timestamp"]
+            if isinstance(ts.dtype, pd.DatetimeTZDtype):
+                # Ensure UTC
+                base_df["timestamp"] = ts.dt.tz_convert("UTC")
+            else:
+                # Localize/convert to UTC (assume naive timestamps are UTC)
+                base_df["timestamp"] = pd.to_datetime(ts, utc=True, errors="coerce")
+
+        # Load HTF (1D) candles for HTF-related features/exits.
+        # NOTE: HTF context (and therefore HTF-exit tuning) is effectively inert if 1D data is missing.
+        if getattr(self, "_use_new_exit_engine", False):
+            htf_timeframe = "1D"
+            htf_candidates = self._build_data_candidates(base_dir, htf_timeframe)
+            htf_file = next((p for p in htf_candidates if p.exists()), None)
+            if htf_file is not None:
+                try:
+                    self.htf_candles_df = pd.read_parquet(
+                        htf_file,
+                        columns=["timestamp", "open", "high", "low", "close"],
+                        engine="pyarrow",
+                    )
+                    if "timestamp" in self.htf_candles_df.columns:
+                        self.htf_candles_df["timestamp"] = pd.to_datetime(
+                            self.htf_candles_df["timestamp"], utc=True, errors="coerce"
+                        )
+                    self.htf_candles_source = str(htf_file)
+                    _LOGGER.debug(
+                        "Loaded %s HTF candles from %s",
+                        f"{len(self.htf_candles_df):,}",
+                        htf_file.name,
+                    )
+                except Exception as e:
+                    _LOGGER.warning("Failed to load HTF candles from %s: %s", htf_file, e)
+            else:
+                _LOGGER.warning(
+                    "HTF candles missing for %s %s. Tried: %s",
+                    self.symbol,
+                    htf_timeframe,
+                    ", ".join(str(p) for p in htf_candidates),
+                )
+
+        # Work off cached DataFrame (avoid eager copy); filters below create sliced views/frames
+        self.candles_df = base_df
+
+        # Filter by date range if specified
+        if self.start_date:
+            start_dt = pd.to_datetime(self.start_date, utc=True)
+            self.candles_df = self.candles_df[self.candles_df["timestamp"] >= start_dt]
+            _LOGGER.debug("Applied start_date filter: %s", self.start_date)
+
+        if self.end_date:
+            end_dt = pd.to_datetime(self.end_date, utc=True)
+            self.candles_df = self.candles_df[self.candles_df["timestamp"] <= end_dt]
+            _LOGGER.debug("Applied end_date filter: %s", self.end_date)
+
+        _LOGGER.debug("Filtered to %s candles", f"{len(self.candles_df):,}")
+
+        # If filtering yields an empty dataset, treat it as “no data loaded” so callers
+        # can skip gracefully (and so run() doesn't later return {'error': 'no_data'}
+        # after load_data() claimed success).
+        if self.candles_df is None or len(self.candles_df) == 0:
+            _LOGGER.error(
+                "No candles available (empty dataset). Check date filters and data range."
+            )
+            self.candles_df = None
+            self._np_arrays = None
+            self._col_open = None
+            self._col_high = None
+            self._col_low = None
+            self._col_close = None
+            self._col_volume = None
+            self._col_timestamp = None
+            self._precomputed_features = None
+            return False
+
+        # Initialize fast-window column arrays if enabled
+        if self.fast_window:
+            df = self.candles_df
+            self._col_open = df["open"].to_numpy(copy=False)
+            self._col_high = df["high"].to_numpy(copy=False)
+            self._col_low = df["low"].to_numpy(copy=False)
+            self._col_close = df["close"].to_numpy(copy=False)
+            self._col_volume = df["volume"].to_numpy(copy=False)
+            # timestamps kept as Python list for downstream expectations
+            self._col_timestamp = df["timestamp"].tolist()
+
+        # Optional: precompute common features for speed (consumed by features_asof via config)
+        # IMPORTANT: Treat GENESIS_PRECOMPUTE_FEATURES=1 as authoritative.
+        # Some callers historically only set the env var; make sure we enable
+        # engine-level precompute toggle consistently.
+        if os.getenv("GENESIS_PRECOMPUTE_FEATURES") == "1":
+            self.precompute_features = True
+
+        self._precomputed_features: dict[str, list[float]] | None = None
+        if getattr(self, "precompute_features", False):
+            try:
+                _LOGGER.info("Precompute enabled: starting feature precomputation")
+                cache_dir = Path(__file__).resolve().parents[3] / "cache" / "precomputed"
+                cache_write_enabled = _precompute_cache_write_enabled()
+                if cache_write_enabled:
+                    cache_dir.mkdir(parents=True, exist_ok=True)
+                # IMPORTANT:
+                # Cache key must include data identity, not only length.
+                # Different periods can have the same number of bars; reusing the wrong
+                # cached features can drastically change strategy decisions.
+                key = self._precompute_cache_key(self.candles_df)
+                cache_path = cache_dir / f"{key}.npz"
+                self._precomputed_features = prepare_precomputed_features(
+                    candles_df=self.candles_df,
+                    htf_candles_df=self.htf_candles_df,
+                    cache_path=cache_path,
+                    cache_write_enabled=cache_write_enabled,
+                    logger=_LOGGER,
+                    build_cache_metadata=lambda candle_count: _build_precompute_cache_metadata(
+                        candle_count=candle_count
+                    ),
+                    validate_cache=lambda npz, candle_count: _validate_metadata_bearing_precompute_cache(
+                        npz,
+                        candle_count=candle_count,
+                    ),
+                    load_cache_payload=_load_precompute_cache_payload,
+                )
+            except Exception as e:
+                # Non-fatal: skip precompute if indicators unavailable
+                _LOGGER.warning("Precomputation failed (non-fatal): %s", e)
+                self._precomputed_features = None
+
+        if len(self.candles_df) < self.warmup_bars:
+            _LOGGER.warning(
+                "Not enough data for warmup (%s < %s)",
+                len(self.candles_df),
+                self.warmup_bars,
+            )
+
+        # Pre-convert DataFrame columns to numpy arrays for fast slicing
+        self._np_arrays = {
+            "open": self.candles_df["open"].values,
+            "high": self.candles_df["high"].values,
+            "low": self.candles_df["low"].values,
+            "close": self.candles_df["close"].values,
+            "volume": self.candles_df["volume"].values,
+            "timestamp": self.candles_df["timestamp"].values,
+        }
+
+        return True
+
+    def _precompute_cache_key(self, df: pd.DataFrame) -> str:
+        """Build a stable on-disk cache key for precomputed features.
+
+        Why:
+            A key based only on `len(df)` is unsafe because multiple date ranges can
+            share the same number of bars, which would cause loading wrong cached
+            indicators/fib swings.
+        """
+
+        if df is None or len(df) == 0:
+            # Defensive fallback; should not happen in normal flow.
+            return f"{self.symbol}_{self.timeframe}_empty"
+
+        ts0 = df["timestamp"].iloc[0]
+        ts1 = df["timestamp"].iloc[-1]
+        # pandas.Timestamp.value is ns since epoch; stable and file-name friendly.
+        start_ns = int(getattr(ts0, "value", 0))
+        end_ns = int(getattr(ts1, "value", 0))
+        material = _precompute_cache_key_material()
+
+        # Optional config context isolation:
+        # If GENESIS_PRECOMPUTE_CONFIG_HASH is provided, namespace cache keys by a
+        # deterministic short digest so runs with different feature-config contexts
+        # do not reuse the same on-disk precompute artifact.
+        # IMPORTANT: Do not include raw env value in key/path.
+        config_hash_env = str(os.getenv("GENESIS_PRECOMPUTE_CONFIG_HASH", "")).strip()
+        cfg_segment = ""
+        if config_hash_env:
+            cfg_digest = hashlib.sha256(config_hash_env.encode("utf-8")).hexdigest()[:12]
+            cfg_segment = f"_cfg{cfg_digest}"
+
+        source_segment = ""
+        candles_source = str(getattr(self, "candles_source", "") or "").strip()
+        if candles_source:
+            source_digest = hashlib.sha256(candles_source.encode("utf-8")).hexdigest()[:12]
+            source_segment = f"_src{source_digest}"
+
+        return (
+            f"{self.symbol}_{self.timeframe}_{material}"
+            f"{cfg_segment}{source_segment}_{len(df)}_{start_ns}_{end_ns}"
+        )
+
+    def _prepare_numpy_arrays(self) -> None:
+        """Prepare numpy arrays from candles_df for fast window extraction."""
+        if self.candles_df is not None:
+            self._np_arrays = {
+                "open": self.candles_df["open"].values,
+                "high": self.candles_df["high"].values,
+                "low": self.candles_df["low"].values,
+                "close": self.candles_df["close"].values,
+                "volume": self.candles_df["volume"].values,
+                "timestamp": self.candles_df["timestamp"].values,
+            }
+
+    def _build_candles_window(self, end_idx: int, window_size: int = 200) -> dict:
+        """
+        Build candles dict for pipeline (last N bars up to end_idx).
+
+        Performance optimizations:
+        - Returns NumPy arrays directly (avoid .tolist() overhead)
+        - Uses array slicing which creates views, not copies
+        - Timestamp list only created when needed
+
+        Args:
+            end_idx: Current bar index (inclusive)
+            window_size: Number of bars to include in window
+
+        Returns:
+            Candles dict with OHLCV as NumPy arrays or lists
+        """
+        start_idx = max(0, end_idx - window_size + 1)
+
+        if self.fast_window and self._col_close is not None:
+            # Slice precomputed arrays (fast path) - return NumPy views (zero-copy)
+            i0 = start_idx
+            i1 = end_idx + 1
+            return {
+                "open": self._col_open[i0:i1],
+                "high": self._col_high[i0:i1],
+                "low": self._col_low[i0:i1],
+                "close": self._col_close[i0:i1],
+                "volume": self._col_volume[i0:i1],
+                "timestamp": self._col_timestamp[i0:i1],
+            }
+
+        # Optimized: use pre-computed numpy arrays WITHOUT converting to lists
+        # NumPy arrays work directly with indicator functions and are much faster
+        if self._np_arrays is not None:
+            return {
+                "open": self._np_arrays["open"][start_idx : end_idx + 1],
+                "high": self._np_arrays["high"][start_idx : end_idx + 1],
+                "low": self._np_arrays["low"][start_idx : end_idx + 1],
+                "close": self._np_arrays["close"][start_idx : end_idx + 1],
+                "volume": self._np_arrays["volume"][start_idx : end_idx + 1],
+                "timestamp": self._np_arrays["timestamp"][start_idx : end_idx + 1].tolist(),
+            }
+
+        # Fallback: slice DataFrame window (slowest path)
+        window = self.candles_df.iloc[start_idx : end_idx + 1]
+        return {
+            "open": window["open"].values,
+            "high": window["high"].values,
+            "low": window["low"].values,
+            "close": window["close"].values,
+            "volume": window["volume"].values,
+            "timestamp": window["timestamp"].values.tolist(),
+        }
+
+    def run(
+        self,
+        policy: dict | None = None,
+        configs: dict | None = None,
+        verbose: bool = False,
+        pruning_callback: Any | None = None,
+        error_policy: str = _PER_BAR_ERROR_POLICY,
+    ) -> dict:
+        """
+        Run backtest.
+
+        Args:
+            policy: Strategy policy (symbol, timeframe)
+            configs: Strategy configs (thresholds, risk, etc.)
+            verbose: Print detailed progress
+            pruning_callback: Optional callback(step, value) -> bool. If returns True, abort.
+            error_policy: Per-bar pipeline failure policy. ``continue_collect_raise_after_loop``
+                          preserves the current default behavior; ``fail_fast`` raises on the
+                          first per-bar evaluation error.
+
+        Returns:
+            Dict with backtest results
+
+        Notes:
+            Per-bar pipeline exceptions follow the internal
+            ``continue_collect_raise_after_loop`` policy: the loop keeps running
+            to finish bar replay, then raises ``RuntimeError`` after completion
+            if any per-bar errors were collected.
+        """
+        # Reset state for isolation (Step 3: Eliminate Hidden State)
+        self.position_tracker = PositionTracker(
+            initial_capital=self.position_tracker.initial_capital,
+            commission_rate=self.position_tracker.commission_rate,
+            slippage_rate=self.position_tracker.slippage_rate,
+        )
+        self.state = {}
+        self.bar_count = 0
+
+        if self.candles_df is None:
+            _LOGGER.error("No data loaded. Call load_data() first.")
+            return {"error": "no_data"}
+
+        if len(self.candles_df) == 0:
+            _LOGGER.error(
+                "No candles available (empty dataset). Check date filters and data range."
+            )
+            return {"error": "no_data"}
+
+        active_error_policy = _normalize_per_bar_error_policy(error_policy)
+
+        # Ensure numpy arrays are prepared for fast window extraction
+        if self._np_arrays is None:
+            self._prepare_numpy_arrays()
+
+        # Default policy/configs
+        policy = policy or {}
+        policy.setdefault("symbol", self.symbol)
+        policy.setdefault("timeframe", self.timeframe)
+
+        # Defensive copy: never mutate the caller-supplied configs dict.
+        # run() injects per-bar keys (_global_index), meta fields and
+        # precomputed_features; without a copy these leak back to the caller.
+        import copy
+
+        configs = copy.deepcopy(configs) if configs else {}
+
+        meta = configs.setdefault("meta", {})
+        merge_resolution = resolve_champion_merge_for_engine(meta)
+        skip_champion_merge = not merge_resolution.should_merge
+
+        champion_cfg = None
+        if not skip_champion_merge:
+            champion_cfg = self.champion_loader.load_cached(self.symbol, self.timeframe)
+            # Deep merge configs to preserve nested overrides
+            configs = self._deep_merge(champion_cfg.config, configs)
+            meta = configs.setdefault("meta", {})
+            meta.setdefault("champion_source", champion_cfg.source)
+            meta.setdefault("champion_version", champion_cfg.version)
+            meta.setdefault("champion_checksum", champion_cfg.checksum)
+            meta.setdefault("champion_loaded_at", champion_cfg.loaded_at)
+        else:
+            meta.setdefault("champion_source", "explicit_backtest_config")
+
+        # No-default-drift contract:
+        # Only propagate the engine-resolved policy into downstream feature evaluation
+        # when the active backtest lane is the explicit non-default curated_only path.
+        # This keeps default frozen_first callers on the existing implicit behavior.
+        if self.data_source_policy != "frozen_first":
+            configs["data_source_policy"] = self.data_source_policy
+
+        # IMPORTANT: Apply HTF exit config from merged runtime/trial configs.
+        # The engine is constructed before configs are known (CLI loads config after create_engine),
+        # so we must (re)initialize the HTF exit engine here per run to respect overrides.
+        self._init_htf_exit_engine(configs.get("htf_exit_config"))
+
+        # Inject precomputed features AFTER merge to ensure they're preserved
+        if getattr(self, "precompute_features", False) and getattr(
+            self, "_precomputed_features", None
+        ):
+            configs["precomputed_features"] = dict(self._precomputed_features)
+
+        # Record a stable fingerprint of the effective config used.
+        # Stored on the engine and emitted via backtest_info for debugging/tracing.
+        self._effective_config_fingerprint = self._config_fingerprint(configs)
+
+        _LOGGER.info(
+            "Running backtest: %s %s | period=%s..%s | bars=%s (warmup=%s) | capital=$%s",
+            self.symbol,
+            self.timeframe,
+            self.candles_df["timestamp"].min(),
+            self.candles_df["timestamp"].max(),
+            f"{len(self.candles_df):,}",
+            self.warmup_bars,
+            f"{self.position_tracker.initial_capital:,.2f}",
+        )
+
+        # Progress bar
+        pbar = tqdm(
+            total=len(self.candles_df),
+            desc="Backtest",
+            unit="bars",
+            bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}]",
+        )
+
+        # Track bars held for current position
+
+        # Performance optimization: Pre-extract numpy arrays to avoid repeated iloc calls
+        # This significantly speeds up the main backtest loop
+        timestamps_array = self.candles_df["timestamp"].values
+        open_prices_array = self.candles_df["open"].values
+        high_prices_array = self.candles_df["high"].values
+        low_prices_array = self.candles_df["low"].values
+        close_prices_array = self.candles_df["close"].values
+        volume_array = (
+            self.candles_df["volume"].values if "volume" in self.candles_df.columns else None
+        )
+        num_bars = len(self.candles_df)
+        per_bar_error_count = 0
+        first_per_bar_error: tuple[int, str] | None = None
+
+        # Replay bars
+        for i in range(num_bars):
+            # Fast-path: pull values from numpy buffers if available
+            if self._np_arrays is not None:
+                timestamp = pd.Timestamp(self._np_arrays["timestamp"][i])
+                close_price = float(self._np_arrays["close"][i])
+                open_price = float(self._np_arrays["open"][i])
+                high_price = float(self._np_arrays["high"][i])
+                low_price = float(self._np_arrays["low"][i])
+                volume_val = float(
+                    self._np_arrays.get("volume", [0.0])[i] if "volume" in self._np_arrays else 0.0
+                )
+            else:
+                bar = self.candles_df.iloc[i]
+                timestamp = timestamps_array[i]
+                close_price = close_prices_array[i]
+                open_price = open_prices_array[i]
+                high_price = high_prices_array[i]
+                low_price = low_prices_array[i]
+                volume_val = bar.get("volume", 0.0)
+
+            # Skip warmup period
+            if i < self.warmup_bars:
+                pbar.update(1)
+                continue
+
+            # Pruning check (every 100 bars to minimize overhead)
+            if pruning_callback and i % 100 == 0:
+                # Report current return as proxy for score
+                current_equity = self.position_tracker.current_equity
+                current_return = (
+                    current_equity - self.position_tracker.initial_capital
+                ) / self.position_tracker.initial_capital
+                if pruning_callback(i, current_return):
+                    pbar.close()
+                    return {
+                        "error": "pruned",
+                        "pruned_at": i,
+                        "metrics": {"total_return": current_return},
+                    }
+
+            # Build candles window for pipeline
+            candles_window = self._build_candles_window(i)
+
+            # Inject global index for precomputed features correctness
+            # This ensures features_asof uses the correct index in precomputed arrays
+            configs["_global_index"] = i
+
+            # Inject equity risk state for risk_state multiplier
+            _cur_eq = self.position_tracker.current_equity
+            _peak_eq = self.state.get("_peak_equity", _cur_eq)
+            if _cur_eq > _peak_eq:
+                _peak_eq = _cur_eq
+            self.state["_peak_equity"] = _peak_eq
+            self.state["equity_drawdown_pct"] = (
+                (_peak_eq - _cur_eq) / _peak_eq if _peak_eq > 0 else 0.0
+            )
+
+            # Run pipeline (uses existing evaluate_pipeline from strategy/)
+            try:
+                result, meta = evaluate_pipeline(
+                    candles=candles_window,
+                    policy=policy,
+                    configs=configs,
+                    state=self.state,
+                )
+
+                # Apply evaluation hook if provided (for composable strategy integration)
+                if self.evaluation_hook is not None:
+                    # Inject bar_index and symbol for stateful components (Cooldown, Hysteresis)
+                    if "bar_index" not in candles_window:
+                        candles_window["bar_index"] = i
+                    if "symbol" not in candles_window:
+                        candles_window["symbol"] = self.symbol
+
+                    result, meta = self.evaluation_hook(result, meta, candles_window)
+
+                # Extract action, size, confidence, regime
+                action = result.get("action", "NONE")
+                size = meta.get("decision", {}).get("size", 0.0)
+
+                # Extract decision metadata early so we can attach correct entry reasons.
+                decision_meta = meta.get("decision", {}) or {}
+                reasons = decision_meta.get("reasons") or []
+                state_out = decision_meta.get("state_out", {}) or {}
+
+                # Extract confidence (can be dict or float)
+                # NOTE: confidence/regime may be needed for logging/debugging, but must never
+                # throw during backtest. Keep parsing best-effort and side-effect free.
+                conf_val = result.get("confidence", 0.5)
+                if isinstance(conf_val, dict):
+                    _conf_overall = conf_val.get("overall", 0.5)
+                else:
+                    try:
+                        _conf_overall = float(conf_val) if conf_val is not None else 0.5
+                    except (TypeError, ValueError):
+                        _conf_overall = 0.5
+
+                regime_val = result.get("regime", "BALANCED")
+                if isinstance(regime_val, dict):
+                    _regime_name = str(regime_val.get("name", "BALANCED") or "BALANCED")
+                else:
+                    _regime_name = str(regime_val) if regime_val is not None else "BALANCED"
+
+                # === EXIT LOGIC (check BEFORE new entry) ===
+                if self.position_tracker.has_position():
+                    # Prepare bar data for exit engine (using pre-extracted arrays)
+                    volume_snapshot = volume_array[i] if volume_array is not None else volume_val
+                    bar_data = {
+                        "timestamp": timestamp,
+                        "open": open_price,
+                        "high": high_price,
+                        "low": low_price,
+                        "close": close_price,
+                        "volume": volume_snapshot,
+                    }
+
+                    exit_reason = self._check_htf_exit_conditions(
+                        current_price=close_price,
+                        timestamp=timestamp,
+                        bar_data=bar_data,
+                        result=result,
+                        meta=meta,
+                        configs=configs,
+                        bar_index=i,
+                    )
+
+                    if exit_reason:
+                        trade = self.position_tracker.close_position_with_reason(
+                            price=close_price, timestamp=timestamp, reason=exit_reason
+                        )
+                        if verbose and trade:
+                            pnl_sign = "+" if trade.pnl > 0 else ""
+                            print(
+                                f"\n[{timestamp}] EXIT ({exit_reason}): "
+                                f"{trade.side} closed @ ${close_price:.2f} | "
+                                f"PnL: {pnl_sign}{trade.pnl_pct:.2f}%"
+                            )
+
+                # === ENTRY LOGIC ===
+                if action != "NONE" and size > 0:
+                    # Attach reasons for this bar BEFORE opening a position.
+                    # PositionTracker consumes and clears these when opening a trade.
+                    if hasattr(self.position_tracker, "set_pending_reasons"):
+                        self.position_tracker.set_pending_reasons(reasons or [])
+
+                    exec_result = self.position_tracker.execute_action(
+                        action=action,
+                        size=size,
+                        price=close_price,
+                        timestamp=timestamp,
+                        symbol=self.symbol,
+                        meta={"entry_regime": _regime_name},
+                    )
+
+                    # If we attempted an entry but did not open a new position, clear pending reasons
+                    # to avoid leaking stale reasons into a later entry.
+                    if not exec_result.get("executed") and hasattr(
+                        self.position_tracker, "clear_pending_reasons"
+                    ):
+                        self.position_tracker.clear_pending_reasons()
+
+                    if exec_result.get("executed"):
+                        if getattr(self, "_use_new_exit_engine", False):
+                            self.htf_exit_engine.reset_state()
+
+                        # Initialize exit context for new position
+                        self._initialize_position_exit_context(result, meta, close_price, timestamp)
+                        entry_debug = {
+                            "timestamp": timestamp.isoformat(),
+                            "summary": state_out.get("fib_gate_summary"),
+                            "htf": state_out.get("htf_fib_entry_debug"),
+                            "ltf": state_out.get("ltf_fib_entry_debug"),
+                            "reasons": decision_meta.get("reasons"),
+                        }
+                        self.position_tracker.log_entry_fib_debug(entry_debug)
+
+                        # Call post-execution hook for stateful components (Cooldown)
+                        if self.post_execution_hook is not None:
+                            self.post_execution_hook(
+                                symbol=self.symbol,
+                                bar_index=i,
+                                action=action,
+                                executed=True,
+                            )
+
+                        if verbose:
+                            print(
+                                f"\n[{timestamp}] ENTRY: {action} {size:.4f} @ ${close_price:.2f}"
+                            )
+
+                # Update equity curve
+                self.position_tracker.update_equity(close_price, timestamp)
+
+                # Update state
+                self.state = state_out
+                self.bar_count += 1
+
+            except Exception as e:
+                per_bar_error_count, first_per_bar_error = _record_per_bar_error(
+                    bar_index=i,
+                    error=e,
+                    error_count=per_bar_error_count,
+                    first_error=first_per_bar_error,
+                )
+                if verbose or _debug_backtest_enabled():
+                    try:
+                        import sys  # noqa: PLC0415
+                        import traceback  # noqa: PLC0415
+
+                        tb = traceback.extract_tb(sys.exc_info()[2])
+                        where = ""
+                        if tb:
+                            last = tb[-1]
+                            where = f" ({last.filename}:{last.lineno} in {last.name})"
+                        print(f"\n[ERROR] Bar {i}: {e}{where}")
+                    except Exception:
+                        print(f"\n[ERROR] Bar {i}: {e}")
+                if active_error_policy == "fail_fast":
+                    _raise_if_per_bar_errors(
+                        error_count=per_bar_error_count,
+                        first_error=first_per_bar_error,
+                        error_policy=active_error_policy,
+                    )
+                # Continue on error (robust backtest)
+
+            pbar.update(1)
+
+        pbar.close()
+
+        _raise_if_per_bar_errors(
+            error_count=per_bar_error_count,
+            first_error=first_per_bar_error,
+            error_policy=active_error_policy,
+        )
+
+        # Report feature hit counts
+        try:
+            from core.strategy.features_asof import get_feature_hit_counts
+
+            fast_hits, slow_hits = get_feature_hit_counts()
+            _LOGGER.debug("Feature paths: fast=%s slow=%s", fast_hits, slow_hits)
+        except ImportError:
+            pass
+
+        # Close all positions at end
+        if self._np_arrays is not None:
+            final_close = float(self._np_arrays["close"][-1])
+            final_ts = pd.Timestamp(self._np_arrays["timestamp"][-1])
+        else:
+            final_bar = self.candles_df.iloc[-1]
+            final_close = final_bar["close"]
+            final_ts = final_bar["timestamp"]
+        self.position_tracker.close_all_positions(final_close, final_ts)
+
+        _LOGGER.info("Backtest complete - %s bars processed", self.bar_count)
+
+        return self._build_results()
+
+    def _check_htf_exit_conditions(
+        self,
+        current_price: float,
+        timestamp: datetime,
+        bar_data: dict,
+        result: dict,
+        meta: dict,
+        configs: dict,
+        bar_index: int | None = None,
+    ) -> str | None:
+        """
+        Check HTF Fibonacci exit conditions.
+
+        Returns:
+            Exit reason string if should exit, None otherwise
+        """
+        if not self.position_tracker.has_position():
+            return None
+
+        position = self.position_tracker.position
+        decision_state = (meta.get("decision") or {}).get("state_out") or {}
+
+        # Get exit config (top-level in merged configs)
+        exit_cfg = configs.get("exit", {})
+        enabled = exit_cfg.get("enabled", True)
+
+        if not enabled:
+            return None
+
+        # Prefer explicit bar_index (passed from main loop). Fallback to configs['_global_index'].
+        idx = bar_index
+        if idx is None:
+            try:
+                idx = int(configs.get("_global_index"))
+            except Exception:
+                idx = None
+
+        # Get HTF Fibonacci context - prefer precomputed if available
+        htf_fib_context = {}
+        if (
+            idx is not None
+            and self._precomputed_features
+            and "htf_fib_0382" in self._precomputed_features
+        ):
+            # Fast path: use precomputed HTF mapping
+            try:
+
+                def _to_positive_finite(value: Any) -> float | None:
+                    try:
+                        parsed = float(value)
+                    except (TypeError, ValueError):
+                        return None
+                    if not math.isfinite(parsed) or parsed <= 0.0:
+                        return None
+                    return parsed
+
+                level_0382 = _to_positive_finite(self._precomputed_features["htf_fib_0382"][idx])
+                level_05 = _to_positive_finite(self._precomputed_features["htf_fib_05"][idx])
+                level_0618 = _to_positive_finite(self._precomputed_features["htf_fib_0618"][idx])
+                swing_high = _to_positive_finite(
+                    self._precomputed_features.get("htf_swing_high", [0.0] * (idx + 1))[idx]
+                )
+                swing_low = _to_positive_finite(
+                    self._precomputed_features.get("htf_swing_low", [0.0] * (idx + 1))[idx]
+                )
+
+                levels_complete = all(v is not None for v in (level_0382, level_05, level_0618))
+                swings_valid = (
+                    swing_high is not None
+                    and swing_low is not None
+                    and float(swing_high) > float(swing_low)
+                )
+
+                if levels_complete and swings_valid:
+                    htf_fib_context = {
+                        "available": True,
+                        "levels": {
+                            0.382: float(level_0382),
+                            0.5: float(level_05),
+                            0.618: float(level_0618),
+                        },
+                        "swing_high": float(swing_high),
+                        "swing_low": float(swing_low),
+                    }
+                else:
+                    htf_fib_context = {"available": False}
+            except (IndexError, KeyError, TypeError, ValueError):
+                htf_fib_context = {"available": False}
+        else:
+            # Fallback: use meta from evaluate_pipeline
+            features_meta = meta.get("features", {})
+            htf_fib_context = features_meta.get("htf_fibonacci", {})
+
+        # Track whether HTF context was ever available during this run.
+        if isinstance(htf_fib_context, dict) and htf_fib_context.get("available"):
+            self._htf_context_seen = True
+
+        # Calculate ATR for exit logic (use last 14 bars AS OF current bar)
+        from core.indicators.atr import calculate_atr
+
+        current_atr = 100.0
+        if idx is not None and self._np_arrays is not None:
+            window_size = min(14, idx + 1)
+            if window_size >= 2:
+                i0 = max(0, idx - window_size + 1)
+                i1 = idx + 1
+                recent_highs = self._np_arrays["high"][i0:i1]
+                recent_lows = self._np_arrays["low"][i0:i1]
+                recent_closes = self._np_arrays["close"][i0:i1]
+                atr_values = calculate_atr(recent_highs, recent_lows, recent_closes, period=14)
+                current_atr = float(atr_values[-1]) if len(atr_values) > 0 else 100.0
+        elif self.candles_df is not None:
+            # Defensive fallback for callers that don't supply an index.
+            window_size = min(14, len(self.candles_df))
+            if window_size >= 2:
+                recent_highs = self.candles_df["high"].iloc[-window_size:].values
+                recent_lows = self.candles_df["low"].iloc[-window_size:].values
+                recent_closes = self.candles_df["close"].iloc[-window_size:].values
+                atr_values = calculate_atr(recent_highs, recent_lows, recent_closes, period=14)
+                current_atr = float(atr_values[-1]) if len(atr_values) > 0 else 100.0
+
+        # Prepare indicators for exit engine
+        features = result.get("features", {})
+        indicators = {
+            "atr": current_atr,
+            "ema50": features.get("ema", current_price),  # Use ema feature (EMA50)
+            "ema_slope50_z": features.get("ema_slope50_z", 0.0),
+        }
+
+        # Check HTF exit conditions
+        if getattr(self, "_use_new_exit_engine", False):
+            # Adapter for New Engine (Phase 1)
+            side_int = 1 if position.side == "LONG" else -1
+            # Normalize levels to the keys expected by the strategy-level engine.
+            # The strategy engine reads: htf_fib_0382, htf_fib_05, htf_fib_0618.
+            # Our context may store levels keyed by floats (0.382/0.5/0.618) or strings.
+            htf_levels = htf_fib_context.get("levels", {})
+            if not isinstance(htf_levels, dict):
+                htf_levels = {}
+
+            def _coerce_float(value: Any) -> float | None:
+                try:
+                    return float(value)
+                except Exception:  # nosec B110
+                    return None
+
+            def _get_level(*candidates: Any) -> float | None:
+                for cand in candidates:
+                    if cand in htf_levels:
+                        v = _coerce_float(htf_levels.get(cand))
+                        if v is not None:
+                            return v
+                    s = str(cand)
+                    if s in htf_levels:
+                        v = _coerce_float(htf_levels.get(s))
+                        if v is not None:
+                            return v
+                return None
+
+            htf_data = pd.Series(
+                {
+                    "htf_fib_0382": _get_level("htf_fib_0382", 0.382),
+                    "htf_fib_05": _get_level("htf_fib_05", 0.5),
+                    "htf_fib_0618": _get_level("htf_fib_0618", 0.618),
+                }
+            )
+
+            try:
+                signal_or_actions = self.htf_exit_engine.check_exits(
+                    current_price=current_price,
+                    position_size=float(position.current_size),
+                    entry_price=float(position.entry_price),
+                    side=side_int,
+                    current_atr=current_atr,
+                    htf_data=htf_data,
+                )
+            except TypeError as exc:
+                err = str(exc)
+                legacy_signature = (
+                    "unexpected keyword" in err
+                    or "required positional argument" in err
+                    or "positional arguments" in err
+                )
+                if not legacy_signature:
+                    raise
+                signal_or_actions = self.htf_exit_engine.check_exits(
+                    position,
+                    bar_data,
+                    htf_fib_context,
+                    indicators,
+                )
+
+            # Some tests monkeypatch `check_exits` to return a list of ExitAction.
+            # Accept that shape directly to keep `_check_htf_exit_conditions` focused on ATR/no-lookahead.
+            if isinstance(signal_or_actions, list):
+                exit_actions = signal_or_actions
+            else:
+                signal = signal_or_actions
+                exit_actions = []
+                if signal is None:
+                    exit_actions = []
+                else:
+                    enable_partials = bool(getattr(self.htf_exit_engine, "enable_partials", True))
+                    enable_trailing = bool(getattr(self.htf_exit_engine, "enable_trailing", True))
+
+                    if signal.action in ["PARTIAL_EXIT", "FULL_EXIT"]:
+                        if signal.action == "PARTIAL_EXIT" and not enable_partials:
+                            pass
+                        else:
+                            # Map to Legacy ExitAction
+                            # PARTIAL_EXIT usually implies a size. FULL_EXIT implies size=current.
+                            action_map = (
+                                "PARTIAL" if signal.action == "PARTIAL_EXIT" else "FULL_EXIT"
+                            )
+
+                            # Calculate size amount
+                            if getattr(signal, "quantity_pct", 0.0) and signal.quantity_pct > 0:
+                                size_val = float(position.current_size) * float(signal.quantity_pct)
+                            else:
+                                # No explicit quantity => treat as full for FULL_EXIT, else no-op.
+                                size_val = (
+                                    float(position.current_size)
+                                    if action_map == "FULL_EXIT"
+                                    else 0.0
+                                )
+
+                            exit_actions.append(
+                                ExitAction(action=action_map, size=size_val, reason=signal.reason)
+                            )
+
+                    elif signal.action == "UPDATE_STOP":
+                        if enable_trailing and getattr(signal, "new_stop_price", None) is not None:
+                            exit_actions.append(
+                                ExitAction(
+                                    action="TRAIL_UPDATE",
+                                    stop_price=float(signal.new_stop_price),
+                                    reason=signal.reason,
+                                )
+                            )
+        else:
+            # Legacy Call
+            exit_actions = self.htf_exit_engine.check_exits(
+                position, bar_data, htf_fib_context, indicators
+            )
+        meta.setdefault("signal", {})
+        meta["signal"]["current_atr"] = current_atr
+
+        # Execute exit actions
+        exit_cfg = configs.get("exit", {})
+        break_even_trigger = exit_cfg.get("break_even_trigger")
+        break_even_offset = exit_cfg.get("break_even_offset", 0.0)
+        partial_break_even = exit_cfg.get("partial_break_even", False)
+        partial_break_even_offset = exit_cfg.get("partial_break_even_offset", break_even_offset)
+
+        if exit_actions:
+            meaningful_actions = [
+                {
+                    "action": action.action,
+                    "size": action.size,
+                    "stop_price": action.stop_price,
+                    "reason": action.reason,
+                }
+                for action in exit_actions
+                if action.action not in {"DEBUG", "TRAIL_UPDATE"}
+            ]
+            if meaningful_actions:
+                exit_debug = {
+                    "timestamp": timestamp.isoformat(),
+                    "price": current_price,
+                    "actions": meaningful_actions,
+                    "position_side": position.side,
+                    "current_atr": current_atr,
+                    "fib_gate_summary": decision_state.get("fib_gate_summary"),
+                    "htf_entry_debug": decision_state.get("htf_fib_entry_debug"),
+                    "ltf_entry_debug": decision_state.get("ltf_fib_entry_debug"),
+                    "htf_exit_config": {
+                        "fib_threshold_atr": self.htf_exit_config.get("fib_threshold_atr"),
+                        "trail_atr_multiplier": self.htf_exit_config.get("trail_atr_multiplier"),
+                    },
+                }
+                self.position_tracker.append_exit_fib_debug(exit_debug)
+
+        for action in exit_actions:
+            if action.action == "PARTIAL":
+                # Execute partial exit
+                trade = self.position_tracker.partial_close(
+                    close_size=action.size,
+                    price=current_price,
+                    timestamp=timestamp,
+                    reason=action.reason,
+                )
+                if trade:  # Always log partial exits
+                    _LOGGER.info(
+                        "PARTIAL exit: %s | size=%.3f @ $%s | pnl=$%s",
+                        action.reason,
+                        float(trade.size),
+                        f"{float(trade.exit_price):,.0f}",
+                        f"{float(trade.pnl):,.2f}",
+                    )
+                    if partial_break_even and trade.remaining_size > 0:
+                        if position.side == "LONG":
+                            be_price = position.entry_price * (1 + partial_break_even_offset)
+                            position.trail_stop = max(
+                                position.trail_stop or -float("inf"), be_price
+                            )
+                        else:
+                            be_price = position.entry_price * (1 - partial_break_even_offset)
+                            position.trail_stop = min(position.trail_stop or float("inf"), be_price)
+
+            elif action.action == "TRAIL_UPDATE":
+                # Update trailing stop (store in position for next bar)
+                if hasattr(position, "trail_stop"):
+                    position.trail_stop = action.stop_price
+                else:
+                    # Add trail_stop attribute if not exists
+                    position.trail_stop = action.stop_price
+                # Break-even promotion if configured
+                if break_even_trigger is not None:
+                    pnl_pct = self.position_tracker.get_unrealized_pnl_pct(current_price) / 100.0
+                    if pnl_pct >= break_even_trigger:
+                        if position.side == "LONG":
+                            be_price = position.entry_price * (1 + break_even_offset)
+                            position.trail_stop = max(position.trail_stop, be_price)
+                        else:
+                            be_price = position.entry_price * (1 - break_even_offset)
+                            position.trail_stop = min(position.trail_stop, be_price)
+
+            elif action.action == "FULL_EXIT":
+                # Full exit - return reason to trigger standard exit logic
+                self.position_tracker.append_exit_fib_debug(
+                    {
+                        "timestamp": timestamp.isoformat(),
+                        "price": current_price,
+                        "reason": action.reason,
+                        "source": "HTF_FULL_EXIT",
+                        "fib_gate_summary": decision_state.get("fib_gate_summary"),
+                    }
+                )
+                return action.reason
+
+        # Check if trail stop hit (from previous bars)
+        if (
+            hasattr(position, "trail_stop")
+            and position.trail_stop
+            and (
+                (position.side == "LONG" and current_price <= position.trail_stop)
+                or (position.side == "SHORT" and current_price >= position.trail_stop)
+            )
+        ):
+            self.position_tracker.append_exit_fib_debug(
+                {
+                    "timestamp": timestamp.isoformat(),
+                    "price": current_price,
+                    "reason": "TRAIL_STOP",
+                    "source": "TRAIL_STOP",
+                    "fib_gate_summary": decision_state.get("fib_gate_summary"),
+                }
+            )
+            return "TRAIL_STOP"
+
+        # Fallback to traditional exit conditions for safety
+        fallback_reason = self._check_traditional_exit_conditions(current_price, result, configs)
+        if fallback_reason:
+            self.position_tracker.append_exit_fib_debug(
+                {
+                    "timestamp": timestamp.isoformat(),
+                    "price": current_price,
+                    "reason": fallback_reason,
+                    "source": "TRADITIONAL_EXIT",
+                    "fib_gate_summary": decision_state.get("fib_gate_summary"),
+                }
+            )
+        return fallback_reason
+
+    def _check_traditional_exit_conditions(
+        self,
+        current_price: float,
+        result: dict,
+        configs: dict,
+    ) -> str | None:
+        """Fallback traditional exit conditions."""
+        position = self.position_tracker.position
+
+        # Get exit config (top-level in merged configs)
+        exit_cfg = configs.get("exit", {})
+        stop_loss_pct = float(exit_cfg.get("stop_loss_pct", 0.02))
+        take_profit_pct = float(exit_cfg.get("take_profit_pct", 0.05))
+        exit_conf_threshold = float(exit_cfg.get("exit_conf_threshold", 0.45))
+
+        # Emergency stop-loss
+        pnl_pct = self.position_tracker.get_unrealized_pnl_pct(current_price) / 100.0
+        if pnl_pct <= -stop_loss_pct:
+            return "EMERGENCY_SL"
+
+        # Emergency take-profit (for very large moves)
+        if pnl_pct >= take_profit_pct * 2:  # 2x normal TP
+            return "EMERGENCY_TP"
+
+        # Confidence drop (use direction-aware confidence if dict)
+        conf_block = result.get("confidence_exit", result.get("confidence", 1.0))
+        if isinstance(conf_block, dict):
+            # Prefer confidence in the direction of the open position
+            if position.side == "LONG":
+                conf_value = float(conf_block.get("buy", conf_block.get("overall", 1.0) or 1.0))
+            else:
+                conf_value = float(conf_block.get("sell", conf_block.get("overall", 1.0) or 1.0))
+        else:
+            try:
+                conf_value = float(conf_block)
+            except Exception:
+                conf_value = 1.0
+        if conf_value < exit_conf_threshold:
+            return "CONF_DROP"
+
+        # Regime change
+        regime = result.get("regime", "NEUTRAL")
+        if position.side == "SHORT" and regime == "BULL":
+            return "REGIME_CHANGE"
+        if position.side == "LONG" and regime == "BEAR":
+            return "REGIME_CHANGE"
+
+        return None
+
+    def _build_results(self) -> dict:
+        """Build final backtest results."""
+        return _build_backtest_results_payload(self)
+
+    def _initialize_position_exit_context(
+        self, result: dict, meta: dict, entry_price: float, timestamp: datetime
+    ) -> None:
+        """
+        Initialize exit context for a newly opened position.
+
+        Args:
+            result: Pipeline result with features and indicators
+            meta: Meta data including HTF Fibonacci context
+            entry_price: Entry price of the position
+            timestamp: Entry timestamp
+        """
+        if not self.position_tracker.position:
+            return
+
+        position = self.position_tracker.position
+
+        # Try to get HTF Fibonacci context
+        features_meta = meta.get("features", {})
+        htf_fib_context = features_meta.get("htf_fibonacci", {})
+
+        if not htf_fib_context.get("available"):
+            # No HTF data available - position will use fallback exits
+            _LOGGER.debug("HTF not available (using fallback exits): %s", htf_fib_context)
+            return
+
+        # Extract swing from HTF context
+        swing_high = htf_fib_context.get("swing_high", 0.0)
+        swing_low = htf_fib_context.get("swing_low", 0.0)
+
+        if swing_high <= swing_low or swing_high <= 0 or swing_low <= 0:
+            # Invalid swing - position will use fallback exits
+            _LOGGER.debug(
+                "Invalid HTF swing (using fallback exits): high=%s, low=%s", swing_high, swing_low
+            )
+            return
+
+        # Skip swing validation at entry - we'll use frozen context approach
+        # The swing will be validated when actually used for exits
+
+        # Calculate exit Fibonacci levels using symmetric logic
+        exit_levels = calculate_exit_fibonacci_levels(
+            side=position.side,
+            swing_high=swing_high,
+            swing_low=swing_low,
+            levels=[0.786, 0.618, 0.5, 0.382],  # Inverterade nivåer för exit
+        )
+
+        # Store in position for exit engine
+        position.exit_swing_high = swing_high
+        position.exit_swing_low = swing_low
+        position.exit_fib_levels = exit_levels
+        position.exit_swing_timestamp = timestamp
+
+        # Arm exit context with frozen HTF data
+        htf_context_for_arm = {
+            "swing_id": f"swing_{timestamp.isoformat()}_{swing_high}_{swing_low}",
+            "levels": exit_levels,
+            "swing_low": swing_low,
+            "swing_high": swing_high,
+        }
+        position.arm_exit_context(htf_context_for_arm)
