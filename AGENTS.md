@@ -15,7 +15,7 @@ Use this track for:
 
 - repo structure and generated workflow files
 - local MCP stdio shell and safe editor hookup
-- local VS Code tasks, debug profiles, and settings
+- local VS Code tasks, debug profiles, settings, and extension recommendations
 - local-only API shell
 - fixture-backed smoke tests
 - README/docs that explain the current admitted boundary

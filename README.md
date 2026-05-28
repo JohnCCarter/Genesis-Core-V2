@@ -3,7 +3,7 @@
 Runtime-first seed with admitted local-only API shell generated from the current
 `Genesis-Core` repository.
 
-Source Genesis-Core HEAD: `0d667e72`
+Source Genesis-Core HEAD: `96b6d989`
 
 ## What is included
 
@@ -19,6 +19,7 @@ Source Genesis-Core HEAD: `0d667e72`
 - local MCP stdio shell (`mcp_server/*.py`, `.vscode/mcp.json`, `config/mcp_settings.json`)
 - local VS Code task/debug loop (`.vscode/tasks.json`, `.vscode/launch.json`)
 - local VS Code Python analysis/test settings (`.vscode/settings.json`)
+- local VS Code extension recommendations (`.vscode/extensions.json`)
 - runtime-only governance guardrails
 - admitted source model payloads under `config/models/**`
 - deterministic fixture model-registry/prob-model smoke
@@ -78,6 +79,7 @@ allowlist variants remain deferred.
 - `.vscode/mcp.json` wires VS Code to the local stdio MCP server using `config/mcp_settings.json`.
 - `.vscode/tasks.json` and `.vscode/launch.json` inject `PYTHONPATH=${workspaceFolder}/src` for local non-installed loops.
 - `.vscode/settings.json` aligns Python analysis/test discovery with the `src/` layout and local `.env` placeholder.
+- `.vscode/extensions.json` recommends the Python/Pylance/Ruff stack for local skeleton work.
 
 After editable install, local module commands:
 
@@ -93,6 +95,9 @@ Local VS Code tasks:
 
 Local VS Code debug profiles:
 `genesis-v2: api shell`, `genesis-v2: smoke suite`, `genesis-v2: pytest`
+
+Suggested VS Code extensions:
+`ms-python.python`, `ms-python.vscode-pylance`, `charliermarsh.ruff`
 
 Python analysis/test settings:
 `.vscode/settings.json`

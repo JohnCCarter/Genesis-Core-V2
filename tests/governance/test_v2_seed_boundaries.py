@@ -35,6 +35,12 @@ _SETTINGS_FILES = [
 ]
 
 
+_EXTENSIONS_FILES = [
+    ".vscode/extensions.json",
+    "tests/runtime/test_local_vscode_extensions.py",
+]
+
+
 _LAUNCH_FILES = [
     ".vscode/launch.json",
     "tests/runtime/test_local_vscode_launch.py",
@@ -169,6 +175,20 @@ def test_seed_contains_local_vscode_settings() -> None:
     assert ".vscode/settings.json" in readme
     assert "Python analysis/test settings" in readme
     assert ".vscode/settings.json" in scope_text
+
+
+def test_seed_contains_local_vscode_extensions() -> None:
+    repo_root = Path(__file__).resolve().parents[2]
+
+    for relative_path in _EXTENSIONS_FILES:
+        assert (repo_root / relative_path).exists(), relative_path
+
+    readme = (repo_root / "README.md").read_text(encoding="utf-8")
+    scope_text = (repo_root / "docs" / "SKELETON_SCOPE.md").read_text(encoding="utf-8")
+
+    assert ".vscode/extensions.json" in readme
+    assert "Suggested VS Code extensions" in readme
+    assert ".vscode/extensions.json" in scope_text
 
 
 def test_seed_contains_local_vscode_launch_loop() -> None:

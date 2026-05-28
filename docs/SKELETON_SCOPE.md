@@ -19,7 +19,7 @@ Included in the current priority lane:
 
 - README and local workflow docs
 - `AGENTS.md` and `.github/copilot-instructions.md`
-- `.vscode/mcp.json`, `.vscode/tasks.json`, `.vscode/launch.json`, and `.vscode/settings.json` for local editor workflow
+- `.vscode/mcp.json`, `.vscode/tasks.json`, `.vscode/launch.json`, `.vscode/settings.json`, and `.vscode/extensions.json` for local editor workflow
 - `config/mcp_settings.json` and `mcp_server/**` for local MCP use
 - local-only API shell (`config`, `status`, `models`, `strategy`)
 - fixture-backed smoke tests and console scripts
@@ -44,4 +44,5 @@ Deferred to separate verified slices:
 - Local task loop: `genesis-v2: api shell`, `genesis-v2: smoke suite`, `genesis-v2: pytest`
 - Local debug loop: `genesis-v2: api shell`, `genesis-v2: smoke suite`, `genesis-v2: pytest`
 - Local editor settings: `python.analysis.extraPaths`, `python.testing.*`, `python.envFile`
+- Local editor recommendations: `ms-python.python`, `ms-python.vscode-pylance`, `charliermarsh.ruff`
 - Optional local MCP install: `python -m pip install -e ".[mcp]"`
