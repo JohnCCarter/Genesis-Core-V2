@@ -5,13 +5,11 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "genesis-core-v2"
 version = "0.1.0"
-description = "Runtime-first seed with admitted API shell extracted from Genesis-Core"
+description = "Runtime-first seed with admitted local-only API shell extracted from Genesis-Core"
 requires-python = ">=3.11"
 dependencies = [
   "fastapi>=0.116,<0.117",
   "uvicorn>=0.24,<0.25",
-  "httpx>=0.25,<0.26",
-  "websockets>=12,<13",
   "pydantic>=2.7,<3",
   "pydantic-settings>=2,<3",
   "python-dotenv>=1,<2",

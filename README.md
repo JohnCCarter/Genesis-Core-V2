@@ -1,15 +1,16 @@
 # Genesis-Core-V2
 
-Runtime-first seed with admitted API/service shell generated from the current
+Runtime-first seed with admitted local-only API shell generated from the current
 `Genesis-Core` repository.
 
-Source Genesis-Core HEAD: `c1f00c9c`
+Source Genesis-Core HEAD: `e39d5025`
 
 ## What is included
 
 - runtime kernel roots (`backtest`, `strategy`, `regime`)
 - local dependency closure required by those roots
-- admitted API/service shell (`src/core/server.py`, `src/core/api/**`)
+- admitted local-only API shell (`src/core/server.py`,
+  `src/core/api/{config,models,status,strategy}.py`)
 - source-backed config validation seam (`src/core/config/validator.py`,
   `src/core/config/legacy_schema_v1.json`)
 - source-backed config endpoint integration smoke (`tests/integration/test_config_endpoints.py`)
@@ -32,6 +33,8 @@ Source Genesis-Core HEAD: `c1f00c9c`
 
 ## What is intentionally excluded
 
+- `src/core/api/{account,info,paper,public,ui}.py`
+- `src/core/io/**`
 - `src/core/pipeline.py`
 - `src/core/optimizer/**`
 - `src/core/strategy/features.py`
@@ -52,8 +55,10 @@ Source `config/models/**` payloads are copied into the seed, while deterministic
 paths use fixture-backed model registry payloads under `registry/fixtures/model_registry/**`.
 Phase 1 intentionally excludes `config/strategy/champions/**`; runtime falls back to
 `config/timeframe_configs.py` through `ChampionLoader` when champion payloads are absent.
-The API/service shell is admitted, but runtime state and champion authority payloads remain
-excluded; generated `.env` contains placeholder values for bearer/auth seams only.
+The admitted API shell is local-only (`config/status/models/strategy`); exchange-facing,
+paper, public-data, and UI surfaces remain excluded for a later slice.
+Runtime state and champion authority payloads remain excluded; generated `.env` contains only
+local-shell placeholders.
 Unneeded Optuna/optimizer closure is intentionally pruned from the seed until and unless a later
 explicit slice admits those higher-sensitivity surfaces.
 

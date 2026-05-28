@@ -6,16 +6,10 @@ from pathlib import Path
 
 _ADMITTED_FILES = [
     "src/core/server.py",
-    "src/core/api/__init__.py",
-    "src/core/api/account.py",
     "src/core/api/config.py",
-    "src/core/api/info.py",
     "src/core/api/models.py",
-    "src/core/api/paper.py",
-    "src/core/api/public.py",
     "src/core/api/status.py",
     "src/core/api/strategy.py",
-    "src/core/api/ui.py",
     "src/core/config/validator.py",
     "src/core/config/legacy_schema_v1.json",
     "tests/integration/test_config_endpoints.py",
@@ -23,6 +17,11 @@ _ADMITTED_FILES = [
 
 
 _EXCLUDED_FILES = [
+    "src/core/api/account.py",
+    "src/core/api/info.py",
+    "src/core/api/paper.py",
+    "src/core/api/public.py",
+    "src/core/api/ui.py",
     "src/core/pipeline.py",
     "src/core/strategy/features.py",
     "src/core/utils/diffing/optuna_guard.py",
@@ -34,6 +33,7 @@ _EXCLUDED_FILES = [
 ]
 
 _EXCLUDED_PREFIXES = [
+    "src/core/io",
     "src/core/optimizer",
     "data",
 ]
@@ -43,6 +43,12 @@ _EXCLUDED_JSON_PAYLOAD_DIRS = [
 ]
 
 _EXCLUDED_MODULE_PREFIXES = [
+    "core.api.account",
+    "core.api.info",
+    "core.api.paper",
+    "core.api.public",
+    "core.api.ui",
+    "core.io",
     "core.optimizer",
     "core.pipeline",
     "core.strategy.features",
@@ -60,7 +66,7 @@ def _is_excluded_module(module: str) -> bool:
     )
 
 
-def test_seed_contains_admitted_api_service_shell_slice() -> None:
+def test_seed_contains_admitted_local_api_shell_slice() -> None:
     repo_root = Path(__file__).resolve().parents[2]
 
     for relative_path in _ADMITTED_FILES:
