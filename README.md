@@ -3,7 +3,7 @@
 Runtime-first seed with admitted local-only API shell generated from the current
 `Genesis-Core` repository.
 
-Source Genesis-Core HEAD: `b7f19e6c`
+Source Genesis-Core HEAD: `c7d18b00`
 
 ## What is included
 
@@ -40,7 +40,7 @@ Source Genesis-Core HEAD: `b7f19e6c`
 - fixture-driven backtest bootstrap smoke (`core.bootstrap.backtest_smoke`)
 - combined runtime smoke suite (`core.bootstrap.smoke_suite`)
 - fixture-driven backtest engine smoke (`tests/runtime/test_backtest_engine_fixture_smoke.py`)
-- installable console scripts for the three smoke entrypoints
+- installable console scripts for local API/MCP/pytest and smoke entrypoints
 
 ## What is intentionally excluded
 
@@ -145,12 +145,13 @@ Python analysis/test settings:
 `.vscode/settings.json`
 
 Console scripts after editable install:
+`genesis-v2-api-shell`, `genesis-v2-mcp-stdio`, `genesis-v2-pytest`
 `genesis-v2-champion-smoke`, `genesis-v2-evaluate-champion-smoke`
 `genesis-v2-fixture-smoke`, `genesis-v2-backtest-smoke`, `genesis-v2-smoke-suite`
 `genesis-v2-model-smoke`
 
 Suggested install verification:
-`python -m pip install -e ".[dev]"`
+`python -m pip install -e ".[dev,mcp]"`
 then run `pytest tests/runtime/test_installed_console_scripts.py -q`
 
 Local pre-commit workflow:

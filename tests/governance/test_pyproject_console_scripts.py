@@ -4,11 +4,14 @@ import tomllib
 from pathlib import Path
 
 
-def test_pyproject_declares_runtime_smoke_console_scripts() -> None:
+def test_pyproject_declares_local_tooling_console_scripts() -> None:
     repo_root = Path(__file__).resolve().parents[2]
     payload = tomllib.loads((repo_root / "pyproject.toml").read_text(encoding="utf-8"))
 
     assert payload["project"]["scripts"] == {
+        "genesis-v2-api-shell": "genesis_core_v2_cli.console_scripts:api_shell_main",
+        "genesis-v2-mcp-stdio": "genesis_core_v2_cli.console_scripts:mcp_stdio_main",
+        "genesis-v2-pytest": "genesis_core_v2_cli.console_scripts:pytest_suite_main",
         "genesis-v2-champion-smoke": "genesis_core_v2_cli.console_scripts:champion_smoke_main",
         "genesis-v2-evaluate-champion-smoke": "genesis_core_v2_cli.console_scripts:evaluate_champion_smoke_main",
         "genesis-v2-fixture-smoke": "genesis_core_v2_cli.console_scripts:fixture_smoke_main",
