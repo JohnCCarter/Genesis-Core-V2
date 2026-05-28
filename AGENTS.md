@@ -15,6 +15,7 @@ Use this track for:
 
 - repo structure and generated workflow files
 - local MCP stdio shell and safe editor hookup
+- repo-local MCP launcher under `scripts/mcp/`
 - repo-local API launcher under `scripts/api/`
 - repo-local pytest launcher under `scripts/validate/`
 - repo-local smoke scripts under `scripts/smoke/`

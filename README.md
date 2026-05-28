@@ -3,7 +3,7 @@
 Runtime-first seed with admitted local-only API shell generated from the current
 `Genesis-Core` repository.
 
-Source Genesis-Core HEAD: `737b7d44`
+Source Genesis-Core HEAD: `4369f5c5`
 
 ## What is included
 
@@ -23,6 +23,7 @@ Source Genesis-Core HEAD: `737b7d44`
 - tracked env bootstrap template (`.env.example`)
 - local pre-commit hook config (`.pre-commit-config.yaml`)
 - narrow local QA defaults in `pyproject.toml`
+- repo-local MCP launcher (`scripts/mcp/mcp_stdio.py`)
 - repo-local API launcher (`scripts/api/api_shell.py`)
 - repo-local pytest launcher (`scripts/validate/pytest_suite.py`)
 - repo-local smoke scripts (`scripts/smoke/{fixture_smoke,backtest_smoke,smoke_suite}.py`)
@@ -76,6 +77,8 @@ Unneeded Optuna/optimizer closure is intentionally pruned from the seed until an
 explicit slice admits those higher-sensitivity surfaces.
 Local MCP support is admitted for stdio-only workspace usage; remote MCP entrypoints and remote
 allowlist variants remain deferred.
+Repo-local MCP launcher is generated so the local stdio shell can start without depending on
+editor-specific config wiring first.
 Repo-local API launcher is generated so the local API shell can start without depending on
 editor-specific tasks or an editable install first.
 Repo-local pytest launcher is generated so the seed can run its test loop without depending on
@@ -95,6 +98,7 @@ editor-specific tasks or an editable install first.
 - `.env.example` keeps the narrow local placeholder values tracked even though `.env` stays ignored.
 - `.pre-commit-config.yaml` keeps a narrow local formatting/lint/sanity hook loop tracked in the seed.
 - `pyproject.toml` carries narrow local pytest/ruff/black defaults for the generated V2 workspace.
+- `scripts/mcp/mcp_stdio.py` wraps the local MCP stdio shell with repo-root bootstrap and the generated config path.
 - `scripts/api/api_shell.py` wraps the local API shell with `src/` bootstrapping for non-installed startup.
 - `scripts/validate/pytest_suite.py` wraps `pytest` with local `src/` bootstrapping for non-installed test execution.
 - `scripts/smoke/*.py` wraps the core smoke modules with local `src/` bootstrapping so the seed is runnable before install.
@@ -107,6 +111,10 @@ Local champion-backed evaluate smoke: `python -m core.bootstrap.evaluate_champio
 Local bootstrap smoke: `python -m core.bootstrap.fixture_smoke`
 Local backtest bootstrap smoke: `python -m core.bootstrap.backtest_smoke`
 Local runtime smoke suite: `python -m core.bootstrap.smoke_suite`
+
+Non-installed local MCP launcher:
+`python scripts/mcp/mcp_stdio.py`
+`python scripts/mcp/mcp_stdio.py --print-config`
 
 Non-installed local API launcher:
 `python scripts/api/api_shell.py`

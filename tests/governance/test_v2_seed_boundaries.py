@@ -59,6 +59,12 @@ _API_SCRIPT_FILES = [
 ]
 
 
+_MCP_SCRIPT_FILES = [
+    "scripts/mcp/mcp_stdio.py",
+    "tests/runtime/test_local_mcp_script.py",
+]
+
+
 _PYTEST_SCRIPT_FILES = [
     "scripts/validate/pytest_suite.py",
     "tests/runtime/test_local_pytest_script.py",
@@ -179,6 +185,20 @@ def test_seed_contains_local_mcp_shell() -> None:
     scope_text = (repo_root / "docs" / "SKELETON_SCOPE.md").read_text(encoding="utf-8")
     assert "local MCP stdio shell" in scope_text
     assert "remote MCP surfaces remain deferred" in scope_text
+
+
+def test_seed_contains_local_mcp_script() -> None:
+    repo_root = Path(__file__).resolve().parents[2]
+
+    for relative_path in _MCP_SCRIPT_FILES:
+        assert (repo_root / relative_path).exists(), relative_path
+
+    readme = (repo_root / "README.md").read_text(encoding="utf-8")
+    scope_text = (repo_root / "docs" / "SKELETON_SCOPE.md").read_text(encoding="utf-8")
+
+    assert "Non-installed local MCP launcher:" in readme
+    assert "scripts/mcp/mcp_stdio.py" in readme
+    assert "scripts/mcp/mcp_stdio.py" in scope_text
 
 
 def test_seed_contains_local_vscode_task_loop() -> None:
