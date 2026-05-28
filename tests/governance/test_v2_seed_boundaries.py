@@ -73,7 +73,10 @@ _PYTEST_SCRIPT_FILES = [
 
 _SCRIPT_FILES = [
     "scripts/smoke/backtest_smoke.py",
+    "scripts/smoke/champion_smoke.py",
+    "scripts/smoke/evaluate_champion_smoke.py",
     "scripts/smoke/fixture_smoke.py",
+    "scripts/smoke/model_smoke.py",
     "scripts/smoke/smoke_suite.py",
     "tests/runtime/test_local_smoke_scripts.py",
 ]

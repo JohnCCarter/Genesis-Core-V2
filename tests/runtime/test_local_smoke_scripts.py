@@ -13,6 +13,12 @@ import pytest
     [
         ("scripts/smoke/fixture_smoke.py", {"action": "NONE"}),
         ("scripts/smoke/backtest_smoke.py", {"trade_count": 1, "deterministic": True}),
+        ("scripts/smoke/champion_smoke.py", {"version": "seed_champion_fixture_v1"}),
+        (
+            "scripts/smoke/evaluate_champion_smoke.py",
+            {"action": "NONE", "champion_source": "registry/fixtures/champions/tBTCUSD_1h.json"},
+        ),
+        ("scripts/smoke/model_smoke.py", {"schema": ["ema_50"]}),
         ("scripts/smoke/smoke_suite.py", {"suite": "runtime_smoke_suite_v1"}),
     ],
 )

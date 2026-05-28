@@ -3,7 +3,7 @@
 Runtime-first seed with admitted local-only API shell generated from the current
 `Genesis-Core` repository.
 
-Source Genesis-Core HEAD: `e5ce7dfd`
+Source Genesis-Core HEAD: `b8a50f8e`
 
 ## What is included
 
@@ -26,7 +26,7 @@ Source Genesis-Core HEAD: `e5ce7dfd`
 - repo-local MCP launcher (`scripts/mcp/mcp_stdio.py`)
 - repo-local API launcher (`scripts/api/api_shell.py`)
 - repo-local pytest launcher (`scripts/validate/pytest_suite.py`)
-- repo-local smoke scripts (`scripts/smoke/{fixture_smoke,backtest_smoke,smoke_suite}.py`)
+- repo-local smoke scripts (`scripts/smoke/{backtest_smoke,champion_smoke,evaluate_champion_smoke,fixture_smoke,model_smoke,smoke_suite}.py`)
 - runtime-only governance guardrails
 - admitted source model payloads under `config/models/**`
 - deterministic fixture model-registry/prob-model smoke
@@ -101,7 +101,7 @@ editor-specific tasks or an editable install first.
 - `scripts/mcp/mcp_stdio.py` wraps the local MCP stdio shell with repo-root bootstrap and the generated config path.
 - `scripts/api/api_shell.py` wraps the local API shell with `src/` bootstrapping for non-installed startup.
 - `scripts/validate/pytest_suite.py` wraps `pytest` with local `src/` bootstrapping for non-installed test execution.
-- `scripts/smoke/*.py` wraps the core smoke modules with local `src/` bootstrapping so the seed is runnable before install.
+- `scripts/smoke/*.py` wraps the admitted core smoke modules with local `src/` bootstrapping so the seed is runnable before install.
 
 After editable install, local module commands:
 
@@ -127,6 +127,9 @@ Non-installed local pytest launcher:
 Non-installed local smoke scripts:
 `python scripts/smoke/fixture_smoke.py`
 `python scripts/smoke/backtest_smoke.py`
+`python scripts/smoke/champion_smoke.py`
+`python scripts/smoke/evaluate_champion_smoke.py`
+`python scripts/smoke/model_smoke.py`
 `python scripts/smoke/smoke_suite.py`
 
 Local VS Code tasks:
