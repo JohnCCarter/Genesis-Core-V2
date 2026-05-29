@@ -11,6 +11,8 @@ def test_local_env_example_tracks_the_narrow_placeholder_values() -> None:
     assert "# Copy this file to .env for local use." in template_text
     for expected_line in [
         "BEARER_TOKEN=change-me",
+        "BITFINEX_API_KEY=change-me",
+        "BITFINEX_API_SECRET=change-me",
         "SYMBOL_MODE=realistic",
         "LOG_LEVEL=INFO",
     ]:

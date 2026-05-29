@@ -3,7 +3,7 @@
 Runtime-first seed with admitted local-only API shell and constrained remote MCP semantics
 generated from the current `Genesis-Core` repository.
 
-Source Genesis-Core HEAD: `3ac832e8`
+Source Genesis-Core HEAD: `6025ad87`
 
 ## What is included
 
@@ -11,7 +11,7 @@ Source Genesis-Core HEAD: `3ac832e8`
 - runtime pipeline orchestration (`src/core/pipeline.py`)
 - local dependency closure required by those roots
 - admitted local-only API shell (`src/core/server.py`,
-    `src/core/api/{config,info,models,status,strategy}.py`)
+    `src/core/api/{account,config,info,models,paper,public,status,strategy,ui}.py`)
 - source-backed config validation seam (`src/core/config/validator.py`,
   `src/core/config/legacy_schema_v1.json`)
 - source-backed config endpoint integration smoke (`tests/integration/test_config_endpoints.py`)
@@ -31,11 +31,21 @@ Source Genesis-Core HEAD: `3ac832e8`
 - admitted strategy authority helpers (`src/core/config/authority_mode_resolver.py`,
   `src/core/strategy/{family_registry,family_admission,run_intent}.py`)
 - admitted config/runtime authority semantics (`src/core/config/{authority,authority_mode_resolver,schema}.py`,
-  `src/core/api/config.py`) without carrying runtime payload files
+    `src/core/api/config.py`) with repo-tracked `config/runtime.seed.json` while local runtime override remains excluded
+- verified champion subset (`config/strategy/champions/tBTCUSD_1h.json`,
+    `config/strategy/champions/tBTCUSD_3h.json`) while candidate/test/backup champion payloads stay excluded
 - admitted backtest comparison/diff semantics (`src/core/utils/diffing/results_diff.py`,
   `tools/compare_backtest_results.py`) without carrying execution roots or results corpora
 - admitted constrained remote MCP semantics (`mcp_server/remote_server.py`,
   `config/mcp_settings.remote_{safe,git}.json`) without operational launchers or deployment guidance
+- Batch E1 public candles endpoint semantics (`src/core/api/public.py`) through the injected `core.server.get_exchange_client` verification seam while broader transport stays deferred
+- Batch E2 read-only account endpoint semantics (`src/core/api/account.py`) through the injected `core.server.bfx_read` verification seam while broader transport stays deferred
+- Batch E3 local paper/UI semantics (`src/core/api/{paper,ui}.py`) through injected `core.server` helper seams while broader transport, deployment guidance, and live-ready transport authority stay deferred
+- Batch G1 Bitfinex REST read spine (`src/core/io/bitfinex/{exchange_client,read_helpers}.py`) with direct verification in `tests/runtime/test_transport_read_spine.py`
+- Batch G2 binds generated public/account route defaults through `src/core/server.py` to the admitted Bitfinex REST read spine only; websocket, standalone auth, and paper-route transport widening remain deferred.
+- Batch H1 admits pure runtime decision logic, composable strategy components, intelligence helper packages, and repo-tracked composable strategy configs/tests without widening transport, optimizer, or runtime-authority surfaces.
+- Batch H2 widens transport family to include the remaining Bitfinex REST/WebSocket modules as dormant package surface only; this slice does not rebind server routes, startup wiring, or paper/live execution.
+- Batch I1 admits the dormant optimizer package (`src/core/optimizer/**`), supporting diffing/Optuna helpers, and repo-tracked `config/optimizer/**` research corpus for import/test completeness only.
 - runtime-only governance guardrails
 - runtime determinism guardrails for pipeline fast-hash policy and feature-cache hash stability
 - admitted source model payloads under `config/models/**`
@@ -54,18 +64,19 @@ Source Genesis-Core HEAD: `3ac832e8`
 
 ## What is intentionally excluded
 
-- `src/core/api/{account,paper,public,ui}.py`
-- `src/core/io/**`
-- `src/core/optimizer/**`
+- broader future `src/core/io/**` beyond the admitted `src/core/io/bitfinex/**` family
 - `src/core/strategy/features.py`
-- `src/core/utils/optuna_helpers.py`
-- `src/core/utils/diffing/{optuna_guard,trial_cache}.py`
 - `scripts/run/run_backtest.py`
+- `scripts/optimize/**`
+- `scripts/preflight/preflight_optuna_check.py`
+- `scripts/validate/validate_optimizer_config.py`
 - `scripts/mcp/start_mcp_remote.ps1`
 - `scripts/mcp_session_preflight.py`
 - `config/runtime.json`
-- `config/runtime.seed.json`
-- `config/strategy/champions/**`
+- `config/strategy/champions/backup/**`
+- `config/strategy/champions/*candidate*.json`
+- `config/strategy/champions/tTEST_1h.json`
+- `config/strategy/candidates/**`
 - `docs/mcp/**`
 - `data/**`
 - branch-local research corpora and historical explanation surfaces
@@ -77,29 +88,45 @@ It is a local starting point, not a claim that all later bootstrap, model, champ
 or wider state-authority decisions are already resolved.
 Source `config/models/**` payloads are copied into the seed, while deterministic smoke
 paths use fixture-backed model registry payloads under `registry/fixtures/model_registry/**`.
-Phase 1 intentionally excludes `config/strategy/champions/**`; runtime falls back to
-`config/timeframe_configs.py` through `ChampionLoader` when champion payloads are absent.
-The admitted API shell is local-only (`config/info/status/models/strategy`); exchange-facing,
-paper, public-data, and UI surfaces remain excluded for a later slice.
-Runtime state and champion authority payloads remain excluded; generated `.env` contains only
-local-shell placeholders. Tracked `.env.example` mirrors the same narrow values for copy-forward bootstrap.
+Repo-tracked `config/runtime.seed.json` is copied into the seed as the baseline authority fallback.
+Generated V2 still excludes local `config/runtime.json`; if a local runtime override is later created,
+`ConfigAuthority` preserves runtime.json-over-seed precedence.
+A verified champion subset is admitted: `config/strategy/champions/tBTCUSD_1h.json` and
+`config/strategy/champions/tBTCUSD_3h.json`.
+`ChampionLoader` still falls back to `config/timeframe_configs.py` when a requested champion is missing or invalid.
+The admitted API shell is local-only (`account/config/info/status/models/paper/public/strategy/ui`).
+Generated `.env` contains local-shell and Bitfinex REST credential placeholders only.
+Tracked `.env.example` mirrors the same narrow values for copy-forward bootstrap.
 Config runtime-authority semantics are admitted for source/verification purposes only, including the
 authority/schema/API surfaces already present in the V2 source closure. Runtime state payloads
-(`config/runtime.json`, `config/runtime.seed.json`), champion artifacts, remote MCP surfaces, and
+(`config/runtime.json`), candidate/test/backup champion artifacts, remote MCP surfaces, and
 live-adjacent/promotion surfaces remain deferred and excluded from the seed.
 Backtest comparison/diff semantics and associated tmp-path-isolated tests are admitted. Backtest
-execution roots, results corpora, champions, runtime state payloads, `scripts/run/run_backtest.py`,
-and remote/live edges remain deferred or excluded.
+execution roots, results corpora, non-authoritative champion payloads, local runtime override
+payloads, `scripts/run/run_backtest.py`, and remote/live edges remain deferred or excluded.
 Genesis-Core-V2 admits constrained remote MCP semantics limited to authorization, safe-mode,
 confirm-token, and transport-alias behavior already present in source. Operational launch scripts,
 deployment/tunnel/proxy guidance, and other live-adjacent surfaces remain deferred and are not
 included in this slice.
+Batch E1 admits the public candles endpoint semantics from `src/core/api/public.py` through an injected `core.server.get_exchange_client` seam for offline verification while broader transport remains deferred.
+Batch E2 admits only the read-only account endpoint semantics from `src/core/api/account.py` through an injected `core.server.bfx_read` seam for offline verification.
+Batch E3 admits the local paper/UI semantics from `src/core/api/{paper,ui}.py` through injected `core.server` helper seams for offline/local verification only.
+Batch G1 admits the Bitfinex REST read spine (`src/core/io/bitfinex/{exchange_client,read_helpers}.py`) for direct runtime verification.
+Batch G2 binds generated public/account route defaults through `src/core/server.py` to the admitted Bitfinex REST read spine only; websocket, standalone auth, and paper-route transport widening remain deferred.
+Batch H1 admits pure runtime decision logic, composable strategy components, intelligence helper packages, and repo-tracked composable strategy configs/tests without widening transport, optimizer, or runtime-authority surfaces.
+Batch H2 widens transport family to include the remaining Bitfinex REST/WebSocket modules as dormant package surface only; this slice does not rebind server routes, startup wiring, or paper/live execution.
+Batch I1 admits the dormant optimizer package and read-only `config/optimizer/**` research corpus for import/test completeness only. It does not admit optimizer execution roots, startup/server bindings, or runtime-authority payloads.
+Batch F admits repo-tracked `config/runtime.seed.json` plus `config/strategy/champions/tBTCUSD_1h.json` and `config/strategy/champions/tBTCUSD_3h.json` while local `config/runtime.json`, candidate/test/backup champions, and `data/**` remain excluded.
 Admitted strategy authority helpers keep family classification, run-intent admission, and authority-mode
 precedence observable in the seed without admitting runtime/config state authority or promotion surfaces.
 Runtime pipeline orchestration is admitted through `src/core/pipeline.py`, while the narrower
-`src/core/utils/random_seeds.py` helper keeps Optuna/optimizer-only helpers out of the seed.
-Unneeded Optuna/optimizer closure is intentionally pruned from the seed until and unless a later
-explicit slice admits those higher-sensitivity surfaces.
+`src/core/utils/random_seeds.py` helper preserves deterministic seeding while the dormant optimizer
+package reuses the admitted `src/core/utils/optuna_helpers.py` parity surface.
+Generated dependency widening for the dormant optimizer slice is limited to `optuna>=3.5,<5` so the
+admitted `core.optimizer` and `core.utils.optuna_helpers` imports remain import-safe without opening
+execution roots or broader tooling surfaces.
+Generated `src/core/utils/diffing/__init__.py` is widened only to the admitted `results_diff`,
+`optuna_guard`, and `trial_cache` exports required by the dormant optimizer package.
 Local MCP support is admitted for stdio-first workspace usage, while the remote HTTP entrypoint and
 remote allowlist variants are admitted only for semantics-level verification.
 Repo-local MCP launcher is generated so the local stdio shell can start without depending on

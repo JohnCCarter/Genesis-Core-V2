@@ -9,6 +9,9 @@ description = "Runtime-first seed with admitted local-only API shell extracted f
 requires-python = ">=3.11"
 dependencies = [
   "fastapi>=0.116,<0.117",
+  "httpx>=0.25,<0.26",
+  "optuna>=3.5,<5",
+  "websockets>=12,<13",
   "uvicorn>=0.24,<0.25",
   "pydantic>=2.7,<3",
   "pydantic-settings>=2,<3",
@@ -35,6 +38,7 @@ genesis-v2-smoke-suite = "genesis_core_v2_cli.console_scripts:smoke_suite_main"
 [project.optional-dependencies]
 dev = [
   "pytest>=8",
+  "pytest-asyncio>=0.23,<1",
   "black>=24.10",
   "ruff>=0.6",
   "pre-commit>=3.0"

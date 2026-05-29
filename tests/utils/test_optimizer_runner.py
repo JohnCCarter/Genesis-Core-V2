@@ -1,0 +1,1495 @@
+from __future__ import annotations
+
+import json
+import os
+import sys
+from collections.abc import Callable
+from contextlib import ExitStack, contextmanager
+from pathlib import Path
+from typing import Any
+from unittest.mock import MagicMock, patch
+
+import pytest
+import yaml
+
+try:
+    import optuna
+except ImportError:
+    optuna = None
+
+import core.optimizer.runner as runner
+from core.optimizer.runner import run_optimizer
+
+TEST_SYMBOL = "tTEST"
+TEST_TIMEFRAME = "1h"
+TEST_SNAPSHOT_ID = "tTEST_1h_20240101_20240201_v1"
+TEST_RUN_ID = "run_test"
+TEST_START_DATE = "2024-01-01"
+TEST_END_DATE = "2024-01-02"
+TEST_RUN_META_SNAPSHOT_ID = "snap_A"
+TEST_CFG_FILENAME = "cfg.yaml"
+
+
+def _nested_level(depth: int, leaf: dict[str, Any]) -> dict[str, Any]:
+    node: dict[str, Any] = dict(leaf)
+    for i in reversed(range(depth)):
+        node = {f"k{i}": node}
+    return node
+
+
+def _write_run_meta(run_dir: Path, run_meta_payload: dict[str, Any]) -> None:
+    run_dir.mkdir(parents=True, exist_ok=True)
+    (run_dir / "run_meta.json").write_text(json.dumps(run_meta_payload), encoding="utf-8")
+
+
+def _write_yaml(path: Path, payload: dict[str, Any]) -> None:
+    path.write_text(yaml.safe_dump(payload), encoding="utf-8")
+
+
+def _results_root(tmp_path: Path) -> Path:
+    return tmp_path / "results" / "hparam_search"
+
+
+def _champions_dir(tmp_path: Path) -> Path:
+    return tmp_path / "champions"
+
+
+def _configure_manager(
+    manager_cls: Any,
+    *,
+    current: Any = None,
+    should_replace: bool = True,
+) -> Any:
+    manager_instance = manager_cls.return_value
+    manager_instance.load_current.return_value = current
+    manager_instance.should_replace.return_value = should_replace
+    return manager_instance
+
+
+def _entry_conf_params(value: float) -> dict[str, Any]:
+    return {"thresholds": {"entry_conf_overall": value}}
+
+
+def _entry_conf_default_grid() -> list[dict[str, Any]]:
+    return [_entry_conf_params(0.4), _entry_conf_params(0.5)]
+
+
+def _ok_constraints() -> dict[str, Any]:
+    return {"ok": True, "reasons": []}
+
+
+def _make_fake_ensure_writer(
+    run_meta_payload: dict[str, Any],
+    on_run_dir: Callable[[Path], None] | None = None,
+) -> Callable[..., None]:
+    def fake_ensure(run_dir: Path, *_args: Any, **_kwargs: Any) -> None:
+        if on_run_dir is not None:
+            on_run_dir(run_dir)
+        _write_run_meta(run_dir, run_meta_payload)
+
+    return fake_ensure
+
+
+def _base_run_meta_payload() -> dict[str, Any]:
+    return {
+        "git_commit": "abc123",
+        "snapshot_id": TEST_SNAPSHOT_ID,
+    }
+
+
+def _prepare_run_meta_test_context(tmp_path: Path) -> tuple[Path, Path, dict[str, Any], str]:
+    run_dir = tmp_path / "run"
+    run_dir.mkdir(parents=True, exist_ok=True)
+    config_path = tmp_path / TEST_CFG_FILENAME
+    config_path.write_text("meta: {}\n", encoding="utf-8")
+    meta = {
+        "snapshot_id": TEST_RUN_META_SNAPSHOT_ID,
+        "symbol": TEST_SYMBOL,
+        "timeframe": TEST_TIMEFRAME,
+    }
+    run_id = TEST_RUN_ID
+    return run_dir, config_path, meta, run_id
+
+
+def _make_optuna_test_config(
+    *,
+    max_trials: int,
+    resume: bool,
+    storage: str | None,
+    validation: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    runs_cfg: dict[str, Any] = {
+        "strategy": "optuna",
+        "max_trials": max_trials,
+        "max_concurrent": 1,
+        "resume": resume,
+        "optuna": {"storage": storage, "study_name": "test-study"},
+    }
+    if validation is not None:
+        runs_cfg["validation"] = validation
+
+    return {
+        "meta": {
+            "symbol": TEST_SYMBOL,
+            "timeframe": TEST_TIMEFRAME,
+            "snapshot_id": TEST_SNAPSHOT_ID,
+            "runs": runs_cfg,
+        },
+        "parameters": {
+            "thresholds": {
+                "entry_conf_overall": {
+                    "type": "grid",
+                    "values": [0.4, 0.5],
+                }
+            }
+        },
+    }
+
+
+def _trial_config(*, parameters: dict[str, Any], warmup_bars: int = 1) -> runner.TrialConfig:
+    return runner.TrialConfig(
+        snapshot_id=TEST_SNAPSHOT_ID,
+        symbol=TEST_SYMBOL,
+        timeframe=TEST_TIMEFRAME,
+        warmup_bars=warmup_bars,
+        parameters=parameters,
+        start_date=TEST_START_DATE,
+        end_date=TEST_END_DATE,
+    )
+
+
+def _backtest_payload(num_trades: int, *, profit_factor: float | None = None) -> dict[str, Any]:
+    metrics: dict[str, Any] = {"num_trades": num_trades}
+    if profit_factor is not None:
+        metrics["profit_factor"] = profit_factor
+    return {
+        "summary": {"initial_capital": 10000.0},
+        "trades": [],
+        "equity_curve": [],
+        "metrics": metrics,
+        "merged_config": {},
+        "runtime_version": 1,
+    }
+
+
+def _set_score_env_with_shell(monkeypatch: pytest.MonkeyPatch, *, score_version: str) -> None:
+    monkeypatch.setenv("GENESIS_SCORE_VERSION", score_version)
+    monkeypatch.delenv("GENESIS_FORCE_SHELL", raising=False)
+
+
+def _set_score_env_with_run_meta_guard(
+    monkeypatch: pytest.MonkeyPatch, *, score_version: str
+) -> None:
+    monkeypatch.setenv("GENESIS_SCORE_VERSION", score_version)
+    monkeypatch.delenv("GENESIS_ALLOW_RUN_META_MISMATCH", raising=False)
+
+
+def _max_concurrent_env_patch() -> Any:
+    return patch.dict(os.environ, {"GENESIS_MAX_CONCURRENT": "1"})
+
+
+def _results_dir_patch(results_dir: Path) -> Any:
+    return patch("core.optimizer.runner.RESULTS_DIR", results_dir)
+
+
+def _champions_dir_patch(tmp_path: Path) -> Any:
+    return patch("core.strategy.champion_loader.CHAMPIONS_DIR", _champions_dir(tmp_path))
+
+
+def _run_trial_side_effect_patch(side_effect: Any) -> Any:
+    return patch("core.optimizer.runner.run_trial", side_effect=side_effect)
+
+
+def _ensure_run_metadata_side_effect_patch(side_effect: Any) -> Any:
+    return patch("core.optimizer.runner._ensure_run_metadata", side_effect=side_effect)
+
+
+def _default_config_patch() -> Any:
+    return patch("core.optimizer.runner._get_default_config", return_value={})
+
+
+def _default_runtime_version_patch() -> Any:
+    return patch("core.optimizer.runner._get_default_runtime_version", return_value=1)
+
+
+def _run_backtest_direct_side_effect_patch(side_effect: Any) -> Any:
+    return patch("core.optimizer.runner._run_backtest_direct", side_effect=side_effect)
+
+
+def _expand_parameters_patch(values: list[dict[str, Any]]) -> Any:
+    return patch("core.optimizer.runner.expand_parameters", return_value=values)
+
+
+def _champion_manager_patch() -> Any:
+    return patch("core.optimizer.runner.ChampionManager")
+
+
+@contextmanager
+def _champion_test_patch_context(
+    *,
+    results_root: Path,
+    expand_values: list[dict[str, Any]],
+    run_trial_side_effect: Any,
+    ensure_run_metadata_side_effect: Any,
+    tmp_path: Path,
+) -> Any:
+    with ExitStack() as stack:
+        stack.enter_context(_max_concurrent_env_patch())
+        stack.enter_context(_results_dir_patch(results_root))
+        stack.enter_context(_expand_parameters_patch(expand_values))
+        stack.enter_context(_run_trial_side_effect_patch(run_trial_side_effect))
+        stack.enter_context(_ensure_run_metadata_side_effect_patch(ensure_run_metadata_side_effect))
+        manager_cls = stack.enter_context(_champion_manager_patch())
+        stack.enter_context(_champions_dir_patch(tmp_path))
+        yield manager_cls
+
+
+def _optimizer_test_context(tmp_path: Path) -> tuple[Path, dict[str, Any]]:
+    return _results_root(tmp_path), _base_run_meta_payload()
+
+
+def _run_optimizer_with_test_id(search_config_path: Path) -> list[dict[str, Any]]:
+    return run_optimizer(search_config_path, run_id=TEST_RUN_ID)
+
+
+_OPTUNA_SKIP = pytest.mark.skipif(not runner.OPTUNA_AVAILABLE, reason="Optuna ej installerat")
+
+
+@pytest.fixture()
+def search_config_tmp(tmp_path: Path) -> Path:
+    config = {
+        "meta": {
+            "symbol": TEST_SYMBOL,
+            "timeframe": TEST_TIMEFRAME,
+            "snapshot_id": TEST_SNAPSHOT_ID,
+            "warmup_bars": 50,
+            "runs": {
+                "max_trials": 2,
+                "resume": False,
+            },
+        },
+        "parameters": {
+            "thresholds": {
+                "entry_conf_overall": {
+                    "type": "grid",
+                    "values": [0.4, 0.5],
+                }
+            }
+        },
+    }
+    config_path = tmp_path / "search.yaml"
+    _write_yaml(config_path, config)
+    return config_path
+
+
+def test_score_version_mismatch_is_fail_fast() -> None:
+    with pytest.raises(ValueError, match="Inkompatibla scoring-versioner"):
+        runner._enforce_score_version_compatibility(
+            current_score_version="v1",
+            candidate_score_version="v2",
+            context="unit_test",
+        )
+
+
+def test_derive_dates_supports_snap_prefix_symbol_timeframe_iso_dates() -> None:
+    start, end = runner._derive_dates("snap_tBTCUSD_3h_2024-01-02_2024-12-31_v1")
+    assert start == "2024-01-02"
+    assert end == "2024-12-31"
+
+
+def test_load_search_config_rejects_non_mapping_yaml(tmp_path: Path) -> None:
+    config_path = tmp_path / "invalid.yaml"
+    config_path.write_text("- just\n- a\n- list\n", encoding="utf-8")
+
+    with pytest.raises(ValueError, match="search config måste vara YAML-mapp"):
+        runner.load_search_config(config_path)
+
+
+def test_expand_parameters_nested_grid_and_fixed_parity() -> None:
+    spec = {
+        "thresholds": {
+            "entry_conf_overall": {"type": "grid", "values": [0.4, 0.5]},
+            "exit_conf": {"type": "fixed", "value": 0.3},
+        },
+        "risk": {
+            "multiplier": {"type": "grid", "values": [1.0, 2.0]},
+        },
+    }
+
+    expanded = list(runner.expand_parameters(spec))
+
+    assert expanded == [
+        {
+            "thresholds": {"entry_conf_overall": 0.4, "exit_conf": 0.3},
+            "risk": {"multiplier": 1.0},
+        },
+        {
+            "thresholds": {"entry_conf_overall": 0.4, "exit_conf": 0.3},
+            "risk": {"multiplier": 2.0},
+        },
+        {
+            "thresholds": {"entry_conf_overall": 0.5, "exit_conf": 0.3},
+            "risk": {"multiplier": 1.0},
+        },
+        {
+            "thresholds": {"entry_conf_overall": 0.5, "exit_conf": 0.3},
+            "risk": {"multiplier": 2.0},
+        },
+    ]
+
+
+def test_get_default_runtime_version_reads_runner_facade_state(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(runner, "_DEFAULT_CONFIG_CACHE", {"cached": True})
+    monkeypatch.setattr(runner, "_DEFAULT_CONFIG_RUNTIME_VERSION", 777)
+
+    assert runner._get_default_runtime_version() == 777
+
+
+def test_get_backtest_economics_reads_runner_facade_state(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        runner,
+        "_BACKTEST_DEFAULTS_CACHE",
+        {"capital": "12345", "commission": "0.01", "slippage": "0.02"},
+    )
+
+    capital, commission, slippage = runner._get_backtest_economics()
+
+    assert capital == pytest.approx(12345.0)
+    assert commission == pytest.approx(0.01)
+    assert slippage == pytest.approx(0.02)
+
+
+def test_collect_comparability_warnings_detects_drift_without_raising() -> None:
+    current_info = {
+        "execution_mode": {
+            "fast_window": True,
+            "env_precompute_features": "1",
+            "precompute_enabled": True,
+            "precomputed_ready": True,
+            "mode_explicit": "0",
+        },
+        "commission_rate": 0.002,
+        "slippage_rate": 0.0,
+        "git_hash": "abc",
+        "seed": "42",
+        "htf": {
+            "env_htf_exits": "1",
+            "use_new_exit_engine": True,
+            "htf_candles_loaded": True,
+            "htf_context_seen": True,
+        },
+    }
+    candidate_info = {
+        "execution_mode": {
+            "fast_window": False,
+            "env_precompute_features": "1",
+            "precompute_enabled": True,
+            "precomputed_ready": False,
+            "mode_explicit": "1",
+        },
+        "commission_rate": 0.001,
+        "slippage_rate": 0.0,
+        "git_hash": "def",
+        "seed": "123",
+        "htf": {
+            "env_htf_exits": "0",
+            "use_new_exit_engine": False,
+            "htf_candles_loaded": False,
+            "htf_context_seen": False,
+        },
+    }
+
+    warnings = runner._collect_comparability_warnings(current_info, candidate_info)
+    assert any("execution_mode.fast_window" in w for w in warnings)
+    assert any("execution_mode.precomputed_ready" in w for w in warnings)
+    assert any("commission_rate" in w for w in warnings)
+    assert any("git_hash" in w for w in warnings)
+    assert any("htf.env_htf_exits" in w for w in warnings)
+
+
+def test_run_optimizer_updates_champion(
+    tmp_path: Path, search_config_tmp: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    results_root, run_meta_payload = _optimizer_test_context(tmp_path)
+
+    trial_queue = {
+        1: {
+            "trial_id": "trial_001",
+            "parameters": _entry_conf_params(0.4),
+            "score": {
+                "score": 120.0,
+                "metrics": {"sharpe_ratio": 0.5},
+                "hard_failures": [],
+            },
+            "constraints": _ok_constraints(),
+            "results_path": "test_results.json",
+        },
+        2: {
+            "trial_id": "trial_002",
+            "parameters": _entry_conf_params(0.5),
+            "score": {
+                "score": 80.0,
+                "metrics": {"sharpe_ratio": 0.2},
+                "hard_failures": ["MAX_DD_TOO_HIGH"],
+            },
+            "constraints": {"ok": False, "reasons": ["MAX_DD_TOO_HIGH"]},
+            "results_path": "test_results_bad.json",
+        },
+    }
+
+    created_run_dir: Path | None = None
+
+    def fake_run_trial(*args: Any, **kwargs: Any) -> dict[str, Any]:
+        _ = args
+        index = kwargs.get("index")
+        return trial_queue.get(
+            index,
+            {
+                "trial_id": f"trial_extra_{index}",
+                "parameters": {},
+                "score": {"score": 0.0, "metrics": {}, "hard_failures": []},
+                "constraints": {"ok": False},
+            },
+        )
+
+    def _capture_run_dir(run_dir: Path) -> None:
+        nonlocal created_run_dir
+        created_run_dir = run_dir
+
+    fake_ensure = _make_fake_ensure_writer(run_meta_payload, _capture_run_dir)
+
+    with _champion_test_patch_context(
+        results_root=results_root,
+        expand_values=_entry_conf_default_grid(),
+        run_trial_side_effect=fake_run_trial,
+        ensure_run_metadata_side_effect=fake_ensure,
+        tmp_path=tmp_path,
+    ) as manager_cls:
+        monkeypatch.setenv("GENESIS_MAX_CONCURRENT", "1")
+        manager_instance = _configure_manager(manager_cls)
+
+        results = _run_optimizer_with_test_id(search_config_tmp)
+
+        assert len(results) == 2
+        manager_instance.write_champion.assert_called_once()
+        call_kwargs = manager_instance.write_champion.call_args.kwargs
+        assert call_kwargs["run_id"] == TEST_RUN_ID
+        assert call_kwargs["candidate"].score == pytest.approx(120.0)
+        assert call_kwargs["snapshot_id"] == run_meta_payload["snapshot_id"]
+
+
+def test_run_optimizer_validation_stage_promotes_validation_best(tmp_path: Path) -> None:
+    config = {
+        "meta": {
+            "symbol": TEST_SYMBOL,
+            "timeframe": TEST_TIMEFRAME,
+            "snapshot_id": TEST_SNAPSHOT_ID,
+            "warmup_bars": 50,
+            "runs": {
+                "max_trials": 2,
+                "resume": False,
+                "validation": {
+                    "top_n": 2,
+                    "use_sample_range": True,
+                    "sample_start": "2024-01-01",
+                    "sample_end": "2024-03-01",
+                    "constraints": {"min_trades": 1, "min_profit_factor": 1.0},
+                },
+            },
+        },
+        "parameters": {
+            "thresholds": {
+                "entry_conf_overall": {
+                    "type": "grid",
+                    "values": [0.4, 0.5],
+                }
+            }
+        },
+    }
+    config_path = tmp_path / "search_with_validation.yaml"
+    _write_yaml(config_path, config)
+
+    results_root, run_meta_payload = _optimizer_test_context(tmp_path)
+
+    def fake_run_trial(*args: Any, **kwargs: Any) -> dict[str, Any]:
+        trial_cfg = args[0]
+        run_dir = kwargs.get("run_dir")
+        params = getattr(trial_cfg, "parameters", {}) or {}
+        entry_conf = params.get("thresholds", {}).get("entry_conf_overall")
+
+        # Explore stage (main run_dir)
+        if run_dir is None or "validation" not in str(run_dir):
+            if entry_conf == 0.4:
+                return {
+                    "trial_id": "trial_001",
+                    "parameters": params,
+                    "score": {"score": 120.0, "metrics": {"num_trades": 10}, "hard_failures": []},
+                    "constraints": _ok_constraints(),
+                    "results_path": "explore_good.json",
+                }
+            return {
+                "trial_id": "trial_002",
+                "parameters": params,
+                "score": {
+                    "score": 80.0,
+                    "metrics": {"num_trades": 0},
+                    "hard_failures": ["pf<1.0"],
+                },
+                "constraints": {"ok": False, "reasons": ["min_profit_factor"]},
+                "results_path": "explore_bad.json",
+            }
+
+        # Validation stage (run_dir/validation)
+        if entry_conf == 0.4:
+            return {
+                "trial_id": "trial_001",
+                "parameters": params,
+                "score": {"score": 90.0, "metrics": {"num_trades": 15}, "hard_failures": []},
+                "constraints": _ok_constraints(),
+                "results_path": "val_ok_04.json",
+            }
+        return {
+            "trial_id": "trial_002",
+            "parameters": params,
+            "score": {"score": 130.0, "metrics": {"num_trades": 20}, "hard_failures": []},
+            "constraints": _ok_constraints(),
+            "results_path": "val_best_05.json",
+        }
+
+    fake_ensure = _make_fake_ensure_writer(run_meta_payload)
+
+    with _champion_test_patch_context(
+        results_root=results_root,
+        expand_values=_entry_conf_default_grid(),
+        run_trial_side_effect=fake_run_trial,
+        ensure_run_metadata_side_effect=fake_ensure,
+        tmp_path=tmp_path,
+    ) as manager_cls:
+        manager_instance = _configure_manager(manager_cls)
+
+        results = _run_optimizer_with_test_id(config_path)
+
+        # 2 explore + 2 validation
+        assert len(results) == 4
+        manager_instance.write_champion.assert_called_once()
+        call_kwargs = manager_instance.write_champion.call_args.kwargs
+        assert call_kwargs["candidate"].score == pytest.approx(130.0)
+
+
+def test_run_optimizer_validation_top_n_zero_preserves_explore_promotion(tmp_path: Path) -> None:
+    config = {
+        "meta": {
+            "symbol": TEST_SYMBOL,
+            "timeframe": TEST_TIMEFRAME,
+            "snapshot_id": TEST_SNAPSHOT_ID,
+            "warmup_bars": 50,
+            "runs": {
+                "max_trials": 1,
+                "resume": False,
+                "validation": {
+                    "top_n": 0,
+                    "use_sample_range": False,
+                },
+            },
+        },
+        "parameters": {
+            "thresholds": {
+                "entry_conf_overall": {
+                    "type": "grid",
+                    "values": [0.4],
+                }
+            }
+        },
+    }
+    config_path = tmp_path / "search_with_validation_top_n_zero.yaml"
+    _write_yaml(config_path, config)
+
+    results_root, run_meta_payload = _optimizer_test_context(tmp_path)
+
+    def fake_run_trial(*args: Any, **_kwargs: Any) -> dict[str, Any]:
+        params = getattr(args[0], "parameters", {}) or {}
+        return {
+            "trial_id": "trial_001",
+            "parameters": params,
+            "score": {"score": 120.0, "metrics": {"num_trades": 10}, "hard_failures": []},
+            "constraints": _ok_constraints(),
+            "results_path": "explore_good.json",
+        }
+
+    fake_ensure = _make_fake_ensure_writer(run_meta_payload)
+
+    with _champion_test_patch_context(
+        results_root=results_root,
+        expand_values=[_entry_conf_params(0.4)],
+        run_trial_side_effect=fake_run_trial,
+        ensure_run_metadata_side_effect=fake_ensure,
+        tmp_path=tmp_path,
+    ) as manager_cls:
+        manager_instance = _configure_manager(manager_cls)
+
+        results = _run_optimizer_with_test_id(config_path)
+
+        assert len(results) == 1
+        manager_instance.write_champion.assert_called_once()
+
+
+def test_run_optimizer_validation_stage_uses_runner_run_trial_patch_surface(
+    tmp_path: Path,
+) -> None:
+    config = {
+        "meta": {
+            "symbol": TEST_SYMBOL,
+            "timeframe": TEST_TIMEFRAME,
+            "snapshot_id": TEST_SNAPSHOT_ID,
+            "warmup_bars": 50,
+            "runs": {
+                "max_trials": 1,
+                "resume": False,
+                "validation": {
+                    "top_n": 1,
+                    "use_sample_range": False,
+                },
+            },
+        },
+        "parameters": {
+            "thresholds": {
+                "entry_conf_overall": {
+                    "type": "grid",
+                    "values": [0.4],
+                }
+            }
+        },
+    }
+    config_path = tmp_path / "search_with_validation_patch_surface.yaml"
+    _write_yaml(config_path, config)
+
+    results_root, run_meta_payload = _optimizer_test_context(tmp_path)
+    validation_run_dirs: list[Path] = []
+
+    def fake_run_trial(*args: Any, **kwargs: Any) -> dict[str, Any]:
+        trial_cfg = args[0]
+        run_dir = kwargs.get("run_dir")
+        params = getattr(trial_cfg, "parameters", {}) or {}
+        if run_dir is not None and "validation" in str(run_dir):
+            validation_run_dirs.append(Path(run_dir))
+            return {
+                "trial_id": "trial_001_validation",
+                "parameters": params,
+                "score": {"score": 110.0, "metrics": {"num_trades": 12}, "hard_failures": []},
+                "constraints": _ok_constraints(),
+                "results_path": "validation_good.json",
+            }
+        return {
+            "trial_id": "trial_001",
+            "parameters": params,
+            "score": {"score": 120.0, "metrics": {"num_trades": 10}, "hard_failures": []},
+            "constraints": _ok_constraints(),
+            "results_path": "explore_good.json",
+        }
+
+    fake_ensure = _make_fake_ensure_writer(run_meta_payload)
+
+    with _champion_test_patch_context(
+        results_root=results_root,
+        expand_values=[_entry_conf_params(0.4)],
+        run_trial_side_effect=fake_run_trial,
+        ensure_run_metadata_side_effect=fake_ensure,
+        tmp_path=tmp_path,
+    ) as manager_cls:
+        manager_instance = _configure_manager(manager_cls)
+
+        results = _run_optimizer_with_test_id(config_path)
+
+        assert len(results) == 2
+        assert len(validation_run_dirs) == 1
+        assert validation_run_dirs[0].name == "validation"
+        assert len([r for r in results if r.get("stage") == "validation"]) == 1
+        manager_instance.write_champion.assert_called_once()
+
+
+@pytest.mark.parametrize(
+    "validation_payload",
+    [
+        {"error": "no_data", "results_path": "validation_missing.json"},
+        {"skipped": True, "reason": "validation_data_missing"},
+    ],
+    ids=["validation_error_no_data", "validation_skipped_no_data"],
+)
+def test_run_optimizer_validation_missing_data_blocks_promotion(
+    tmp_path: Path,
+    validation_payload: dict[str, Any],
+) -> None:
+    config = {
+        "meta": {
+            "symbol": TEST_SYMBOL,
+            "timeframe": TEST_TIMEFRAME,
+            "snapshot_id": TEST_SNAPSHOT_ID,
+            "warmup_bars": 50,
+            "runs": {
+                "max_trials": 1,
+                "resume": False,
+                "validation": {
+                    "top_n": 1,
+                    "use_sample_range": False,
+                },
+            },
+        },
+        "parameters": {
+            "thresholds": {
+                "entry_conf_overall": {
+                    "type": "grid",
+                    "values": [0.4],
+                }
+            }
+        },
+    }
+    config_path = tmp_path / "search_with_validation_missing_data.yaml"
+    _write_yaml(config_path, config)
+
+    results_root, run_meta_payload = _optimizer_test_context(tmp_path)
+
+    def fake_run_trial(*args: Any, **kwargs: Any) -> dict[str, Any]:
+        trial_cfg = args[0]
+        run_dir = kwargs.get("run_dir")
+        params = getattr(trial_cfg, "parameters", {}) or {}
+
+        if run_dir is None or "validation" not in str(run_dir):
+            return {
+                "trial_id": "trial_001",
+                "parameters": params,
+                "score": {"score": 120.0, "metrics": {"num_trades": 10}, "hard_failures": []},
+                "constraints": _ok_constraints(),
+                "results_path": "explore_good.json",
+            }
+
+        return {
+            "trial_id": "trial_001_validation",
+            "parameters": params,
+            **validation_payload,
+        }
+
+    fake_ensure = _make_fake_ensure_writer(run_meta_payload)
+
+    with _champion_test_patch_context(
+        results_root=results_root,
+        expand_values=[_entry_conf_params(0.4)],
+        run_trial_side_effect=fake_run_trial,
+        ensure_run_metadata_side_effect=fake_ensure,
+        tmp_path=tmp_path,
+    ) as manager_cls:
+        manager_instance = _configure_manager(manager_cls)
+
+        results = _run_optimizer_with_test_id(config_path)
+
+        assert len(results) == 2
+        manager_instance.write_champion.assert_not_called()
+
+        validation_entries = [r for r in results if r.get("stage") == "validation"]
+        assert len(validation_entries) == 1
+
+        validation_entry = validation_entries[0]
+        if validation_payload.get("error"):
+            assert validation_entry.get("error") == "no_data"
+        else:
+            assert validation_entry.get("skipped") is True
+            assert validation_entry.get("reason") == "validation_data_missing"
+
+
+def test_trial_requests_htf_exits_detects_htf_exit_config() -> None:
+    assert runner._trial_requests_htf_exits({"htf_exit_config": {"partial_1_pct": 0.5}}) is True
+    assert runner._trial_requests_htf_exits({"htf_exit_config": {}}) is False
+    assert runner._trial_requests_htf_exits({"htf_exit_config": None}) is False
+    assert runner._trial_requests_htf_exits({}) is False
+
+
+def test_optimizer_deep_merge_deep_nested_parity_and_immutability() -> None:
+    depth = 120
+    base = {
+        "root": _nested_level(
+            depth,
+            {
+                "shared": {"a": 1},
+                "base_only": True,
+            },
+        ),
+        "list_value": [1, 2],
+    }
+    override = {
+        "root": _nested_level(
+            depth,
+            {
+                "shared": {"b": 2},
+                "override_only": True,
+            },
+        ),
+        "list_value": [9],
+    }
+
+    base_before = json.loads(json.dumps(base))
+    override_before = json.loads(json.dumps(override))
+
+    merged = runner._deep_merge(base, override)
+
+    leaf = merged["root"]
+    for i in range(depth):
+        leaf = leaf[f"k{i}"]
+
+    assert leaf == {
+        "shared": {"a": 1, "b": 2},
+        "base_only": True,
+        "override_only": True,
+    }
+    assert merged["list_value"] == [9]
+
+    assert base == base_before
+    assert override == override_before
+
+
+def test_build_backtest_cmd_uses_sys_executable_and_module_invocation(tmp_path: Path) -> None:
+    trial = _trial_config(parameters={}, warmup_bars=50)
+
+    cmd = runner._build_backtest_cmd(
+        trial,
+        start_date=TEST_START_DATE,
+        end_date=TEST_END_DATE,
+        capital_default=10_000.0,
+        commission_default=0.002,
+        slippage_default=0.0,
+        config_file=tmp_path / "trial_config.json",
+        optuna_context={
+            "storage": "sqlite:///dummy.db",
+            "study_name": "s",
+            "trial_id": 123,
+            "pruner": {"type": "none"},
+        },
+    )
+
+    assert cmd[0] == sys.executable
+    assert cmd[1:3] == ["-m", "scripts.run.run_backtest"]
+    assert "--fast-window" in cmd
+    assert "--precompute-features" in cmd
+    assert "--config-file" in cmd
+    assert "--optuna-trial-id" in cmd
+    assert "--optuna-pruner" in cmd
+    pruner_idx = cmd.index("--optuna-pruner")
+    assert cmd[pruner_idx + 1] == "none"
+
+
+@pytest.mark.parametrize(
+    ("promotion_cfg", "trial_score", "results_path", "current_score"),
+    [
+        ({"enabled": False}, 120.0, "explore_good.json", None),
+        ({"enabled": True, "min_improvement": 5.0}, 102.0, "explore_ok.json", 100.0),
+    ],
+    ids=["promotion_disabled", "promotion_min_improvement_blocks_small_gain"],
+)
+def test_run_optimizer_promotion_negative_cases_do_not_write_champion(
+    tmp_path: Path,
+    search_config_tmp: Path,
+    promotion_cfg: dict[str, Any],
+    trial_score: float,
+    results_path: str,
+    current_score: float | None,
+) -> None:
+    results_root, run_meta_payload = _optimizer_test_context(tmp_path)
+
+    def fake_run_trial(*_args: Any, **kwargs: Any) -> dict[str, Any]:
+        return {
+            "trial_id": f"trial_{kwargs.get('index', 1):03d}",
+            "parameters": _entry_conf_params(0.4),
+            "score": {"score": trial_score, "metrics": {"num_trades": 10}, "hard_failures": []},
+            "constraints": _ok_constraints(),
+            "results_path": results_path,
+        }
+
+    fake_ensure = _make_fake_ensure_writer(run_meta_payload)
+
+    cfg = yaml.safe_load(search_config_tmp.read_text(encoding="utf-8"))
+    cfg["meta"]["runs"]["promotion"] = promotion_cfg
+    search_config_tmp.write_text(yaml.safe_dump(cfg), encoding="utf-8")
+
+    with _champion_test_patch_context(
+        results_root=results_root,
+        expand_values=[_entry_conf_params(0.4)],
+        run_trial_side_effect=fake_run_trial,
+        ensure_run_metadata_side_effect=fake_ensure,
+        tmp_path=tmp_path,
+    ) as manager_cls:
+        manager_instance = _configure_manager(
+            manager_cls,
+            current=None if current_score is None else MagicMock(score=current_score),
+        )
+
+        results = _run_optimizer_with_test_id(search_config_tmp)
+
+        assert len(results) == 1
+        manager_instance.write_champion.assert_not_called()
+
+
+def test_run_trial_uses_scoring_thresholds_from_constraints(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _set_score_env_with_shell(monkeypatch, score_version="v2")
+
+    trial = _trial_config(parameters=_entry_conf_params(0.4))
+
+    seen: dict[str, Any] = {}
+
+    def fake_score_backtest(
+        _results: dict[str, Any], *, thresholds: Any | None = None, score_version: str | None = None
+    ) -> dict[str, Any]:
+        seen["thresholds"] = thresholds
+        seen["score_version"] = score_version
+        return {
+            "score": 0.0,
+            "metrics": {
+                "num_trades": 10,
+                "total_return": 0.0,
+                "profit_factor": 1.0,
+                "max_drawdown": 0.0,
+                "sharpe_ratio": 0.0,
+                "win_rate": 0.5,
+            },
+            "hard_failures": [],
+            "baseline": {"score_version": score_version or "v1"},
+        }
+
+    def fake_run_backtest_direct(*_args: Any, **_kwargs: Any) -> tuple[int, str, dict[str, Any]]:
+        return (0, "", _backtest_payload(10))
+
+    with (
+        _default_config_patch(),
+        _default_runtime_version_patch(),
+        patch("core.optimizer.runner._check_abort_heuristic", return_value={"ok": True}),
+        _run_backtest_direct_side_effect_patch(fake_run_backtest_direct),
+        patch("core.optimizer.runner.score_backtest", side_effect=fake_score_backtest),
+    ):
+        payload = runner.run_trial(
+            trial,
+            run_id=TEST_RUN_ID,
+            index=1,
+            run_dir=tmp_path,
+            allow_resume=False,
+            existing_trials={},
+            constraints_cfg={
+                "scoring_thresholds": {
+                    "min_trades": 1,
+                    "min_profit_factor": 0.55,
+                    "max_max_dd": 0.5,
+                }
+            },
+        )
+
+    assert payload.get("error") is None
+    assert seen.get("score_version") == "v2"
+
+    # Trial artifacts must be forensically bound to parameters + score_version.
+    cfg = json.loads((tmp_path / "trial_001_config.json").read_text(encoding="utf-8"))
+    assert cfg.get("run_id") == TEST_RUN_ID
+    assert cfg.get("trial_id") == "trial_001"
+    assert cfg.get("parameters") == _entry_conf_params(0.4)
+    assert cfg.get("score_version") == "v2"
+    assert cfg.get("trial_key") == runner._trial_key(trial.parameters)
+    assert cfg.get("param_signature") == runner.param_signature(trial.parameters)
+
+    thresholds = seen.get("thresholds")
+    assert thresholds is not None
+    assert thresholds.min_trades == 1
+    assert thresholds.min_profit_factor == pytest.approx(0.55)
+    assert thresholds.max_max_dd == pytest.approx(0.5)
+
+
+def test_run_trial_cache_hit_keeps_trial_prep_in_runner_facade(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _set_score_env_with_shell(monkeypatch, score_version="v2")
+
+    trial = _trial_config(parameters=_entry_conf_params(0.4))
+    cache_lookup_payload = {
+        "score": {"score": 12.5, "metrics": {"num_trades": 3}, "hard_failures": []},
+        "constraints": {"ok": True, "reasons": []},
+        "results_path": "cached.json",
+    }
+
+    cache_instance = MagicMock()
+    cache_instance.lookup.return_value = cache_lookup_payload
+
+    with (
+        patch("core.optimizer.runner.TrialResultCache", return_value=cache_instance),
+        _default_config_patch(),
+        _default_runtime_version_patch(),
+    ):
+        payload = runner.run_trial(
+            trial,
+            run_id=TEST_RUN_ID,
+            index=1,
+            run_dir=tmp_path,
+            allow_resume=False,
+            existing_trials={},
+            cache_enabled=True,
+        )
+
+    assert payload["from_cache"] is True
+    assert payload["trial_id"] == "trial_001"
+    assert payload["parameters"] == _entry_conf_params(0.4)
+    assert payload["config_path"] == "trial_001_config.json"
+
+    written_trial = json.loads((tmp_path / "trial_001.json").read_text(encoding="utf-8"))
+    assert written_trial["from_cache"] is True
+    assert written_trial["config_path"] == "trial_001_config.json"
+
+
+def test_run_trial_config_payload_uses_resolved_score_version(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("GENESIS_SCORE_VERSION", " V2 ")
+    monkeypatch.delenv("GENESIS_FORCE_SHELL", raising=False)
+
+    trial = _trial_config(parameters=_entry_conf_params(0.4))
+
+    def fake_run_backtest_direct(*_args: Any, **_kwargs: Any) -> tuple[int, str, dict[str, Any]]:
+        return (0, "", _backtest_payload(10))
+
+    with (
+        _default_config_patch(),
+        _default_runtime_version_patch(),
+        patch("core.optimizer.runner._check_abort_heuristic", return_value={"ok": True}),
+        _run_backtest_direct_side_effect_patch(fake_run_backtest_direct),
+        patch(
+            "core.optimizer.runner.score_backtest",
+            return_value={
+                "score": 1.0,
+                "metrics": {
+                    "num_trades": 10,
+                    "total_return": 0.0,
+                    "profit_factor": 1.0,
+                    "max_drawdown": 0.0,
+                    "sharpe_ratio": 0.0,
+                    "win_rate": 0.5,
+                },
+                "hard_failures": [],
+                "baseline": {"score_version": "v2"},
+            },
+        ),
+    ):
+        runner.run_trial(
+            trial,
+            run_id=TEST_RUN_ID,
+            index=1,
+            run_dir=tmp_path,
+            allow_resume=False,
+            existing_trials={},
+        )
+
+    cfg = json.loads((tmp_path / "trial_001_config.json").read_text(encoding="utf-8"))
+    assert cfg["score_version"] == "v2"
+
+
+def test_extract_results_path_from_log_parses_run_backtest_format(tmp_path: Path) -> None:
+    out_json = tmp_path / "out.json"
+    out_json.write_text("{}\n", encoding="utf-8")
+
+    log_content = f"[OK] Results saved:\njson: {out_json}\ntrades_csv: whatever.csv\n"
+    parsed = runner._extract_results_path_from_log(log_content)
+    assert parsed == out_json
+
+
+def test_load_existing_trials_warns_on_corrupt_artifact(tmp_path: Path, caplog) -> None:
+    bad = tmp_path / "trial_001.json"
+    bad.write_text("{not valid json", encoding="utf-8")
+
+    with caplog.at_level("WARNING"):
+        loaded = runner._load_existing_trials(tmp_path)
+
+    assert loaded == {}
+    assert "Skipping unreadable trial artifact" in caplog.text
+    assert "trial_001.json" in caplog.text
+
+
+def test_run_trial_abort_payload_is_strict_json_and_includes_score_version(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _set_score_env_with_shell(monkeypatch, score_version="v1")
+
+    trial = _trial_config(parameters={"thresholds": {"entry_conf_overall": 0.35}})
+
+    def fake_run_backtest_direct(*_args: Any, **_kwargs: Any) -> tuple[int, str, dict[str, Any]]:
+        payload = _backtest_payload(0, profit_factor=float("inf"))
+        payload["metrics"]["nested"] = {"ratio": float("nan")}
+        payload["metrics"]["series"] = [1.0, float("-inf")]
+        return (0, "", payload)
+
+    with (
+        _default_config_patch(),
+        _default_runtime_version_patch(),
+        _run_backtest_direct_side_effect_patch(fake_run_backtest_direct),
+    ):
+        payload = runner.run_trial(
+            trial,
+            run_id=TEST_RUN_ID,
+            index=1,
+            run_dir=tmp_path,
+            allow_resume=False,
+            existing_trials={},
+        )
+
+    assert payload.get("abort_reason") == "zero_trades_high_thresholds"
+    assert payload.get("score", {}).get("score_version") == "v1"
+
+    trial_json_path = tmp_path / "trial_001.json"
+    raw = trial_json_path.read_text(encoding="utf-8")
+    assert "Infinity" not in raw
+
+    parsed = runner._json_loads(raw)
+    score_block = parsed.get("score")
+    assert isinstance(score_block, dict)
+    assert score_block.get("score_version") == "v1"
+
+    metrics = score_block.get("metrics")
+    assert isinstance(metrics, dict)
+    assert metrics.get("profit_factor") is None
+    assert metrics.get("nested") == {"ratio": None}
+    assert metrics.get("series") == [1.0, None]
+
+
+def test_ensure_run_metadata_mismatch_is_fail_fast(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _set_score_env_with_run_meta_guard(monkeypatch, score_version="v1")
+
+    run_dir, config_path, meta, run_id = _prepare_run_meta_test_context(tmp_path)
+
+    # Match everything except snapshot_id (guard should fail-fast).
+    (run_dir / "run_meta.json").write_text(
+        json.dumps(
+            {
+                "run_id": run_id,
+                "config_path": str(config_path),
+                "snapshot_id": "snap_B",
+                "symbol": TEST_SYMBOL,
+                "timeframe": TEST_TIMEFRAME,
+                "score_version": "v1",
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match=r"run_meta\.json mismatch"):
+        runner._ensure_run_metadata(run_dir, config_path, meta, run_id)
+
+
+def test_ensure_run_metadata_backfills_missing_fields(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _set_score_env_with_run_meta_guard(monkeypatch, score_version="v2")
+
+    run_dir, config_path, meta, run_id = _prepare_run_meta_test_context(tmp_path)
+
+    # Older/partial run_meta.json missing key fields should be backfilled.
+    (run_dir / "run_meta.json").write_text(
+        json.dumps({"run_id": run_id, "snapshot_id": TEST_RUN_META_SNAPSHOT_ID}),
+        encoding="utf-8",
+    )
+
+    runner._ensure_run_metadata(run_dir, config_path, meta, run_id)
+
+    updated = json.loads((run_dir / "run_meta.json").read_text(encoding="utf-8"))
+    assert updated.get("run_id") == run_id
+    assert updated.get("config_path") == str(config_path)
+    assert updated.get("symbol") == TEST_SYMBOL
+    assert updated.get("timeframe") == TEST_TIMEFRAME
+    assert updated.get("score_version") == "v2"
+    assert updated.get("raw_meta") == meta
+    assert updated.get("updated_at")
+
+
+def test_verify_or_set_optuna_study_score_version(monkeypatch: pytest.MonkeyPatch) -> None:
+    class _DummyStudy:
+        def __init__(self, existing: str | None = None) -> None:
+            self.user_attrs: dict[str, Any] = {}
+            if existing is not None:
+                self.user_attrs["genesis_score_version"] = existing
+
+        def set_user_attr(self, k: str, v: Any) -> None:
+            self.user_attrs[k] = v
+
+    monkeypatch.delenv("GENESIS_ALLOW_STUDY_RESUME_MISMATCH", raising=False)
+
+    s = _DummyStudy()
+    runner._verify_or_set_optuna_study_score_version(s, "v2")
+    assert s.user_attrs.get("genesis_score_version") == "v2"
+
+    s2 = _DummyStudy(existing="v1")
+    with pytest.raises(RuntimeError, match=r"score_version mismatch"):
+        runner._verify_or_set_optuna_study_score_version(s2, "v2")
+
+    monkeypatch.setenv("GENESIS_ALLOW_STUDY_RESUME_MISMATCH", "1")
+    s3 = _DummyStudy(existing="v1")
+    runner._verify_or_set_optuna_study_score_version(s3, "v2")
+    # Allow-mismatch should tolerate mismatch without overwriting existing.
+    assert s3.user_attrs.get("genesis_score_version") == "v1"
+
+
+@_OPTUNA_SKIP
+def test_run_optimizer_optuna_strategy(tmp_path: Path) -> None:
+    config = _make_optuna_test_config(max_trials=2, resume=False, storage=None)
+    config["meta"]["runs"]["promotion"] = {"enabled": False}
+    config_path = tmp_path / "optuna.yaml"
+    _write_yaml(config_path, config)
+
+    run_meta_payload = _base_run_meta_payload()
+
+    def fake_make_trial(idx: int, params: dict[str, Any]) -> dict[str, Any]:
+        return {
+            "trial_id": f"trial_{idx:03d}",
+            "parameters": params,
+            "results_path": "dummy.json",
+            "score": {"score": 1.0, "metrics": {}, "hard_failures": []},
+            "constraints": _ok_constraints(),
+        }
+
+    with (
+        _results_dir_patch(tmp_path / "results"),
+        patch("core.optimizer.runner._ensure_run_metadata") as ensure_meta,
+        patch("core.optimizer.runner._create_optuna_study") as create_study,
+        patch("core.optimizer.runner.run_trial") as mock_run_trial,
+    ):
+        mock_run_trial.return_value = fake_make_trial(1, _entry_conf_params(0.4))
+        ensure_meta.side_effect = lambda run_dir, *_: _write_run_meta(run_dir, run_meta_payload)
+
+        study_mock = MagicMock()
+        trial_mock = MagicMock()
+        trial_mock.number = 0
+        trial_mock.suggest_categorical.return_value = 0.4  # Return a real value
+        trial_mock.user_attrs = {}
+
+        study_mock.best_trial = trial_mock
+        study_mock.study_name = "test-study"
+        study_mock.trials = [trial_mock]
+        study_mock.best_value = 1.0
+
+        def optuna_objective_side_effect(objective, **kwargs):
+            _ = kwargs
+            # Simulate Optuna calling the objective with the mocked trial
+            score = objective(trial_mock)
+            # Manually update trial state as Optuna would
+            trial_mock.user_attrs["result_payload"] = mock_run_trial.return_value
+            trial_mock.state = optuna.trial.TrialState.COMPLETE
+            trial_mock.value = score
+            return score
+
+        study_mock.optimize.side_effect = optuna_objective_side_effect
+        create_study.return_value = study_mock
+
+        results = runner.run_optimizer(config_path, run_id="run_optuna")
+
+    assert len(results) == 1
+    assert results[0]["constraints"]["ok"] is True
+    create_study.assert_called_once()
+
+
+@_OPTUNA_SKIP
+def test_run_optimizer_optuna_strategy_uses_runner_run_optuna_patch_surface(tmp_path: Path) -> None:
+    config = _make_optuna_test_config(max_trials=2, resume=False, storage=None)
+    config["meta"]["runs"]["promotion"] = {"enabled": False}
+    config_path = tmp_path / "optuna_patch_surface.yaml"
+    _write_yaml(config_path, config)
+
+    run_meta_payload = _base_run_meta_payload()
+
+    def fake_ensure(run_dir: Path, *_args: Any, **_kwargs: Any) -> None:
+        _write_run_meta(run_dir, run_meta_payload)
+
+    expected = [
+        {
+            "trial_id": "trial_001",
+            "parameters": _entry_conf_params(0.4),
+            "score": {"score": 1.0, "metrics": {}, "hard_failures": []},
+            "constraints": _ok_constraints(),
+            "results_path": "dummy.json",
+        }
+    ]
+
+    with (
+        _results_dir_patch(tmp_path / "results"),
+        patch("core.optimizer.runner._ensure_run_metadata", side_effect=fake_ensure),
+        patch("core.optimizer.runner._run_optuna", return_value=expected) as mock_run_optuna,
+    ):
+        results = runner.run_optimizer(config_path, run_id="run_optuna_patch_surface")
+
+    assert results == expected
+    mock_run_optuna.assert_called_once()
+
+
+@_OPTUNA_SKIP
+def test_run_optimizer_validation_fallback_reads_from_optuna_storage(tmp_path: Path) -> None:
+    config = _make_optuna_test_config(
+        max_trials=0,
+        resume=True,
+        storage="sqlite:///dummy.db",
+        validation={"enabled": True, "top_n": 2, "use_sample_range": False},
+    )
+    config["meta"]["runs"]["promotion"] = {"enabled": False}
+    config_path = tmp_path / "optuna_validate_only.yaml"
+    _write_yaml(config_path, config)
+
+    results_root = _results_root(tmp_path)
+    run_meta_payload = {
+        "git_commit": "abc123",
+        "snapshot_id": TEST_SNAPSHOT_ID,
+        "optuna": {
+            "study_name": "test-study",
+            "storage": "sqlite:///dummy.db",
+            "direction": "maximize",
+            "n_trials": 0,
+            "best_value": None,
+            "best_trial_number": None,
+        },
+    }
+
+    created_run_dir: Path | None = None
+
+    def _capture_run_dir(run_dir: Path) -> None:
+        nonlocal created_run_dir
+        created_run_dir = run_dir
+
+    fake_ensure = _make_fake_ensure_writer(run_meta_payload, _capture_run_dir)
+
+    # Two explore payloads living in Optuna storage
+    from types import SimpleNamespace
+
+    from optuna.trial import TrialState
+
+    trial_a = SimpleNamespace(
+        state=TrialState.COMPLETE,
+        user_attrs={
+            "result_payload": {
+                "trial_id": "trial_a",
+                "parameters": _entry_conf_params(0.4),
+                "score": {"score": 10.0, "metrics": {}, "hard_failures": []},
+                "constraints": _ok_constraints(),
+            }
+        },
+    )
+    trial_b = SimpleNamespace(
+        state=TrialState.COMPLETE,
+        user_attrs={
+            "result_payload": {
+                "trial_id": "trial_b",
+                "parameters": _entry_conf_params(0.5),
+                "score": {"score": 7.0, "metrics": {}, "hard_failures": []},
+                "constraints": _ok_constraints(),
+            }
+        },
+    )
+    study_mock = SimpleNamespace(trials=[trial_a, trial_b])
+
+    def fake_run_trial(*args: Any, **kwargs: Any) -> dict[str, Any]:
+        _ = kwargs
+        trial_cfg = args[0]
+        params = getattr(trial_cfg, "parameters", {}) or {}
+        entry_conf = params.get("thresholds", {}).get("entry_conf_overall")
+        # Return different validation scores just to ensure we ran it.
+        return {
+            "trial_id": f"val_{entry_conf}",
+            "parameters": params,
+            "score": {
+                "score": 100.0 if entry_conf == 0.4 else 200.0,
+                "metrics": {},
+                "hard_failures": [],
+            },
+            "constraints": _ok_constraints(),
+            "results_path": "val.json",
+        }
+
+    with (
+        _results_dir_patch(results_root),
+        _ensure_run_metadata_side_effect_patch(fake_ensure),
+        patch("core.optimizer.runner._run_optuna", return_value=[]),
+        patch("optuna.load_study", return_value=study_mock) as load_study,
+        _run_trial_side_effect_patch(fake_run_trial),
+    ):
+        selected = runner._select_top_n_from_optuna_storage(run_meta_payload, top_n=2)
+        assert len(selected) == 2
+        results = run_optimizer(config_path, run_id="run_validate_only")
+
+    # Fallback-vägen ska ha läst kandidater från Optuna storage.
+    assert load_study.call_count >= 1
+
+    assert created_run_dir is not None
+    assert created_run_dir.exists()
+    assert (created_run_dir / "validation").exists()
+    meta = json.loads((created_run_dir / "run_meta.json").read_text(encoding="utf-8"))
+    assert meta.get("validation", {}).get("validated") == 2
+    assert len(results) == 2
+
+
+@_OPTUNA_SKIP
+def test_run_optimizer_validation_fallback_uses_runner_storage_patch_surface(
+    tmp_path: Path,
+) -> None:
+    config = _make_optuna_test_config(
+        max_trials=0,
+        resume=True,
+        storage="sqlite:///dummy.db",
+        validation={"enabled": True, "top_n": 1, "use_sample_range": False},
+    )
+    config_path = tmp_path / "optuna_validate_patch_surface.yaml"
+    _write_yaml(config_path, config)
+
+    results_root = _results_root(tmp_path)
+    run_meta_payload = {
+        "git_commit": "abc123",
+        "snapshot_id": TEST_SNAPSHOT_ID,
+        "optuna": {
+            "study_name": "test-study",
+            "storage": "sqlite:///dummy.db",
+            "direction": "maximize",
+            "n_trials": 0,
+            "best_value": None,
+            "best_trial_number": None,
+        },
+    }
+    fake_ensure = _make_fake_ensure_writer(run_meta_payload)
+    selected_from_storage = [
+        {
+            "trial_id": "trial_storage_a",
+            "parameters": _entry_conf_params(0.4),
+            "score": {"score": 10.0, "metrics": {}, "hard_failures": []},
+            "constraints": _ok_constraints(),
+        }
+    ]
+
+    def fake_run_trial(*args: Any, **_kwargs: Any) -> dict[str, Any]:
+        params = getattr(args[0], "parameters", {}) or {}
+        return {
+            "trial_id": "val_001",
+            "parameters": params,
+            "score": {"score": 200.0, "metrics": {}, "hard_failures": []},
+            "constraints": _ok_constraints(),
+            "results_path": "val.json",
+        }
+
+    with (
+        _results_dir_patch(results_root),
+        _ensure_run_metadata_side_effect_patch(fake_ensure),
+        patch("core.optimizer.runner._run_optuna", return_value=[]),
+        patch(
+            "core.optimizer.runner._select_top_n_from_optuna_storage",
+            return_value=selected_from_storage,
+        ) as select_top_n,
+        _run_trial_side_effect_patch(fake_run_trial),
+        _champion_manager_patch() as manager_cls,
+        _champions_dir_patch(tmp_path),
+    ):
+        manager_instance = _configure_manager(manager_cls)
+        results = run_optimizer(config_path, run_id="run_validate_patch_surface")
+
+    select_top_n.assert_called_once()
+    assert len(results) == 1
+    assert results[0].get("stage") == "validation"
+    manager_instance.write_champion.assert_called_once()

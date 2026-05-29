@@ -7,11 +7,15 @@ from pathlib import Path
 
 _ADMITTED_FILES = [
     "src/core/server.py",
+    "src/core/api/account.py",
     "src/core/api/config.py",
     "src/core/api/info.py",
     "src/core/api/models.py",
+    "src/core/api/paper.py",
+    "src/core/api/public.py",
     "src/core/api/status.py",
     "src/core/api/strategy.py",
+    "src/core/api/ui.py",
     "src/core/config/validator.py",
     "src/core/config/legacy_schema_v1.json",
     "tests/integration/test_config_endpoints.py",
@@ -148,6 +152,64 @@ _REMOTE_MCP_VERIFICATION_FILES = [
 ]
 
 
+_ACCOUNT_API_VERIFICATION_FILES = [
+    "seed_manifest.json",
+    "src/core/api/account.py",
+    "src/core/server.py",
+    "tests/runtime/test_account_endpoints.py",
+]
+
+
+_PAPER_UI_VERIFICATION_FILES = [
+    "seed_manifest.json",
+    "src/core/api/paper.py",
+    "src/core/api/ui.py",
+    "src/core/server.py",
+    "tests/runtime/test_paper_endpoints.py",
+    "tests/runtime/test_ui_endpoints.py",
+]
+
+
+_STATEFUL_AUTHORITY_VERIFICATION_FILES = [
+    "seed_manifest.json",
+    "config/runtime.seed.json",
+    "config/strategy/champions/tBTCUSD_1h.json",
+    "config/strategy/champions/tBTCUSD_3h.json",
+    "src/core/strategy/champion_loader.py",
+    "tests/runtime/test_stateful_authority_payloads.py",
+]
+
+
+_TRANSPORT_READ_VERIFICATION_FILES = [
+    "seed_manifest.json",
+    "src/core/io/__init__.py",
+    "src/core/io/bitfinex/__init__.py",
+    "src/core/io/bitfinex/exchange_client.py",
+    "src/core/io/bitfinex/read_helpers.py",
+    "src/core/io/bitfinex/rest_public.py",
+    "src/core/io/bitfinex/rest_auth.py",
+    "src/core/io/bitfinex/ws_public.py",
+    "src/core/io/bitfinex/ws_auth.py",
+    "src/core/io/bitfinex/ws_reconnect.py",
+    "tests/runtime/test_transport_read_spine.py",
+    "tests/runtime/test_transport_route_inertness.py",
+    "tests/utils/test_bitfinex_transport_imports.py",
+    "tests/utils/test_rest_auth_routes_to_exchange_client.py",
+    "tests/utils/test_rest_public_min.py",
+    "tests/utils/test_ws_auth_min.py",
+    "tests/utils/test_ws_public_min.py",
+    "tests/utils/test_ws_reconnect.py",
+]
+
+
+_PUBLIC_API_VERIFICATION_FILES = [
+    "seed_manifest.json",
+    "src/core/api/public.py",
+    "src/core/server.py",
+    "tests/runtime/test_public_candles_endpoint.py",
+]
+
+
 _PIPELINE_VERIFICATION_FILES = [
     "seed_manifest.json",
     "src/core/pipeline.py",
@@ -162,6 +224,86 @@ _BACKTEST_COMPARISON_VERIFICATION_FILES = [
     "tools/compare_backtest_results.py",
     "tests/backtest/test_compare_backtest_results.py",
     "tests/utils/diffing/test_results_diff.py",
+]
+
+
+_OPTIMIZER_PACKAGE_VERIFICATION_FILES = [
+    "seed_manifest.json",
+    "src/core/optimizer/__init__.py",
+    "src/core/optimizer/champion.py",
+    "src/core/optimizer/constraints.py",
+    "src/core/optimizer/param_transforms.py",
+    "src/core/optimizer/runner.py",
+    "src/core/optimizer/runner_config.py",
+    "src/core/optimizer/runner_optuna_orchestration.py",
+    "src/core/optimizer/runner_trial_backtest.py",
+    "src/core/optimizer/runner_trial_results.py",
+    "src/core/optimizer/runner_validation.py",
+    "src/core/optimizer/scoring.py",
+    "src/core/utils/optuna_helpers.py",
+    "src/core/utils/diffing/config_equivalence.py",
+    "src/core/utils/diffing/optuna_guard.py",
+    "src/core/utils/diffing/trial_cache.py",
+    "scripts/audit/audit_optuna_objective_parity.py",
+    "tests/governance/test_import_smoke_backtest_optuna.py",
+    "tests/utils/diffing/test_config_equivalence.py",
+    "tests/utils/diffing/test_optuna_diff.py",
+    "tests/utils/test_optimizer_champion.py",
+    "tests/utils/test_optimizer_direct_execution_canonical_guard.py",
+    "tests/utils/test_optimizer_duplicate_fixes.py",
+    "tests/utils/test_optimizer_json_cache_env_flag.py",
+    "tests/utils/test_optimizer_param_transforms.py",
+    "tests/utils/test_optimizer_param_transforms_dirichlet.py",
+    "tests/utils/test_optimizer_performance.py",
+    "tests/utils/test_optimizer_runner.py",
+    "tests/utils/test_optuna_config_cache.py",
+    "tests/utils/test_optuna_rdbstorage_engine_kwargs.py",
+    "tests/utils/test_optuna_resume_signature.py",
+    "tests/utils/test_set_global_seeds_parity.py",
+]
+
+
+_OPTIMIZER_CONFIG_ADMISSION_FILES = [
+    "seed_manifest.json",
+    "config/optimizer/README.md",
+    "config/optimizer/1h/tBTCUSD_1h_coarse_grid.yaml",
+    "config/optimizer/1h/tBTCUSD_1h_risk_optuna_smoke.yaml",
+    "config/optimizer/1h/phased_v1/tBTCUSD_1h_phased_v1_fib_gate_matrix.yaml",
+    "config/optimizer/1h/phased_v1/tBTCUSD_1h_phased_v1_phaseA.yaml",
+    "config/optimizer/1h/phased_v1/tBTCUSD_1h_phased_v1_phaseB.yaml",
+    "config/optimizer/1h/phased_v1/tBTCUSD_1h_phased_v1_phaseB_seeded.yaml",
+    "config/optimizer/1h/phased_v1/tBTCUSD_1h_phased_v1_phaseC_seeded_oos.yaml",
+    "config/optimizer/3h/tBTCUSD_3h_explore_validate_2024_2025.yaml",
+    "config/optimizer/3h/phased_v3/PHASED_V3_RESULTS.md",
+    "config/optimizer/3h/phased_v3/tBTCUSD_3h_phased_v3_phaseA.yaml",
+    "config/optimizer/3h/phased_v3/tBTCUSD_3h_phased_v3_phaseB.yaml",
+    "config/optimizer/3h/phased_v3/tBTCUSD_3h_phased_v3_phaseC.yaml",
+    "config/optimizer/3h/phased_v3/tBTCUSD_3h_phased_v3_phaseD.yaml",
+    "config/optimizer/3h/phased_v3/tBTCUSD_3h_phased_v3_phaseE_oos.yaml",
+    "config/optimizer/3h/phased_v3/best_trials/phaseA_best_trial.json",
+    "config/optimizer/3h/phased_v3/best_trials/phaseB_v2_best_trial.json",
+    "config/optimizer/3h/phased_v3/best_trials/phaseB_v3_best_trial.json",
+    "config/optimizer/3h/phased_v3/best_trials/phaseC_oos_trial.json",
+    "config/optimizer/3h/ri_train_validate_blind_v1/tBTCUSD_3h_ri_train_validate_2023_2024_v1.yaml",
+    "config/optimizer/3h/ri_challenger_family_v1/tBTCUSD_3h_ri_challenger_family_slice2_2024_v1.yaml",
+    "config/optimizer/3h/ri_challenger_family_v1/tBTCUSD_3h_ri_challenger_family_slice3_2024_v1.yaml",
+    "config/optimizer/3h/ri_challenger_family_v1/tBTCUSD_3h_ri_challenger_family_slice4_2024_v1.yaml",
+    "config/optimizer/3h/ri_challenger_family_v1/tBTCUSD_3h_ri_challenger_family_slice5_2024_v1.yaml",
+    "config/optimizer/3h/ri_challenger_family_v1/tBTCUSD_3h_ri_challenger_family_slice6_2024_v1.yaml",
+    "config/optimizer/3h/ri_challenger_family_v1/tBTCUSD_3h_ri_challenger_family_slice7_2024_v1.yaml",
+    "config/optimizer/3h/ri_challenger_family_v1/tBTCUSD_3h_ri_challenger_family_slice8_2024_v1.yaml",
+    "config/optimizer/3h/ri_challenger_family_v1/tBTCUSD_3h_ri_challenger_family_slice8_cross_regime_oos_2025_v1.yaml",
+    "config/optimizer/3h/ri_challenger_family_v1/tBTCUSD_3h_ri_challenger_family_slice9_2024_v1.yaml",
+    "config/optimizer/3h/ri_challenger_family_v1/tBTCUSD_3h_ri_challenger_family_slice10_2024_v1.yaml",
+    "config/optimizer/3h/ri_challenger_family_v1/tBTCUSD_3h_ri_decision_ev_edge_slice1_2024_v1.yaml",
+    "config/optimizer/3h/ri_challenger_family_v1/tBTCUSD_3h_ri_decision_ev_edge_slice1_smoke_20260327.yaml",
+    "config/optimizer/3h/ri_challenger_family_v1/tBTCUSD_3h_ri_decision_risk_state_transition_guard_slice1_2024_v1.yaml",
+    "config/optimizer/3h/ri_challenger_family_v1/tBTCUSD_3h_ri_decision_risk_state_transition_guard_slice1_smoke_20260327.yaml",
+    "config/optimizer/3h/ri_challenger_family_v1/tBTCUSD_3h_ri_signal_regime_definition_slice1_2024_v1.yaml",
+    "config/optimizer/3h/ri_challenger_family_v1/tBTCUSD_3h_ri_signal_slice1_2024_v1.yaml",
+    "config/optimizer/6h/PHASED_NORMALIZATION_PLAN.md",
+    "config/optimizer/6h/phased_v1/tBTCUSD_6h_phased_v1_debug_baseline.yaml",
+    "config/optimizer/6h/phased_v1/tBTCUSD_6h_phased_v1_phaseA.yaml",
 ]
 
 
@@ -232,43 +374,55 @@ _MCP_FILES = [
 
 
 _EXCLUDED_FILES = [
-    "src/core/api/account.py",
-    "src/core/api/paper.py",
-    "src/core/api/public.py",
-    "src/core/api/ui.py",
     "src/core/strategy/features.py",
-    "src/core/utils/diffing/optuna_guard.py",
-    "src/core/utils/diffing/trial_cache.py",
-    "src/core/utils/optuna_helpers.py",
+    "scripts/run/run_backtest.py",
+    "scripts/preflight/preflight_optuna_check.py",
+    "scripts/validate/validate_optimizer_config.py",
     "config/runtime.json",
-    "config/runtime.seed.json",
+    "config/strategy/champions/tBTCUSD_1h_quality_v2_candidate_scoped.json",
+    "config/strategy/champions/tBTCUSD_1h_quality_v2_candidate_scoped_relaxed_size.json",
+    "config/strategy/champions/tTEST_1h.json",
 ]
 
 _EXCLUDED_PREFIXES = [
-    "src/core/io",
-    "src/core/optimizer",
+    "config/strategy/candidates",
     "data",
+    "scripts/optimize",
 ]
 
 _EXCLUDED_JSON_PAYLOAD_DIRS = [
-    "config/strategy/champions",
+    "config/strategy/champions/backup",
 ]
 
 _EXCLUDED_MODULE_PREFIXES = [
-    "core.api.account",
-    "core.api.paper",
-    "core.api.public",
-    "core.api.ui",
     "core.io",
-    "core.optimizer",
     "core.strategy.features",
-    "core.utils.diffing.optuna_guard",
-    "core.utils.diffing.trial_cache",
-    "core.utils.optuna_helpers",
+]
+
+
+_EXPLICIT_TRANSPORT_MODULE_ADMISSIONS = [
+    "core.io.bitfinex.exchange_client",
+    "core.io.bitfinex.read_helpers",
+    "core.io.bitfinex.rest_public",
+    "core.io.bitfinex.rest_auth",
+    "core.io.bitfinex.ws_public",
+    "core.io.bitfinex.ws_auth",
+    "core.io.bitfinex.ws_reconnect",
+]
+
+_EXPLICIT_TRANSPORT_PACKAGE_MODULES = [
+    "core.io.bitfinex",
 ]
 
 
 def _is_excluded_module(module: str) -> bool:
+    if module in _EXPLICIT_TRANSPORT_PACKAGE_MODULES:
+        return False
+    if any(
+        module == admitted or module.startswith(f"{admitted}.")
+        for admitted in _EXPLICIT_TRANSPORT_MODULE_ADMISSIONS
+    ):
+        return False
     return any(
         module == prefix or module.startswith(f"{prefix}.")
         for prefix in _EXCLUDED_MODULE_PREFIXES
@@ -421,8 +575,8 @@ def test_seed_contains_local_info_routes() -> None:
     readme = (repo_root / "README.md").read_text(encoding="utf-8")
     scope_text = (repo_root / "docs" / "SKELETON_SCOPE.md").read_text(encoding="utf-8")
 
-    assert "src/core/api/{config,info,models,status,strategy}.py" in readme
-    assert "local-only API shell (`config`, `info`, `status`, `models`, `strategy`)" in scope_text
+    assert "src/core/api/{account,config,info,models,paper,public,status,strategy,ui}.py" in readme
+    assert "local-only API shell (`account`, `config`, `info`, `status`, `models`, `paper`, `public`, `strategy`, `ui`)" in scope_text
 
 
 def test_seed_contains_local_pytest_script() -> None:
@@ -620,6 +774,215 @@ def test_seed_contains_remote_mcp_verification_manifest() -> None:
     assert "Genesis-Core-V2 admits constrained remote MCP semantics limited to authorization, safe-mode," in scope_text
 
 
+def test_seed_contains_account_api_verification_manifest() -> None:
+    repo_root = Path(__file__).resolve().parents[2]
+    account_text = (repo_root / "src" / "core" / "api" / "account.py").read_text(encoding="utf-8")
+
+    for relative_path in _ACCOUNT_API_VERIFICATION_FILES:
+        assert (repo_root / relative_path).exists(), relative_path
+
+    manifest = json.loads((repo_root / "seed_manifest.json").read_text(encoding="utf-8"))
+    readme = (repo_root / "README.md").read_text(encoding="utf-8")
+    scope_text = (repo_root / "docs" / "SKELETON_SCOPE.md").read_text(encoding="utf-8")
+
+    assert manifest["account_api_verification"] == {
+        "read_only_account_routes": {
+            "module_file": "src/core/api/account.py",
+            "runtime_test_file": "tests/runtime/test_account_endpoints.py",
+            "server_hook_file": "src/core/server.py",
+        }
+    }
+    assert "core.io" not in account_text
+    assert (
+        "Batch E2 admits only the read-only account endpoint semantics from `src/core/api/account.py` through an injected `core.server.bfx_read` seam for offline verification."
+        in readme
+    )
+    assert (
+        "Batch E2 admits only the read-only account endpoint semantics from `src/core/api/account.py` through an injected `core.server.bfx_read` seam for offline verification."
+        in scope_text
+    )
+
+
+def test_seed_contains_public_api_verification_manifest() -> None:
+    repo_root = Path(__file__).resolve().parents[2]
+
+    for relative_path in _PUBLIC_API_VERIFICATION_FILES:
+        assert (repo_root / relative_path).exists(), relative_path
+
+    manifest = json.loads((repo_root / "seed_manifest.json").read_text(encoding="utf-8"))
+    readme = (repo_root / "README.md").read_text(encoding="utf-8")
+    scope_text = (repo_root / "docs" / "SKELETON_SCOPE.md").read_text(encoding="utf-8")
+
+    assert manifest["public_api_verification"] == {
+        "public_candles": {
+            "module_file": "src/core/api/public.py",
+            "runtime_test_file": "tests/runtime/test_public_candles_endpoint.py",
+            "server_hook_file": "src/core/server.py",
+        }
+    }
+    assert (
+        "Batch E1 admits the public candles endpoint semantics from `src/core/api/public.py` through an injected `core.server.get_exchange_client` seam for offline verification while broader transport remains deferred."
+        in readme
+    )
+    assert (
+        "Batch E1 admits the public candles endpoint semantics from `src/core/api/public.py` through an injected `core.server.get_exchange_client` seam for offline verification while broader transport remains deferred."
+        in scope_text
+    )
+
+
+def test_seed_contains_paper_ui_verification_manifest() -> None:
+    repo_root = Path(__file__).resolve().parents[2]
+    paper_text = (repo_root / "src" / "core" / "api" / "paper.py").read_text(encoding="utf-8")
+    server_text = (repo_root / "src" / "core" / "server.py").read_text(encoding="utf-8")
+
+    for relative_path in _PAPER_UI_VERIFICATION_FILES:
+        assert (repo_root / relative_path).exists(), relative_path
+
+    manifest = json.loads((repo_root / "seed_manifest.json").read_text(encoding="utf-8"))
+    readme = (repo_root / "README.md").read_text(encoding="utf-8")
+    scope_text = (repo_root / "docs" / "SKELETON_SCOPE.md").read_text(encoding="utf-8")
+
+    assert manifest["paper_ui_verification"] == {
+        "paper_routes": {
+            "module_file": "src/core/api/paper.py",
+            "runtime_test_file": "tests/runtime/test_paper_endpoints.py",
+            "server_hook_file": "src/core/server.py",
+        },
+        "ui_route": {
+            "module_file": "src/core/api/ui.py",
+            "runtime_test_file": "tests/runtime/test_ui_endpoints.py",
+            "server_hook_file": "src/core/server.py",
+        },
+    }
+    assert "core.io" not in paper_text
+    assert "paper_router" in server_text
+    assert "ui_router" in server_text
+    assert "auth/w/order/submit" not in server_text
+    assert (
+        "Batch E3 admits the local paper/UI semantics from `src/core/api/{paper,ui}.py` through injected `core.server` helper seams for offline/local verification only."
+        in readme
+    )
+    assert (
+        "Batch E3 admits the local paper/UI semantics from `src/core/api/{paper,ui}.py` through injected `core.server` helper seams for offline/local verification only."
+        in scope_text
+    )
+
+
+def test_seed_contains_stateful_authority_verification_manifest() -> None:
+    repo_root = Path(__file__).resolve().parents[2]
+    champions_dir = repo_root / "config" / "strategy" / "champions"
+
+    for relative_path in _STATEFUL_AUTHORITY_VERIFICATION_FILES:
+        assert (repo_root / relative_path).exists(), relative_path
+
+    manifest = json.loads((repo_root / "seed_manifest.json").read_text(encoding="utf-8"))
+    readme = (repo_root / "README.md").read_text(encoding="utf-8")
+    scope_text = (repo_root / "docs" / "SKELETON_SCOPE.md").read_text(encoding="utf-8")
+
+    assert manifest["stateful_authority_verification"] == {
+        "runtime_seed_baseline": {
+            "runtime_test_file": "tests/runtime/test_stateful_authority_payloads.py",
+            "tracked_file": "config/runtime.seed.json",
+        },
+        "verified_champion_subset": {
+            "fallback_loader_file": "src/core/strategy/champion_loader.py",
+            "runtime_test_file": "tests/runtime/test_stateful_authority_payloads.py",
+            "tracked_files": [
+                "config/strategy/champions/tBTCUSD_1h.json",
+                "config/strategy/champions/tBTCUSD_3h.json",
+            ],
+        },
+    }
+    assert not (repo_root / "config" / "runtime.json").exists()
+    assert {path.name for path in champions_dir.glob("*.json")} == {
+        "tBTCUSD_1h.json",
+        "tBTCUSD_3h.json",
+    }
+    assert not (champions_dir / "backup").exists()
+    assert (
+        "Batch F admits repo-tracked `config/runtime.seed.json` plus `config/strategy/champions/tBTCUSD_1h.json` and `config/strategy/champions/tBTCUSD_3h.json` while local `config/runtime.json`, candidate/test/backup champions, and `data/**` remain excluded."
+        in readme
+    )
+    assert (
+        "Batch F admits repo-tracked `config/runtime.seed.json` plus `config/strategy/champions/tBTCUSD_1h.json` and `config/strategy/champions/tBTCUSD_3h.json` while local `config/runtime.json`, candidate/test/backup champions, and `data/**` remain excluded."
+        in scope_text
+    )
+    assert (
+        "`ChampionLoader` still falls back to `config/timeframe_configs.py` when a requested champion is missing or invalid."
+        in readme
+    )
+
+
+def test_seed_contains_transport_read_verification_manifest() -> None:
+    repo_root = Path(__file__).resolve().parents[2]
+
+    for relative_path in _TRANSPORT_READ_VERIFICATION_FILES:
+        assert (repo_root / relative_path).exists(), relative_path
+
+    manifest = json.loads((repo_root / "seed_manifest.json").read_text(encoding="utf-8"))
+    readme = (repo_root / "README.md").read_text(encoding="utf-8")
+    scope_text = (repo_root / "docs" / "SKELETON_SCOPE.md").read_text(encoding="utf-8")
+    server_text = (repo_root / "src" / "core" / "server.py").read_text(encoding="utf-8")
+
+    assert manifest["explicit_transport_admissions"] == [
+        "src/core/io/__init__.py",
+        "src/core/io/bitfinex/__init__.py",
+        "src/core/io/bitfinex/exchange_client.py",
+        "src/core/io/bitfinex/read_helpers.py",
+        "src/core/io/bitfinex/rest_public.py",
+        "src/core/io/bitfinex/rest_auth.py",
+        "src/core/io/bitfinex/ws_public.py",
+        "src/core/io/bitfinex/ws_auth.py",
+        "src/core/io/bitfinex/ws_reconnect.py",
+    ]
+    assert manifest["transport_read_verification"] == {
+        "bitfinex_rest_read_spine": {
+            "module_files": [
+                "src/core/io/bitfinex/exchange_client.py",
+                "src/core/io/bitfinex/read_helpers.py",
+            ],
+            "runtime_test_file": "tests/runtime/test_transport_read_spine.py",
+        }
+    }
+    assert manifest["transport_route_convergence"] == {
+        "public_account_defaults": {
+            "route_module_files": [
+                "src/core/api/account.py",
+                "src/core/api/public.py",
+            ],
+            "runtime_test_files": [
+                "tests/runtime/test_account_endpoints.py",
+                "tests/runtime/test_public_candles_endpoint.py",
+            ],
+            "server_file": "src/core/server.py",
+        }
+    }
+    assert "_DeferredPublicExchangeClient" not in server_text
+    assert "_DeferredAccountReadHelpers" not in server_text
+    assert "from core.io.bitfinex.exchange_client import aclose_http_client, get_exchange_client" in server_text
+    assert "from core.io.bitfinex import read_helpers as bfx_read" in server_text
+    assert "rest_auth" not in server_text
+    assert "ws_auth" not in server_text
+    assert "ws_public" not in server_text
+    assert "ws_reconnect" not in server_text
+    assert (
+        "Batch G2 binds generated public/account route defaults through `src/core/server.py` to the admitted Bitfinex REST read spine only; websocket, standalone auth, and paper-route transport widening remain deferred."
+        in readme
+    )
+    assert (
+        "Batch H2 widens transport family to include the remaining Bitfinex REST/WebSocket modules as dormant package surface only; this slice does not rebind server routes, startup wiring, or paper/live execution."
+        in readme
+    )
+    assert (
+        "Batch G2 binds generated public/account route defaults through `src/core/server.py` to the admitted Bitfinex REST read spine only; websocket, standalone auth, and paper-route transport widening remain deferred."
+        in scope_text
+    )
+    assert (
+        "Batch H2 widens transport family to include the remaining Bitfinex REST/WebSocket modules as dormant package surface only; this slice does not rebind server routes, startup wiring, or paper/live execution."
+        in scope_text
+    )
+
+
 def test_seed_contains_pipeline_verification_manifest() -> None:
     repo_root = Path(__file__).resolve().parents[2]
 
@@ -643,7 +1006,6 @@ def test_seed_contains_pipeline_verification_manifest() -> None:
 
 def test_seed_contains_backtest_comparison_verification_manifest() -> None:
     repo_root = Path(__file__).resolve().parents[2]
-    diffing_init = repo_root / "src" / "core" / "utils" / "diffing" / "__init__.py"
 
     for relative_path in _BACKTEST_COMPARISON_VERIFICATION_FILES:
         assert (repo_root / relative_path).exists(), relative_path
@@ -663,12 +1025,84 @@ def test_seed_contains_backtest_comparison_verification_manifest() -> None:
         },
     }
     assert not (repo_root / "scripts" / "run" / "run_backtest.py").exists()
-    init_text = diffing_init.read_text(encoding="utf-8")
-    assert "results_diff" not in init_text
-    assert "optuna_guard" not in init_text
-    assert "trial_cache" not in init_text
     assert "Backtest comparison/diff semantics and associated tmp-path-isolated tests are admitted" in readme
     assert "Backtest comparison/diff semantics and associated tmp-path-isolated tests are admitted" in scope_text
+
+
+def test_seed_contains_optimizer_package_verification_manifest() -> None:
+    repo_root = Path(__file__).resolve().parents[2]
+    diffing_init = repo_root / "src" / "core" / "utils" / "diffing" / "__init__.py"
+    server_text = (repo_root / "src" / "core" / "server.py").read_text(encoding="utf-8")
+
+    for relative_path in _OPTIMIZER_PACKAGE_VERIFICATION_FILES:
+        assert (repo_root / relative_path).exists(), relative_path
+
+    for relative_path in _OPTIMIZER_CONFIG_ADMISSION_FILES:
+        assert (repo_root / relative_path).exists(), relative_path
+
+    manifest = json.loads((repo_root / "seed_manifest.json").read_text(encoding="utf-8"))
+    readme = (repo_root / "README.md").read_text(encoding="utf-8")
+    scope_text = (repo_root / "docs" / "SKELETON_SCOPE.md").read_text(encoding="utf-8")
+    pyproject_text = (repo_root / "pyproject.toml").read_text(encoding="utf-8")
+    init_text = diffing_init.read_text(encoding="utf-8")
+
+    assert manifest["optimizer_package_verification"] == {
+        "audit_script_files": [
+            "scripts/audit/audit_optuna_objective_parity.py",
+        ],
+        "dependency_contract": {
+            "import_smoke_test_file": "tests/governance/test_import_smoke_backtest_optuna.py",
+            "runtime_dependency": "optuna>=3.5,<5",
+        },
+        "dormant_package": {
+            "module_files": [
+                "src/core/optimizer/__init__.py",
+                "src/core/optimizer/champion.py",
+                "src/core/optimizer/constraints.py",
+                "src/core/optimizer/param_transforms.py",
+                "src/core/optimizer/runner.py",
+                "src/core/optimizer/runner_config.py",
+                "src/core/optimizer/runner_optuna_orchestration.py",
+                "src/core/optimizer/runner_trial_backtest.py",
+                "src/core/optimizer/runner_trial_results.py",
+                "src/core/optimizer/runner_validation.py",
+                "src/core/optimizer/scoring.py",
+                "src/core/utils/optuna_helpers.py",
+                "src/core/utils/diffing/config_equivalence.py",
+                "src/core/utils/diffing/optuna_guard.py",
+                "src/core/utils/diffing/trial_cache.py",
+            ],
+            "test_files": [
+                "tests/governance/test_import_smoke_backtest_optuna.py",
+                "tests/utils/diffing/test_config_equivalence.py",
+                "tests/utils/diffing/test_optuna_diff.py",
+                "tests/utils/test_optimizer_champion.py",
+                "tests/utils/test_optimizer_direct_execution_canonical_guard.py",
+                "tests/utils/test_optimizer_duplicate_fixes.py",
+                "tests/utils/test_optimizer_json_cache_env_flag.py",
+                "tests/utils/test_optimizer_param_transforms.py",
+                "tests/utils/test_optimizer_param_transforms_dirichlet.py",
+                "tests/utils/test_optimizer_performance.py",
+                "tests/utils/test_optimizer_runner.py",
+                "tests/utils/test_optuna_config_cache.py",
+                "tests/utils/test_optuna_rdbstorage_engine_kwargs.py",
+                "tests/utils/test_optuna_resume_signature.py",
+                "tests/utils/test_set_global_seeds_parity.py",
+            ],
+        },
+        "read_only_config_corpus": {
+            "tracked_files": _OPTIMIZER_CONFIG_ADMISSION_FILES[1:],
+        },
+    }
+    assert "optuna>=3.5,<5" in pyproject_text
+    assert "from .optuna_guard import TrialFingerprint, estimate_zero_trade, evaluate_trial_with_cache" in init_text
+    assert "from .trial_cache import TrialResultCache" in init_text
+    assert "from .results_diff import (" in init_text
+    assert "core.optimizer" not in server_text
+    assert "scripts.run.run_backtest" not in server_text
+    assert "Batch I1 admits the dormant optimizer package and read-only `config/optimizer/**` research corpus for import/test completeness only." in readme
+    assert "Batch I1 admits the dormant optimizer package and read-only `config/optimizer/**` research corpus for import/test completeness only." in scope_text
+    assert "Generated dependency widening for the dormant optimizer slice is limited to `optuna>=3.5,<5`" in readme
 
 
 def test_seed_contains_config_authority_verification_manifest() -> None:
@@ -804,6 +1238,9 @@ def test_seed_excludes_legacy_and_stateful_surfaces() -> None:
 
     for prefix in _EXCLUDED_PREFIXES:
         assert not (repo_root / prefix).exists(), prefix
+
+    server_text = (repo_root / "src" / "core" / "server.py").read_text(encoding="utf-8")
+    assert "core.optimizer" not in server_text
 
 
 def test_phase_one_seed_has_no_excluded_json_payloads() -> None:
