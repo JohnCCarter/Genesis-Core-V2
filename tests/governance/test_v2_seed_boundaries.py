@@ -144,6 +144,18 @@ _PIPELINE_VERIFICATION_FILES = [
 ]
 
 
+_CONFIG_AUTHORITY_VERIFICATION_FILES = [
+    "seed_manifest.json",
+    "src/core/api/config.py",
+    "src/core/config/authority.py",
+    "src/core/config/authority_mode_resolver.py",
+    "src/core/config/schema.py",
+    "tests/governance/test_authority_mode_resolver.py",
+    "tests/integration/test_config_endpoints.py",
+    "tests/runtime/test_config_authority_semantics.py",
+]
+
+
 _STRATEGY_AUTHORITY_VERIFICATION_FILES = [
     "seed_manifest.json",
     "src/core/config/authority_mode_resolver.py",
@@ -556,6 +568,33 @@ def test_seed_contains_pipeline_verification_manifest() -> None:
     }
     assert "runtime pipeline orchestration (`src/core/pipeline.py`)" in readme
     assert "src/core/pipeline.py" in scope_text
+
+
+def test_seed_contains_config_authority_verification_manifest() -> None:
+    repo_root = Path(__file__).resolve().parents[2]
+
+    for relative_path in _CONFIG_AUTHORITY_VERIFICATION_FILES:
+        assert (repo_root / relative_path).exists(), relative_path
+
+    manifest = json.loads((repo_root / "seed_manifest.json").read_text(encoding="utf-8"))
+    readme = (repo_root / "README.md").read_text(encoding="utf-8")
+    scope_text = (repo_root / "docs" / "SKELETON_SCOPE.md").read_text(encoding="utf-8")
+
+    assert manifest["config_authority_verification"] == {
+        "authority_mode_resolver": {
+            "module_file": "src/core/config/authority_mode_resolver.py",
+            "test_file": "tests/governance/test_authority_mode_resolver.py",
+        },
+        "runtime_authority_semantics": {
+            "api_file": "src/core/api/config.py",
+            "authority_file": "src/core/config/authority.py",
+            "runtime_test_file": "tests/runtime/test_config_authority_semantics.py",
+            "schema_file": "src/core/config/schema.py",
+            "validate_smoke_test_file": "tests/integration/test_config_endpoints.py",
+        },
+    }
+    assert "Config runtime-authority semantics are admitted for source/verification purposes only" in readme
+    assert "Config runtime-authority semantics are admitted for source/verification purposes only" in scope_text
 
 
 def test_seed_contains_strategy_authority_verification_manifest() -> None:

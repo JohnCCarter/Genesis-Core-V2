@@ -22,6 +22,7 @@ Use this track for:
 - local VS Code tasks, debug profiles, settings, and extension recommendations
 - local-only API shell
 - admitted strategy authority helpers (`family_registry`, `family_admission`, `authority_mode_resolver`, `run_intent`)
+- admitted config/runtime authority semantics (`ConfigAuthority`, runtime schema, config API contract) without carrying runtime payloads
 - fixture-backed smoke tests
 - README/docs that explain the current admitted boundary
 - local developer and agent workflow guidance
@@ -30,7 +31,6 @@ Use this track for:
 
 Defer these to separate verified slices:
 
-- config semantics and runtime authority
 - backtest authority, comparison, readiness, and promotion surfaces
 - remote MCP exposure and remote Git workflow surfaces
 - exchange, paper, UI, and other private/live-adjacent edges

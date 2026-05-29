@@ -27,6 +27,19 @@
     "runtime_behavior": "fallback_to_timeframe_configs_when_champion_missing_or_invalid",
     "runtime_fallback_source": "config/timeframe_configs.py"
   },
+  "config_authority_verification": {
+    "authority_mode_resolver": {
+      "module_file": "src/core/config/authority_mode_resolver.py",
+      "test_file": "tests/governance/test_authority_mode_resolver.py"
+    },
+    "runtime_authority_semantics": {
+      "api_file": "src/core/api/config.py",
+      "authority_file": "src/core/config/authority.py",
+      "runtime_test_file": "tests/runtime/test_config_authority_semantics.py",
+      "schema_file": "src/core/config/schema.py",
+      "validate_smoke_test_file": "tests/integration/test_config_endpoints.py"
+    }
+  },
   "copied_files": [
     "config/__init__.py",
     "config/models/registry.json",
@@ -303,6 +316,7 @@
     "tests/core/strategy/test_families.py",
     "tests/core/strategy/test_family_admission.py",
     "tests/governance/__init__.py",
+    "tests/governance/test_authority_mode_resolver.py",
     "tests/governance/test_dead_code_tripwires.py",
     "tests/governance/test_no_legacy_feature_imports.py",
     "tests/governance/test_pipeline_fast_hash_guard.py",
@@ -343,6 +357,7 @@
     "tests/core/strategy/test_families.py",
     "tests/core/strategy/test_family_admission.py",
     "tests/integration/test_config_endpoints.py",
+    "tests/governance/test_authority_mode_resolver.py",
     "tests/governance/test_no_legacy_feature_imports.py",
     "tests/governance/test_dead_code_tripwires.py",
     "tests/governance/test_pipeline_fast_hash_guard.py",
@@ -509,6 +524,7 @@
     "Generated `scripts/api/api_shell.py` provides a non-installed local API entrypoint against the V2 `src` layout.",
     "Generated `scripts/validate/pytest_suite.py` provides a non-installed local pytest entrypoint against the V2 `src` layout.",
     "Generated `scripts/smoke/*.py` provide non-installed local smoke entrypoints against the V2 `src` layout.",
+    "Config runtime-authority semantics are admitted for source/verification purposes only while runtime payload files remain excluded from the seed.",
     "Admitted strategy authority helpers keep family classification, run-intent admission, and authority-mode precedence testable without admitting runtime/config state authority.",
     "Runtime determinism guardrails for pipeline fast-hash policy and feature-cache hash stability are admitted into the seed.",
     "Exchange-facing, paper, public-data, and UI service edges are intentionally excluded.",
@@ -721,7 +737,7 @@
     "scripts/smoke/model_smoke.py": "e6b010d000355d4ea36bdf1a74c65f4048b87101d9d6488714b5c7deb293f52e",
     "scripts/smoke/smoke_suite.py": "7a3024915117b72ad51b8aebff97858a45ac0acea89a5371d4b0a6015ccc0439",
     "scripts/validate/pytest_suite.py": "3470549cbe64fcb0f7648a4e1d7dbfdf8de4136087a61b0109ff6a8706d5e262",
-    "seed_manifest.json": "5cd64614b085b106bf61af16dcd53b7fe669e20ffee6ec7a4b758471d2396b4a",
+    "seed_manifest.json": "5cb2defe50d0b2430d4e0fe44bb6aa0166ac60c4956b28fbb2af3f6b2e6c53a0",
     "src/core/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "src/core/api/__init__.py": "9e141c9574a06d3ca44c17148afa758dfa9e17480bb422c6762a15ce9b47e555",
     "src/core/api/config.py": "c09e6116eacc63445b54e33b05eee90554861f8ea0ac1eb690134ca869ac06e0",
@@ -859,7 +875,7 @@
     "tests/runtime/test_pipeline_defaults.py": "eb91aed9b1299225fa6466a1bd58e3757c4dbb87930b451f633a72ff7a78c022",
     "tests/runtime/test_runtime_fixture_smoke.py": "229e71ec3c803bbedad884e9302dc7308db5906384d0b2700295c86a280eb6c6",
     "tests/runtime/test_smoke_suite.py": "520826d830356a2979113586a0c7ad6137fe24bc1b6edca48766ce4dd39407b9",
-    "tests/runtime/test_strategy_authority.py": "83a13e8422295fb53c20c2961f5c644f857a7f86b4e9a44a0e770ca7560a127f",
+    "tests/runtime/test_strategy_authority.py": "01239c3b27ae8608d4bb6abee380f26dbaf536493306a9dc07509962c1330ae9",
     "tests/utils/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "tests/utils/test_features_asof_cache_key_deterministic.py": "6e1b8efc0643ca25932fd1d8ae9cd487b2c0d29a0663855c797361a538891703"
   },
@@ -926,7 +942,7 @@
       "python scripts/smoke/smoke_suite.py"
     ]
   },
-  "source_head": "243b911f",
+  "source_head": "19c10d53",
   "source_of_truth_repo": "Genesis-Core",
   "source_repo": "C:\\Users\\fa06662\\Projects\\Genesis-Core",
   "status": "genesis_core_v2_runtime_seed_local_materialization",

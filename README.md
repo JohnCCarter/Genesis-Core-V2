@@ -3,7 +3,7 @@
 Runtime-first seed with admitted local-only API shell generated from the current
 `Genesis-Core` repository.
 
-Source Genesis-Core HEAD: `243b911f`
+Source Genesis-Core HEAD: `19c10d53`
 
 ## What is included
 
@@ -30,6 +30,8 @@ Source Genesis-Core HEAD: `243b911f`
 - repo-local smoke scripts (`scripts/smoke/{backtest_smoke,champion_smoke,evaluate_champion_smoke,fixture_smoke,model_smoke,smoke_suite}.py`)
 - admitted strategy authority helpers (`src/core/config/authority_mode_resolver.py`,
   `src/core/strategy/{family_registry,family_admission,run_intent}.py`)
+- admitted config/runtime authority semantics (`src/core/config/{authority,authority_mode_resolver,schema}.py`,
+  `src/core/api/config.py`) without carrying runtime payload files
 - runtime-only governance guardrails
 - runtime determinism guardrails for pipeline fast-hash policy and feature-cache hash stability
 - admitted source model payloads under `config/models/**`
@@ -76,6 +78,10 @@ The admitted API shell is local-only (`config/info/status/models/strategy`); exc
 paper, public-data, and UI surfaces remain excluded for a later slice.
 Runtime state and champion authority payloads remain excluded; generated `.env` contains only
 local-shell placeholders. Tracked `.env.example` mirrors the same narrow values for copy-forward bootstrap.
+Config runtime-authority semantics are admitted for source/verification purposes only, including the
+authority/schema/API surfaces already present in the V2 source closure. Runtime state payloads
+(`config/runtime.json`, `config/runtime.seed.json`), champion artifacts, remote MCP surfaces, and
+live-adjacent/promotion surfaces remain deferred and excluded from the seed.
 Admitted strategy authority helpers keep family classification, run-intent admission, and authority-mode
 precedence observable in the seed without admitting runtime/config state authority or promotion surfaces.
 Runtime pipeline orchestration is admitted through `src/core/pipeline.py`, while the narrower

@@ -30,16 +30,21 @@ Included in the current priority lane:
 - `config/mcp_settings.json` and `mcp_server/**` for local MCP use
 - local-only API shell (`config`, `info`, `status`, `models`, `strategy`)
 - admitted strategy authority helpers (`src/core/config/authority_mode_resolver.py`, `src/core/strategy/{family_registry,family_admission,run_intent}.py`)
+- admitted config/runtime authority semantics (`src/core/config/{authority,authority_mode_resolver,schema}.py`, `src/core/api/config.py`) while runtime payloads remain excluded
 - `src/core/pipeline.py` plus narrow deterministic seeding helper `src/core/utils/random_seeds.py`
 - runtime determinism guardrails for pipeline fast-hash policy and feature-cache hash stability
 - fixture-backed smoke tests and console scripts
 - explicitly admitted non-sensitive config/model artifacts already carried into the seed
 
+Config runtime-authority semantics are admitted for source/verification purposes only, including the
+authority/schema/API surfaces already present in the V2 source closure. Runtime state payloads
+(`config/runtime.json`, `config/runtime.seed.json`), champion artifacts, remote MCP surfaces, and
+live-adjacent/promotion surfaces remain deferred and excluded from the seed.
+
 ## Track B — authority migration
 
 Deferred to separate verified slices:
 
-- config semantics and runtime authority
 - backtest authority plus comparison/readiness surfaces
 - remote MCP surfaces remain deferred (`mcp_server/remote_server.py`, remote-safe/git configs)
 - exchange, paper, UI, and other private/live-adjacent edges
