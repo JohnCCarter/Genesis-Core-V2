@@ -31,6 +31,7 @@ Included in the current priority lane:
 - local-only API shell (`config`, `info`, `status`, `models`, `strategy`)
 - admitted strategy authority helpers (`src/core/config/authority_mode_resolver.py`, `src/core/strategy/{family_registry,family_admission,run_intent}.py`)
 - admitted config/runtime authority semantics (`src/core/config/{authority,authority_mode_resolver,schema}.py`, `src/core/api/config.py`) while runtime payloads remain excluded
+- admitted backtest comparison/diff semantics (`src/core/utils/diffing/results_diff.py`, `tools/compare_backtest_results.py`) while execution roots and corpora remain excluded
 - `src/core/pipeline.py` plus narrow deterministic seeding helper `src/core/utils/random_seeds.py`
 - runtime determinism guardrails for pipeline fast-hash policy and feature-cache hash stability
 - fixture-backed smoke tests and console scripts
@@ -40,12 +41,14 @@ Config runtime-authority semantics are admitted for source/verification purposes
 authority/schema/API surfaces already present in the V2 source closure. Runtime state payloads
 (`config/runtime.json`, `config/runtime.seed.json`), champion artifacts, remote MCP surfaces, and
 live-adjacent/promotion surfaces remain deferred and excluded from the seed.
+Backtest comparison/diff semantics and associated tmp-path-isolated tests are admitted. Backtest
+execution roots, results corpora, champions, runtime state payloads, `scripts/run/run_backtest.py`,
+and remote/live edges remain deferred or excluded.
 
 ## Track B — authority migration
 
 Deferred to separate verified slices:
 
-- backtest authority plus comparison/readiness surfaces
 - remote MCP surfaces remain deferred (`mcp_server/remote_server.py`, remote-safe/git configs)
 - exchange, paper, UI, and other private/live-adjacent edges
 - freeze-sensitive surfaces

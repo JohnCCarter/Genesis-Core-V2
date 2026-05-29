@@ -3,7 +3,7 @@
 Runtime-first seed with admitted local-only API shell generated from the current
 `Genesis-Core` repository.
 
-Source Genesis-Core HEAD: `19c10d53`
+Source Genesis-Core HEAD: `72b7e189`
 
 ## What is included
 
@@ -32,6 +32,8 @@ Source Genesis-Core HEAD: `19c10d53`
   `src/core/strategy/{family_registry,family_admission,run_intent}.py`)
 - admitted config/runtime authority semantics (`src/core/config/{authority,authority_mode_resolver,schema}.py`,
   `src/core/api/config.py`) without carrying runtime payload files
+- admitted backtest comparison/diff semantics (`src/core/utils/diffing/results_diff.py`,
+  `tools/compare_backtest_results.py`) without carrying execution roots or results corpora
 - runtime-only governance guardrails
 - runtime determinism guardrails for pipeline fast-hash policy and feature-cache hash stability
 - admitted source model payloads under `config/models/**`
@@ -55,7 +57,8 @@ Source Genesis-Core HEAD: `19c10d53`
 - `src/core/optimizer/**`
 - `src/core/strategy/features.py`
 - `src/core/utils/optuna_helpers.py`
-- `src/core/utils/diffing/{optuna_guard,results_diff,trial_cache}.py`
+- `src/core/utils/diffing/{optuna_guard,trial_cache}.py`
+- `scripts/run/run_backtest.py`
 - `config/runtime.json`
 - `config/runtime.seed.json`
 - `config/strategy/champions/**`
@@ -82,6 +85,9 @@ Config runtime-authority semantics are admitted for source/verification purposes
 authority/schema/API surfaces already present in the V2 source closure. Runtime state payloads
 (`config/runtime.json`, `config/runtime.seed.json`), champion artifacts, remote MCP surfaces, and
 live-adjacent/promotion surfaces remain deferred and excluded from the seed.
+Backtest comparison/diff semantics and associated tmp-path-isolated tests are admitted. Backtest
+execution roots, results corpora, champions, runtime state payloads, `scripts/run/run_backtest.py`,
+and remote/live edges remain deferred or excluded.
 Admitted strategy authority helpers keep family classification, run-intent admission, and authority-mode
 precedence observable in the seed without admitting runtime/config state authority or promotion surfaces.
 Runtime pipeline orchestration is admitted through `src/core/pipeline.py`, while the narrower

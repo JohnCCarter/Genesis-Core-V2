@@ -23,6 +23,7 @@ Use this track for:
 - local-only API shell
 - admitted strategy authority helpers (`family_registry`, `family_admission`, `authority_mode_resolver`, `run_intent`)
 - admitted config/runtime authority semantics (`ConfigAuthority`, runtime schema, config API contract) without carrying runtime payloads
+- admitted backtest comparison/diff semantics (`results_diff`, compare/parity tooling) without carrying execution roots or results corpora
 - fixture-backed smoke tests
 - README/docs that explain the current admitted boundary
 - local developer and agent workflow guidance
@@ -31,7 +32,6 @@ Use this track for:
 
 Defer these to separate verified slices:
 
-- backtest authority, comparison, readiness, and promotion surfaces
 - remote MCP exposure and remote Git workflow surfaces
 - exchange, paper, UI, and other private/live-adjacent edges
 - freeze-sensitive surfaces

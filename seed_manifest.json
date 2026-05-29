@@ -10,6 +10,16 @@
     ]
   },
   "authorizing": false,
+  "backtest_comparison_verification": {
+    "compare_tool": {
+      "module_file": "tools/compare_backtest_results.py",
+      "test_file": "tests/backtest/test_compare_backtest_results.py"
+    },
+    "results_diff": {
+      "module_file": "src/core/utils/diffing/results_diff.py",
+      "test_file": "tests/utils/diffing/test_results_diff.py"
+    }
+  },
   "blocked_imports": [],
   "bootstrap_verification": {
     "env_template": {
@@ -309,10 +319,12 @@
     "src/core/utils/dict_merge.py",
     "src/core/utils/diffing/canonical.py",
     "src/core/utils/diffing/feature_cache.py",
+    "src/core/utils/diffing/results_diff.py",
     "src/core/utils/env_flags.py",
     "src/core/utils/logging_redaction.py",
     "src/core/utils/random_seeds.py",
     "tests/__init__.py",
+    "tests/backtest/test_compare_backtest_results.py",
     "tests/core/strategy/test_families.py",
     "tests/core/strategy/test_family_admission.py",
     "tests/governance/__init__.py",
@@ -322,7 +334,11 @@
     "tests/governance/test_pipeline_fast_hash_guard.py",
     "tests/integration/test_config_endpoints.py",
     "tests/utils/__init__.py",
-    "tests/utils/test_features_asof_cache_key_deterministic.py"
+    "tests/utils/diffing/__init__.py",
+    "tests/utils/diffing/test_results_diff.py",
+    "tests/utils/test_features_asof_cache_key_deterministic.py",
+    "tools/__init__.py",
+    "tools/compare_backtest_results.py"
   ],
   "destination_repo": "C:\\Users\\fa06662\\Projects\\Genesis-Core-V2",
   "determinism_verification": {
@@ -349,11 +365,14 @@
     "src/core/strategy/model_registry.py",
     "src/core/strategy/champion_loader.py",
     "src/core/strategy/run_intent.py",
+    "src/core/utils/diffing/results_diff.py",
     "src/core/intelligence/regime/authority.py",
     "src/core/strategy/regime.py",
+    "tools/compare_backtest_results.py",
     "config/__init__.py",
     "config/timeframe_configs.py",
     "src/core/config/legacy_schema_v1.json",
+    "tests/backtest/test_compare_backtest_results.py",
     "tests/core/strategy/test_families.py",
     "tests/core/strategy/test_family_admission.py",
     "tests/integration/test_config_endpoints.py",
@@ -361,6 +380,7 @@
     "tests/governance/test_no_legacy_feature_imports.py",
     "tests/governance/test_dead_code_tripwires.py",
     "tests/governance/test_pipeline_fast_hash_guard.py",
+    "tests/utils/diffing/test_results_diff.py",
     "tests/utils/test_features_asof_cache_key_deterministic.py"
   ],
   "excluded_modules": [
@@ -372,7 +392,6 @@
     "core.optimizer",
     "core.strategy.features",
     "core.utils.diffing.optuna_guard",
-    "core.utils.diffing.results_diff",
     "core.utils.diffing.trial_cache",
     "core.utils.optuna_helpers"
   ],
@@ -525,6 +544,7 @@
     "Generated `scripts/validate/pytest_suite.py` provides a non-installed local pytest entrypoint against the V2 `src` layout.",
     "Generated `scripts/smoke/*.py` provide non-installed local smoke entrypoints against the V2 `src` layout.",
     "Config runtime-authority semantics are admitted for source/verification purposes only while runtime payload files remain excluded from the seed.",
+    "Backtest comparison/diff semantics are admitted with tmp-path-isolated tests while execution roots and results corpora remain excluded.",
     "Admitted strategy authority helpers keep family classification, run-intent admission, and authority-mode precedence testable without admitting runtime/config state authority.",
     "Runtime determinism guardrails for pipeline fast-hash policy and feature-cache hash stability are admitted into the seed.",
     "Exchange-facing, paper, public-data, and UI service edges are intentionally excluded.",
@@ -536,7 +556,7 @@
   "output_hashes": {
     ".env": "369a0ce352acd15713e7da5ec1bf9d11d61dd68409e7b58ab1c04a0fc424d7d0",
     ".env.example": "3f9b2f787fec25a945c6021084bef12d0e4ec03c9f9ae0ecddedf993b4cd7678",
-    ".github/copilot-instructions.md": "7e297ab88ec36ac2a68ad73abed68d74b189076850f040e077801b709301dabd",
+    ".github/copilot-instructions.md": "f33fcab9e77d18f3b50e16fca9ca5dc8d28608260395fab1493b9cb08002f039",
     ".gitignore": "8ee95e751b95b668510265f2fde549d9ad495c4059a77b348cb06a6df9a253f2",
     ".pre-commit-config.yaml": "b8af71324cc02d8bce8f6e34583c438dab39ec47f845413080b5ebafe6d63494",
     ".vscode/extensions.json": "5d1b5e77d7eb37c81ec5e9e1cc884a3bc363c6f14158e8481307c19519587c83",
@@ -544,8 +564,8 @@
     ".vscode/mcp.json": "47d666456dbc8def5821cf14444bee22f929eb6360689a259806b51d247958f8",
     ".vscode/settings.json": "e74b59b003fce766ae7c842d5822ddd7557b4498812ccc62275fca2789a27b26",
     ".vscode/tasks.json": "ac998b8a5f78b05bca7d7e5bdcbc19b368bb06c822e2690bfd509b0245ae2bb4",
-    "AGENTS.md": "5e307da53f30a3aaf4cbe31a8861f03fdb19d953284d99136899419fcdd1c752",
-    "README.md": "9f6bd326efb6d2e3570dc832c124c493e96f6b503c16ee0644df95e4aabf8b27",
+    "AGENTS.md": "a027c6b65be566939d9e5bcb29648e3a9673b240f39cc3ba6d364ee3d9ec5e8a",
+    "README.md": "d159e1e6eee04d6dfb8dcfef60e5a1af090d54836b02fcf884d9e7109a42d127",
     "config/__init__.py": "8994ca2027dce1be71c006c42a3a6372fbbe93c547c0516a258499cf08142753",
     "config/backtest_defaults.yaml": "f3e7464975dbeaf6a27ec2119d0df325728ca2f68cececd16ebeb5c9f79addfe",
     "config/mcp_settings.json": "2e70225f77b5c0754cd55d97b3f6fa3135dc6d9f00d2eabcfc2fb86dfce63bbb",
@@ -716,7 +736,7 @@
     "config/models/tXTZUSD_5m.json": "a6df5e580bdde9cd982947c47e97c1af4feafc969e8964e7b811ccb8c870a586",
     "config/models/tXTZUSD_6h.json": "a6df5e580bdde9cd982947c47e97c1af4feafc969e8964e7b811ccb8c870a586",
     "config/timeframe_configs.py": "18469ea5de4609c626ce07d00c5cb13cc6c930f34662aa17008488af935582fa",
-    "docs/SKELETON_SCOPE.md": "59fc76920af4fbab54c7c68caa175eebb5e984f39a5d3ba539ade96c48399482",
+    "docs/SKELETON_SCOPE.md": "799be1601b51ccf0fa41270f36d91b90595f2a409b0c4937a67b6cd31becc71b",
     "mcp_server/__init__.py": "f80803af0867fe2f671c072d1348f335fef5332f4d43c208479dfe519e1702a8",
     "mcp_server/config.py": "d21d266978d95d7483347b81abd34122cfc63b954244acbf7e998f7d366b117d",
     "mcp_server/resources.py": "aeb64bb170ef223c09675742d8da90a501a8ee0074d775f4915506bd6d321204",
@@ -737,7 +757,7 @@
     "scripts/smoke/model_smoke.py": "e6b010d000355d4ea36bdf1a74c65f4048b87101d9d6488714b5c7deb293f52e",
     "scripts/smoke/smoke_suite.py": "7a3024915117b72ad51b8aebff97858a45ac0acea89a5371d4b0a6015ccc0439",
     "scripts/validate/pytest_suite.py": "3470549cbe64fcb0f7648a4e1d7dbfdf8de4136087a61b0109ff6a8706d5e262",
-    "seed_manifest.json": "5cb2defe50d0b2430d4e0fe44bb6aa0166ac60c4956b28fbb2af3f6b2e6c53a0",
+    "seed_manifest.json": "1854e0e9dd3546e538137dd5adda641bb6bc7fd6969626c6a1d473e482d1d0c1",
     "src/core/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "src/core/api/__init__.py": "9e141c9574a06d3ca44c17148afa758dfa9e17480bb422c6762a15ce9b47e555",
     "src/core/api/config.py": "c09e6116eacc63445b54e33b05eee90554861f8ea0ac1eb690134ca869ac06e0",
@@ -841,20 +861,23 @@
     "src/core/utils/diffing/__init__.py": "cc70e8da2881e7e8df43f40a6a1a78f04b43166a3ee15b61dcef9340eba29b4b",
     "src/core/utils/diffing/canonical.py": "864854ba8c4327092abd4e87162c746add058c9623b05753f61ebf592bd6b3fb",
     "src/core/utils/diffing/feature_cache.py": "59c55c7ab7d1550233013b565451c5fb9a5a4ae9c4b0e8634f810ccb306afe6f",
+    "src/core/utils/diffing/results_diff.py": "88ebf6f4c3d91837f09f715488765397956ffcdf34fd6beda6ab79d838458679",
     "src/core/utils/env_flags.py": "6794df0096f1c05356177b8213afee1ca01c040a65d9bbda9b43538d32f56021",
     "src/core/utils/logging_redaction.py": "d6f754bff5586c579bd6102e4c322456937f055f3e15d4c20135a69b903ad436",
     "src/core/utils/random_seeds.py": "b2f4c75e969ff688cb71a08263eeae0cb95b9339b7bf88fca4d2cea1482d8353",
     "src/genesis_core_v2_cli/__init__.py": "ba7272aae6cb3e3fc9861580b972b4eb7c882e09db157934820b4040307f8ee7",
     "src/genesis_core_v2_cli/console_scripts.py": "e6b50cb1356650e8ec4262276373c7d914f915100dfd4d370c58322c3037a2a6",
     "tests/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "tests/backtest/test_compare_backtest_results.py": "731adfedfea396791fd944297d36e6117ecf5cabad80c043495ef4f6bcecb524",
     "tests/core/strategy/test_families.py": "186224c3d840aa3dc90b3bb77fd5770d60f73cb4b974617675fa3ed84a77e152",
     "tests/core/strategy/test_family_admission.py": "47ff1c13ddebbdfa4f800a806d8a58ee7cbdaa7f6641b2a83c00cb80420a071d",
     "tests/governance/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "tests/governance/test_authority_mode_resolver.py": "6aef366524dc036c8a973523590cc817aa3e50a3f06d2df652b23ee83c770be3",
     "tests/governance/test_dead_code_tripwires.py": "3631eee07f9f58946c486969397723beb969e1d626e845fb67417b27711f8ed8",
     "tests/governance/test_no_legacy_feature_imports.py": "f3aeb21da5e113a87fd458a70aea1ce1dda904d7f878e39c49a428cd10138259",
     "tests/governance/test_pipeline_fast_hash_guard.py": "26e1632eb9406b0a4232c4b689d745a7b40e35f43fcf5a07809bb223964fd2f7",
     "tests/governance/test_pyproject_console_scripts.py": "bae048f52db088076f4844e0ccf08d561468d6c73cb627b56d646c8f29c42194",
-    "tests/governance/test_v2_seed_boundaries.py": "fdcf64f86d5523fb04c84c33a84977d2cf1e5023b1a2986809496b0d5a0a30c7",
+    "tests/governance/test_v2_seed_boundaries.py": "e120f929e7755def517b2e979e1ebcf92e186814d9661235e4b582c2582f4d07",
     "tests/integration/test_config_endpoints.py": "28059e71553716539edb23924a26951e2687f580703507843d5029335afcf310",
     "tests/runtime/test_backtest_bootstrap_smoke.py": "2e557462e03d83f775d31510654223bc3812556b9547dce5e528440174e685ce",
     "tests/runtime/test_backtest_engine_fixture_smoke.py": "54f837ed9437bb32b347143508f2afd18d80d6167209a89f4c14b4234ed30753",
@@ -877,7 +900,11 @@
     "tests/runtime/test_smoke_suite.py": "520826d830356a2979113586a0c7ad6137fe24bc1b6edca48766ce4dd39407b9",
     "tests/runtime/test_strategy_authority.py": "01239c3b27ae8608d4bb6abee380f26dbaf536493306a9dc07509962c1330ae9",
     "tests/utils/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-    "tests/utils/test_features_asof_cache_key_deterministic.py": "6e1b8efc0643ca25932fd1d8ae9cd487b2c0d29a0663855c797361a538891703"
+    "tests/utils/diffing/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "tests/utils/diffing/test_results_diff.py": "cecd90af5792e026f8ee2c8b57b4a2fb08117e8ad7b189663dc1f458f47bc015",
+    "tests/utils/test_features_asof_cache_key_deterministic.py": "6e1b8efc0643ca25932fd1d8ae9cd487b2c0d29a0663855c797361a538891703",
+    "tools/__init__.py": "86eea723a6ca5336336823b673316ee9075931aef241f620216d62425d89b6ae",
+    "tools/compare_backtest_results.py": "186b1fb8979276fecb467459fbae0978c9cc43adbeb2863842140257cf623d2b"
   },
   "phase": "runtime_seed_with_local_api_shell",
   "pipeline_verification": {
@@ -942,7 +969,7 @@
       "python scripts/smoke/smoke_suite.py"
     ]
   },
-  "source_head": "19c10d53",
+  "source_head": "72b7e189",
   "source_of_truth_repo": "Genesis-Core",
   "source_repo": "C:\\Users\\fa06662\\Projects\\Genesis-Core",
   "status": "genesis_core_v2_runtime_seed_local_materialization",

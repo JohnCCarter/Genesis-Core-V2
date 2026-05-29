@@ -144,6 +144,15 @@ _PIPELINE_VERIFICATION_FILES = [
 ]
 
 
+_BACKTEST_COMPARISON_VERIFICATION_FILES = [
+    "seed_manifest.json",
+    "src/core/utils/diffing/results_diff.py",
+    "tools/compare_backtest_results.py",
+    "tests/backtest/test_compare_backtest_results.py",
+    "tests/utils/diffing/test_results_diff.py",
+]
+
+
 _CONFIG_AUTHORITY_VERIFICATION_FILES = [
     "seed_manifest.json",
     "src/core/api/config.py",
@@ -220,7 +229,6 @@ _EXCLUDED_FILES = [
     "src/core/api/ui.py",
     "src/core/strategy/features.py",
     "src/core/utils/diffing/optuna_guard.py",
-    "src/core/utils/diffing/results_diff.py",
     "src/core/utils/diffing/trial_cache.py",
     "src/core/utils/optuna_helpers.py",
     "config/runtime.json",
@@ -246,7 +254,6 @@ _EXCLUDED_MODULE_PREFIXES = [
     "core.optimizer",
     "core.strategy.features",
     "core.utils.diffing.optuna_guard",
-    "core.utils.diffing.results_diff",
     "core.utils.diffing.trial_cache",
     "core.utils.optuna_helpers",
 ]
@@ -568,6 +575,36 @@ def test_seed_contains_pipeline_verification_manifest() -> None:
     }
     assert "runtime pipeline orchestration (`src/core/pipeline.py`)" in readme
     assert "src/core/pipeline.py" in scope_text
+
+
+def test_seed_contains_backtest_comparison_verification_manifest() -> None:
+    repo_root = Path(__file__).resolve().parents[2]
+    diffing_init = repo_root / "src" / "core" / "utils" / "diffing" / "__init__.py"
+
+    for relative_path in _BACKTEST_COMPARISON_VERIFICATION_FILES:
+        assert (repo_root / relative_path).exists(), relative_path
+
+    manifest = json.loads((repo_root / "seed_manifest.json").read_text(encoding="utf-8"))
+    readme = (repo_root / "README.md").read_text(encoding="utf-8")
+    scope_text = (repo_root / "docs" / "SKELETON_SCOPE.md").read_text(encoding="utf-8")
+
+    assert manifest["backtest_comparison_verification"] == {
+        "compare_tool": {
+            "module_file": "tools/compare_backtest_results.py",
+            "test_file": "tests/backtest/test_compare_backtest_results.py",
+        },
+        "results_diff": {
+            "module_file": "src/core/utils/diffing/results_diff.py",
+            "test_file": "tests/utils/diffing/test_results_diff.py",
+        },
+    }
+    assert not (repo_root / "scripts" / "run" / "run_backtest.py").exists()
+    init_text = diffing_init.read_text(encoding="utf-8")
+    assert "results_diff" not in init_text
+    assert "optuna_guard" not in init_text
+    assert "trial_cache" not in init_text
+    assert "Backtest comparison/diff semantics and associated tmp-path-isolated tests are admitted" in readme
+    assert "Backtest comparison/diff semantics and associated tmp-path-isolated tests are admitted" in scope_text
 
 
 def test_seed_contains_config_authority_verification_manifest() -> None:
