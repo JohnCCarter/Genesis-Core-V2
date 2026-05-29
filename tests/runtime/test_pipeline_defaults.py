@@ -27,17 +27,27 @@ def test_pipeline_uses_backtest_defaults_for_costs(monkeypatch: pytest.MonkeyPat
 
 
 def test_pipeline_setup_environment_sets_seed_and_canonical_env(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.delenv("GENESIS_RANDOM_SEED", raising=False)
-    monkeypatch.delenv("GENESIS_FAST_WINDOW", raising=False)
-    monkeypatch.delenv("GENESIS_PRECOMPUTE_FEATURES", raising=False)
-    monkeypatch.delenv("GENESIS_MODE_EXPLICIT", raising=False)
-    monkeypatch.delenv("GENESIS_FAST_HASH", raising=False)
+    original_env = os.environ.copy()
 
-    pipeline = GenesisPipeline()
-    pipeline.setup_environment(seed=123)
+    try:
+        for key in (
+            "GENESIS_RANDOM_SEED",
+            "GENESIS_FAST_WINDOW",
+            "GENESIS_PRECOMPUTE_FEATURES",
+            "GENESIS_MODE_EXPLICIT",
+            "GENESIS_FAST_HASH",
+            "PYTHONHASHSEED",
+        ):
+            os.environ.pop(key, None)
 
-    assert os.environ["GENESIS_RANDOM_SEED"] == "123"
-    assert os.environ["PYTHONHASHSEED"] == "123"
-    assert os.environ["GENESIS_FAST_WINDOW"] == "1"
-    assert os.environ["GENESIS_PRECOMPUTE_FEATURES"] == "1"
-    assert os.environ["GENESIS_FAST_HASH"] == "0"
+        pipeline = GenesisPipeline()
+        pipeline.setup_environment(seed=123)
+
+        assert os.environ["GENESIS_RANDOM_SEED"] == "123"
+        assert os.environ["PYTHONHASHSEED"] == "123"
+        assert os.environ["GENESIS_FAST_WINDOW"] == "1"
+        assert os.environ["GENESIS_PRECOMPUTE_FEATURES"] == "1"
+        assert os.environ["GENESIS_FAST_HASH"] == "0"
+    finally:
+        os.environ.clear()
+        os.environ.update(original_env)

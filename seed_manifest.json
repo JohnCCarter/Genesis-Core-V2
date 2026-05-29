@@ -301,9 +301,20 @@
     "tests/governance/__init__.py",
     "tests/governance/test_dead_code_tripwires.py",
     "tests/governance/test_no_legacy_feature_imports.py",
-    "tests/integration/test_config_endpoints.py"
+    "tests/governance/test_pipeline_fast_hash_guard.py",
+    "tests/integration/test_config_endpoints.py",
+    "tests/utils/__init__.py",
+    "tests/utils/test_features_asof_cache_key_deterministic.py"
   ],
   "destination_repo": "C:\\Users\\fa06662\\Projects\\Genesis-Core-V2",
+  "determinism_verification": {
+    "feature_cache_hash_stability": {
+      "test_file": "tests/utils/test_features_asof_cache_key_deterministic.py"
+    },
+    "pipeline_fast_hash_guard": {
+      "test_file": "tests/governance/test_pipeline_fast_hash_guard.py"
+    }
+  },
   "entry_roots": [
     "src/core/pipeline.py",
     "src/core/backtest/engine.py",
@@ -323,7 +334,9 @@
     "src/core/config/legacy_schema_v1.json",
     "tests/integration/test_config_endpoints.py",
     "tests/governance/test_no_legacy_feature_imports.py",
-    "tests/governance/test_dead_code_tripwires.py"
+    "tests/governance/test_dead_code_tripwires.py",
+    "tests/governance/test_pipeline_fast_hash_guard.py",
+    "tests/utils/test_features_asof_cache_key_deterministic.py"
   ],
   "excluded_modules": [
     "core.api.account",
@@ -485,6 +498,7 @@
     "Generated `scripts/api/api_shell.py` provides a non-installed local API entrypoint against the V2 `src` layout.",
     "Generated `scripts/validate/pytest_suite.py` provides a non-installed local pytest entrypoint against the V2 `src` layout.",
     "Generated `scripts/smoke/*.py` provide non-installed local smoke entrypoints against the V2 `src` layout.",
+    "Runtime determinism guardrails for pipeline fast-hash policy and feature-cache hash stability are admitted into the seed.",
     "Exchange-facing, paper, public-data, and UI service edges are intentionally excluded.",
     "Optuna-heavy helpers and optimizer-only closure are intentionally excluded even after pipeline admission.",
     "Legacy `core.strategy.features` surface intentionally excluded.",
@@ -503,7 +517,7 @@
     ".vscode/settings.json": "e74b59b003fce766ae7c842d5822ddd7557b4498812ccc62275fca2789a27b26",
     ".vscode/tasks.json": "ac998b8a5f78b05bca7d7e5bdcbc19b368bb06c822e2690bfd509b0245ae2bb4",
     "AGENTS.md": "71eaaeabd1163498adb37fc00dcaac640e91ee7a9f8e92f78857a399fa61e4e3",
-    "README.md": "a75cf52bc9a11cb1bcaa20a147da50eac3dbe9efa9fa9b98ba26660ab21eace1",
+    "README.md": "0f011109cbe3ac9d0358fe89fcd963ef79636c8938a98acf44490a4782683308",
     "config/__init__.py": "8994ca2027dce1be71c006c42a3a6372fbbe93c547c0516a258499cf08142753",
     "config/backtest_defaults.yaml": "f3e7464975dbeaf6a27ec2119d0df325728ca2f68cececd16ebeb5c9f79addfe",
     "config/mcp_settings.json": "2e70225f77b5c0754cd55d97b3f6fa3135dc6d9f00d2eabcfc2fb86dfce63bbb",
@@ -674,7 +688,7 @@
     "config/models/tXTZUSD_5m.json": "a6df5e580bdde9cd982947c47e97c1af4feafc969e8964e7b811ccb8c870a586",
     "config/models/tXTZUSD_6h.json": "a6df5e580bdde9cd982947c47e97c1af4feafc969e8964e7b811ccb8c870a586",
     "config/timeframe_configs.py": "18469ea5de4609c626ce07d00c5cb13cc6c930f34662aa17008488af935582fa",
-    "docs/SKELETON_SCOPE.md": "3a3b099a4e30f093d07a0f42649315a58b737de386154e3db924061417fd92d7",
+    "docs/SKELETON_SCOPE.md": "60c111bc8ab02187262dc02099872eaead7c49649cff77c06e7b569bcb273d83",
     "mcp_server/__init__.py": "f80803af0867fe2f671c072d1348f335fef5332f4d43c208479dfe519e1702a8",
     "mcp_server/config.py": "d21d266978d95d7483347b81abd34122cfc63b954244acbf7e998f7d366b117d",
     "mcp_server/resources.py": "aeb64bb170ef223c09675742d8da90a501a8ee0074d775f4915506bd6d321204",
@@ -695,7 +709,7 @@
     "scripts/smoke/model_smoke.py": "e6b010d000355d4ea36bdf1a74c65f4048b87101d9d6488714b5c7deb293f52e",
     "scripts/smoke/smoke_suite.py": "7a3024915117b72ad51b8aebff97858a45ac0acea89a5371d4b0a6015ccc0439",
     "scripts/validate/pytest_suite.py": "3470549cbe64fcb0f7648a4e1d7dbfdf8de4136087a61b0109ff6a8706d5e262",
-    "seed_manifest.json": "13def1bff1fe20895394b7bc4d7b0f940ade232490cfa9333efd365353335e0f",
+    "seed_manifest.json": "b67be10bc061e5cccacc1642d43f4e2aee4434f0cf3ec48142fa6ffa45d29faa",
     "src/core/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "src/core/api/__init__.py": "9e141c9574a06d3ca44c17148afa758dfa9e17480bb422c6762a15ce9b47e555",
     "src/core/api/config.py": "c09e6116eacc63445b54e33b05eee90554861f8ea0ac1eb690134ca869ac06e0",
@@ -806,8 +820,9 @@
     "tests/governance/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "tests/governance/test_dead_code_tripwires.py": "3631eee07f9f58946c486969397723beb969e1d626e845fb67417b27711f8ed8",
     "tests/governance/test_no_legacy_feature_imports.py": "f3aeb21da5e113a87fd458a70aea1ce1dda904d7f878e39c49a428cd10138259",
+    "tests/governance/test_pipeline_fast_hash_guard.py": "26e1632eb9406b0a4232c4b689d745a7b40e35f43fcf5a07809bb223964fd2f7",
     "tests/governance/test_pyproject_console_scripts.py": "bae048f52db088076f4844e0ccf08d561468d6c73cb627b56d646c8f29c42194",
-    "tests/governance/test_v2_seed_boundaries.py": "0b1d6417e3275f5e1ff11ecd86db4ade5481ac01ded672aa86c52b837c471f40",
+    "tests/governance/test_v2_seed_boundaries.py": "e2e41a98ce5c95589c6a6c5bbbcf31afca4791bef844e6c1f1f67bebe977b4aa",
     "tests/integration/test_config_endpoints.py": "28059e71553716539edb23924a26951e2687f580703507843d5029335afcf310",
     "tests/runtime/test_backtest_bootstrap_smoke.py": "2e557462e03d83f775d31510654223bc3812556b9547dce5e528440174e685ce",
     "tests/runtime/test_backtest_engine_fixture_smoke.py": "54f837ed9437bb32b347143508f2afd18d80d6167209a89f4c14b4234ed30753",
@@ -825,9 +840,11 @@
     "tests/runtime/test_local_vscode_settings.py": "86b4856466544e4783ab4ef441ccd5bd3081bfd7c33cd33a3fc05fe52539b360",
     "tests/runtime/test_local_vscode_tasks.py": "5e63c9b401f552e4982a7b6906fdd66045e37b97a562f32d0f74dc8391454ed2",
     "tests/runtime/test_model_smoke.py": "2290517c2bea5b931c36820f078cce3a137a06f5a7435319c50b3197c4fc7a7f",
-    "tests/runtime/test_pipeline_defaults.py": "cb17f6137a25aa18ab6394392388e0ba86040d3a68e873b482fa078a4da86b05",
+    "tests/runtime/test_pipeline_defaults.py": "eb91aed9b1299225fa6466a1bd58e3757c4dbb87930b451f633a72ff7a78c022",
     "tests/runtime/test_runtime_fixture_smoke.py": "229e71ec3c803bbedad884e9302dc7308db5906384d0b2700295c86a280eb6c6",
-    "tests/runtime/test_smoke_suite.py": "520826d830356a2979113586a0c7ad6137fe24bc1b6edca48766ce4dd39407b9"
+    "tests/runtime/test_smoke_suite.py": "520826d830356a2979113586a0c7ad6137fe24bc1b6edca48766ce4dd39407b9",
+    "tests/utils/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "tests/utils/test_features_asof_cache_key_deterministic.py": "6e1b8efc0643ca25932fd1d8ae9cd487b2c0d29a0663855c797361a538891703"
   },
   "phase": "runtime_seed_with_local_api_shell",
   "pipeline_verification": {
@@ -892,7 +909,7 @@
       "python scripts/smoke/smoke_suite.py"
     ]
   },
-  "source_head": "a0f9782e",
+  "source_head": "243b911f",
   "source_of_truth_repo": "Genesis-Core",
   "source_repo": "C:\\Users\\fa06662\\Projects\\Genesis-Core",
   "status": "genesis_core_v2_runtime_seed_local_materialization",

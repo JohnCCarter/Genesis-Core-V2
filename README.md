@@ -3,7 +3,7 @@
 Runtime-first seed with admitted local-only API shell generated from the current
 `Genesis-Core` repository.
 
-Source Genesis-Core HEAD: `a0f9782e`
+Source Genesis-Core HEAD: `243b911f`
 
 ## What is included
 
@@ -29,6 +29,7 @@ Source Genesis-Core HEAD: `a0f9782e`
 - repo-local pytest launcher (`scripts/validate/pytest_suite.py`)
 - repo-local smoke scripts (`scripts/smoke/{backtest_smoke,champion_smoke,evaluate_champion_smoke,fixture_smoke,model_smoke,smoke_suite}.py`)
 - runtime-only governance guardrails
+- runtime determinism guardrails for pipeline fast-hash policy and feature-cache hash stability
 - admitted source model payloads under `config/models/**`
 - deterministic fixture model-registry/prob-model smoke
     (`registry/fixtures/model_registry/config/models/{registry.json,tBTCUSD_1h.json}`,

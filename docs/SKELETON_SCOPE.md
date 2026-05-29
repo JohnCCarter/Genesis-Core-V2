@@ -30,6 +30,7 @@ Included in the current priority lane:
 - `config/mcp_settings.json` and `mcp_server/**` for local MCP use
 - local-only API shell (`config`, `info`, `status`, `models`, `strategy`)
 - `src/core/pipeline.py` plus narrow deterministic seeding helper `src/core/utils/random_seeds.py`
+- runtime determinism guardrails for pipeline fast-hash policy and feature-cache hash stability
 - fixture-backed smoke tests and console scripts
 - explicitly admitted non-sensitive config/model artifacts already carried into the seed
 
