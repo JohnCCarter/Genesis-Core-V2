@@ -8,6 +8,7 @@
 - runtime pipeline orchestration via `src/core/pipeline.py`
 - local-only API
 - local MCP stdio shell
+- constrained remote MCP HTTP semantics without deployment helpers
 - generated workflow guidance for agent-driven work
 - fixture-backed smoke tests
 - no exchange, no UI, and no private runtime edges
@@ -32,6 +33,7 @@ Included in the current priority lane:
 - admitted strategy authority helpers (`src/core/config/authority_mode_resolver.py`, `src/core/strategy/{family_registry,family_admission,run_intent}.py`)
 - admitted config/runtime authority semantics (`src/core/config/{authority,authority_mode_resolver,schema}.py`, `src/core/api/config.py`) while runtime payloads remain excluded
 - admitted backtest comparison/diff semantics (`src/core/utils/diffing/results_diff.py`, `tools/compare_backtest_results.py`) while execution roots and corpora remain excluded
+- admitted constrained remote MCP semantics (`mcp_server/remote_server.py`, `config/mcp_settings.remote_{safe,git}.json`) while launchers and deployment guidance remain excluded
 - `src/core/pipeline.py` plus narrow deterministic seeding helper `src/core/utils/random_seeds.py`
 - runtime determinism guardrails for pipeline fast-hash policy and feature-cache hash stability
 - fixture-backed smoke tests and console scripts
@@ -39,17 +41,21 @@ Included in the current priority lane:
 
 Config runtime-authority semantics are admitted for source/verification purposes only, including the
 authority/schema/API surfaces already present in the V2 source closure. Runtime state payloads
-(`config/runtime.json`, `config/runtime.seed.json`), champion artifacts, remote MCP surfaces, and
+(`config/runtime.json`, `config/runtime.seed.json`), champion artifacts, and
 live-adjacent/promotion surfaces remain deferred and excluded from the seed.
 Backtest comparison/diff semantics and associated tmp-path-isolated tests are admitted. Backtest
 execution roots, results corpora, champions, runtime state payloads, `scripts/run/run_backtest.py`,
 and remote/live edges remain deferred or excluded.
+Genesis-Core-V2 admits constrained remote MCP semantics limited to authorization, safe-mode,
+confirm-token, and transport-alias behavior already present in source. Operational launch scripts,
+deployment/tunnel/proxy guidance, and other live-adjacent surfaces remain deferred and are not
+included in this slice.
 
 ## Track B — authority migration
 
 Deferred to separate verified slices:
 
-- remote MCP surfaces remain deferred (`mcp_server/remote_server.py`, remote-safe/git configs)
+- remote MCP operational launchers and deployment/tunnel/proxy guidance remain deferred
 - exchange, paper, UI, and other private/live-adjacent edges
 - freeze-sensitive surfaces
 

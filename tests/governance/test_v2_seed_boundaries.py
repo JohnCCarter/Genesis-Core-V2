@@ -136,6 +136,18 @@ _MCP_VERIFICATION_FILES = [
 ]
 
 
+_REMOTE_MCP_VERIFICATION_FILES = [
+    "seed_manifest.json",
+    "config/mcp_settings.remote_git.json",
+    "config/mcp_settings.remote_safe.json",
+    "mcp_server/remote_server.py",
+    "tests/governance/test_mcp_remote_authorization.py",
+    "tests/integration/test_mcp_git_status_remote_filters.py",
+    "tests/integration/test_mcp_remote_git_workflow_confirm.py",
+    "tests/utils/test_remote_server_fastmcp_sse_alias.py",
+]
+
+
 _PIPELINE_VERIFICATION_FILES = [
     "seed_manifest.json",
     "src/core/pipeline.py",
@@ -220,9 +232,6 @@ _MCP_FILES = [
 
 
 _EXCLUDED_FILES = [
-    "config/mcp_settings.remote_git.json",
-    "config/mcp_settings.remote_safe.json",
-    "mcp_server/remote_server.py",
     "src/core/api/account.py",
     "src/core/api/paper.py",
     "src/core/api/public.py",
@@ -299,7 +308,7 @@ def test_seed_contains_local_mcp_shell() -> None:
 
     scope_text = (repo_root / "docs" / "SKELETON_SCOPE.md").read_text(encoding="utf-8")
     assert "local MCP stdio shell" in scope_text
-    assert "remote MCP surfaces remain deferred" in scope_text
+    assert "constrained remote MCP HTTP semantics without deployment helpers" in scope_text
 
 
 def test_seed_contains_local_mcp_script() -> None:
@@ -554,6 +563,61 @@ def test_seed_contains_mcp_verification_manifest() -> None:
             "runtime_test_file": "tests/runtime/test_local_mcp_script.py",
         },
     }
+
+
+def test_seed_contains_remote_mcp_verification_manifest() -> None:
+    repo_root = Path(__file__).resolve().parents[2]
+
+    for relative_path in _REMOTE_MCP_VERIFICATION_FILES:
+        assert (repo_root / relative_path).exists(), relative_path
+
+    manifest = json.loads((repo_root / "seed_manifest.json").read_text(encoding="utf-8"))
+    readme = (repo_root / "README.md").read_text(encoding="utf-8")
+    scope_text = (repo_root / "docs" / "SKELETON_SCOPE.md").read_text(encoding="utf-8")
+    remote_safe = json.loads(
+        (repo_root / "config" / "mcp_settings.remote_safe.json").read_text(encoding="utf-8")
+    )
+    remote_git = json.loads(
+        (repo_root / "config" / "mcp_settings.remote_git.json").read_text(encoding="utf-8")
+    )
+
+    assert manifest["remote_mcp_verification"] == {
+        "authorization_and_transport": {
+            "module_file": "mcp_server/remote_server.py",
+            "auth_test_file": "tests/governance/test_mcp_remote_authorization.py",
+            "transport_test_file": "tests/utils/test_remote_server_fastmcp_sse_alias.py",
+        },
+        "remote_git_workflow": {
+            "config_file": "config/mcp_settings.remote_git.json",
+            "confirm_test_file": "tests/integration/test_mcp_remote_git_workflow_confirm.py",
+        },
+        "remote_safe_config": {
+            "config_file": "config/mcp_settings.remote_safe.json",
+            "filter_test_file": "tests/integration/test_mcp_git_status_remote_filters.py",
+        },
+    }
+    assert remote_safe["features"] == {
+        "code_execution": False,
+        "file_operations": True,
+        "git_integration": True,
+    }
+    assert remote_git["features"] == {
+        "code_execution": True,
+        "file_operations": True,
+        "git_integration": True,
+    }
+    assert ".github" not in remote_safe["security"]["allowed_paths"]
+    assert ".github" in remote_git["security"]["allowed_paths"]
+    assert "results" not in remote_safe["security"]["allowed_paths"]
+    assert "results" in remote_git["security"]["allowed_paths"]
+    assert remote_safe["security"]["max_file_size_mb"] == 5
+    assert remote_git["security"]["max_file_size_mb"] == 10
+    assert "config/runtime.json" in remote_safe["security"]["blocked_patterns"]
+    assert "config/runtime.json" in remote_git["security"]["blocked_patterns"]
+    assert not (repo_root / "scripts" / "mcp" / "start_mcp_remote.ps1").exists()
+    assert not (repo_root / "scripts" / "mcp_session_preflight.py").exists()
+    assert "Genesis-Core-V2 admits constrained remote MCP semantics limited to authorization, safe-mode," in readme
+    assert "Genesis-Core-V2 admits constrained remote MCP semantics limited to authorization, safe-mode," in scope_text
 
 
 def test_seed_contains_pipeline_verification_manifest() -> None:

@@ -1,9 +1,9 @@
 # Genesis-Core-V2
 
-Runtime-first seed with admitted local-only API shell generated from the current
-`Genesis-Core` repository.
+Runtime-first seed with admitted local-only API shell and constrained remote MCP semantics
+generated from the current `Genesis-Core` repository.
 
-Source Genesis-Core HEAD: `72b7e189`
+Source Genesis-Core HEAD: `3ac832e8`
 
 ## What is included
 
@@ -34,6 +34,8 @@ Source Genesis-Core HEAD: `72b7e189`
   `src/core/api/config.py`) without carrying runtime payload files
 - admitted backtest comparison/diff semantics (`src/core/utils/diffing/results_diff.py`,
   `tools/compare_backtest_results.py`) without carrying execution roots or results corpora
+- admitted constrained remote MCP semantics (`mcp_server/remote_server.py`,
+  `config/mcp_settings.remote_{safe,git}.json`) without operational launchers or deployment guidance
 - runtime-only governance guardrails
 - runtime determinism guardrails for pipeline fast-hash policy and feature-cache hash stability
 - admitted source model payloads under `config/models/**`
@@ -59,12 +61,12 @@ Source Genesis-Core HEAD: `72b7e189`
 - `src/core/utils/optuna_helpers.py`
 - `src/core/utils/diffing/{optuna_guard,trial_cache}.py`
 - `scripts/run/run_backtest.py`
+- `scripts/mcp/start_mcp_remote.ps1`
+- `scripts/mcp_session_preflight.py`
 - `config/runtime.json`
 - `config/runtime.seed.json`
 - `config/strategy/champions/**`
-- `mcp_server/remote_server.py`
-- `config/mcp_settings.remote_safe.json`
-- `config/mcp_settings.remote_git.json`
+- `docs/mcp/**`
 - `data/**`
 - branch-local research corpora and historical explanation surfaces
 
@@ -88,14 +90,18 @@ live-adjacent/promotion surfaces remain deferred and excluded from the seed.
 Backtest comparison/diff semantics and associated tmp-path-isolated tests are admitted. Backtest
 execution roots, results corpora, champions, runtime state payloads, `scripts/run/run_backtest.py`,
 and remote/live edges remain deferred or excluded.
+Genesis-Core-V2 admits constrained remote MCP semantics limited to authorization, safe-mode,
+confirm-token, and transport-alias behavior already present in source. Operational launch scripts,
+deployment/tunnel/proxy guidance, and other live-adjacent surfaces remain deferred and are not
+included in this slice.
 Admitted strategy authority helpers keep family classification, run-intent admission, and authority-mode
 precedence observable in the seed without admitting runtime/config state authority or promotion surfaces.
 Runtime pipeline orchestration is admitted through `src/core/pipeline.py`, while the narrower
 `src/core/utils/random_seeds.py` helper keeps Optuna/optimizer-only helpers out of the seed.
 Unneeded Optuna/optimizer closure is intentionally pruned from the seed until and unless a later
 explicit slice admits those higher-sensitivity surfaces.
-Local MCP support is admitted for stdio-only workspace usage; remote MCP entrypoints and remote
-allowlist variants remain deferred.
+Local MCP support is admitted for stdio-first workspace usage, while the remote HTTP entrypoint and
+remote allowlist variants are admitted only for semantics-level verification.
 Repo-local MCP launcher is generated so the local stdio shell can start without depending on
 editor-specific config wiring first.
 Repo-local API launcher is generated so the local API shell can start without depending on

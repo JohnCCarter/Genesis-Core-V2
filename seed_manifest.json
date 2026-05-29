@@ -52,6 +52,8 @@
   },
   "copied_files": [
     "config/__init__.py",
+    "config/mcp_settings.remote_git.json",
+    "config/mcp_settings.remote_safe.json",
     "config/models/registry.json",
     "config/models/tADAUSD_12h.json",
     "config/models/tADAUSD_14D.json",
@@ -221,6 +223,7 @@
     "config/timeframe_configs.py",
     "mcp_server/__init__.py",
     "mcp_server/config.py",
+    "mcp_server/remote_server.py",
     "mcp_server/resources.py",
     "mcp_server/server.py",
     "mcp_server/tools.py",
@@ -330,13 +333,17 @@
     "tests/governance/__init__.py",
     "tests/governance/test_authority_mode_resolver.py",
     "tests/governance/test_dead_code_tripwires.py",
+    "tests/governance/test_mcp_remote_authorization.py",
     "tests/governance/test_no_legacy_feature_imports.py",
     "tests/governance/test_pipeline_fast_hash_guard.py",
     "tests/integration/test_config_endpoints.py",
+    "tests/integration/test_mcp_git_status_remote_filters.py",
+    "tests/integration/test_mcp_remote_git_workflow_confirm.py",
     "tests/utils/__init__.py",
     "tests/utils/diffing/__init__.py",
     "tests/utils/diffing/test_results_diff.py",
     "tests/utils/test_features_asof_cache_key_deterministic.py",
+    "tests/utils/test_remote_server_fastmcp_sse_alias.py",
     "tools/__init__.py",
     "tools/compare_backtest_results.py"
   ],
@@ -355,7 +362,10 @@
     "src/core/backtest/engine_precompute.py",
     "src/core/server.py",
     "src/core/api/info.py",
+    "config/mcp_settings.remote_safe.json",
+    "config/mcp_settings.remote_git.json",
     "mcp_server/server.py",
+    "mcp_server/remote_server.py",
     "src/core/config/authority_mode_resolver.py",
     "src/core/strategy/evaluate.py",
     "src/core/strategy/family_registry.py",
@@ -376,11 +386,15 @@
     "tests/core/strategy/test_families.py",
     "tests/core/strategy/test_family_admission.py",
     "tests/integration/test_config_endpoints.py",
+    "tests/integration/test_mcp_git_status_remote_filters.py",
+    "tests/integration/test_mcp_remote_git_workflow_confirm.py",
+    "tests/governance/test_mcp_remote_authorization.py",
     "tests/governance/test_authority_mode_resolver.py",
     "tests/governance/test_no_legacy_feature_imports.py",
     "tests/governance/test_dead_code_tripwires.py",
     "tests/governance/test_pipeline_fast_hash_guard.py",
     "tests/utils/diffing/test_results_diff.py",
+    "tests/utils/test_remote_server_fastmcp_sse_alias.py",
     "tests/utils/test_features_asof_cache_key_deterministic.py"
   ],
   "excluded_modules": [
@@ -402,9 +416,6 @@
     "docs/analysis/edge_topology/"
   ],
   "excluded_relative_paths": [
-    "config/mcp_settings.remote_git.json",
-    "config/mcp_settings.remote_safe.json",
-    "mcp_server/remote_server.py",
     "src/core/api/account.py",
     "src/core/api/paper.py",
     "src/core/api/public.py",
@@ -532,7 +543,8 @@
   "notes": [
     "Runtime-first seed with local-only API shell generated locally.",
     "Workflow files make the V2 seed self-describing as a skeleton-first repository.",
-    "Local stdio MCP tooling is admitted with a safe V2-specific config; remote MCP surfaces remain excluded.",
+    "Local stdio MCP tooling is admitted with a safe V2-specific config.",
+    "Constrained remote MCP semantics are admitted with auth, safe-mode, confirm-token, and transport-alias verification while launcher and deployment guidance surfaces remain excluded.",
     "Generated `.vscode/tasks.json` and `.vscode/launch.json` provide repeatable local API/MCP/smoke/test loops via `PYTHONPATH=${workspaceFolder}/src`.",
     "Generated `.vscode/settings.json` aligns Python analysis and pytest discovery with the V2 `src` layout.",
     "Generated `.vscode/extensions.json` recommends Python/Pylance/Ruff extensions for the V2 editor workflow.",
@@ -757,7 +769,7 @@
     "scripts/smoke/model_smoke.py": "e6b010d000355d4ea36bdf1a74c65f4048b87101d9d6488714b5c7deb293f52e",
     "scripts/smoke/smoke_suite.py": "7a3024915117b72ad51b8aebff97858a45ac0acea89a5371d4b0a6015ccc0439",
     "scripts/validate/pytest_suite.py": "3470549cbe64fcb0f7648a4e1d7dbfdf8de4136087a61b0109ff6a8706d5e262",
-    "seed_manifest.json": "1854e0e9dd3546e538137dd5adda641bb6bc7fd6969626c6a1d473e482d1d0c1",
+    "seed_manifest.json": "7445753f99f806f0e18f4e51cac0b0394d50034b578392b17615df1c8731b101",
     "src/core/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "src/core/api/__init__.py": "9e141c9574a06d3ca44c17148afa758dfa9e17480bb422c6762a15ce9b47e555",
     "src/core/api/config.py": "c09e6116eacc63445b54e33b05eee90554861f8ea0ac1eb690134ca869ac06e0",
@@ -941,6 +953,21 @@
       "python scripts/validate/pytest_suite.py tests/runtime/test_local_api_shell_script.py -q"
     ]
   },
+  "remote_mcp_verification": {
+    "authorization_and_transport": {
+      "auth_test_file": "tests/governance/test_mcp_remote_authorization.py",
+      "module_file": "mcp_server/remote_server.py",
+      "transport_test_file": "tests/utils/test_remote_server_fastmcp_sse_alias.py"
+    },
+    "remote_git_workflow": {
+      "config_file": "config/mcp_settings.remote_git.json",
+      "confirm_test_file": "tests/integration/test_mcp_remote_git_workflow_confirm.py"
+    },
+    "remote_safe_config": {
+      "config_file": "config/mcp_settings.remote_safe.json",
+      "filter_test_file": "tests/integration/test_mcp_git_status_remote_filters.py"
+    }
+  },
   "skeleton_priority": "prioritize_v2_skeleton_completeness_before_content_migration",
   "smoke_entrypoints": {
     "console_scripts": [
@@ -969,7 +996,7 @@
       "python scripts/smoke/smoke_suite.py"
     ]
   },
-  "source_head": "72b7e189",
+  "source_head": "3ac832e8",
   "source_of_truth_repo": "Genesis-Core",
   "source_repo": "C:\\Users\\fa06662\\Projects\\Genesis-Core",
   "status": "genesis_core_v2_runtime_seed_local_materialization",
