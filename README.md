@@ -28,6 +28,8 @@ Source Genesis-Core HEAD: `243b911f`
 - repo-local API launcher (`scripts/api/api_shell.py`)
 - repo-local pytest launcher (`scripts/validate/pytest_suite.py`)
 - repo-local smoke scripts (`scripts/smoke/{backtest_smoke,champion_smoke,evaluate_champion_smoke,fixture_smoke,model_smoke,smoke_suite}.py`)
+- admitted strategy authority helpers (`src/core/config/authority_mode_resolver.py`,
+  `src/core/strategy/{family_registry,family_admission,run_intent}.py`)
 - runtime-only governance guardrails
 - runtime determinism guardrails for pipeline fast-hash policy and feature-cache hash stability
 - admitted source model payloads under `config/models/**`
@@ -74,6 +76,8 @@ The admitted API shell is local-only (`config/info/status/models/strategy`); exc
 paper, public-data, and UI surfaces remain excluded for a later slice.
 Runtime state and champion authority payloads remain excluded; generated `.env` contains only
 local-shell placeholders. Tracked `.env.example` mirrors the same narrow values for copy-forward bootstrap.
+Admitted strategy authority helpers keep family classification, run-intent admission, and authority-mode
+precedence observable in the seed without admitting runtime/config state authority or promotion surfaces.
 Runtime pipeline orchestration is admitted through `src/core/pipeline.py`, while the narrower
 `src/core/utils/random_seeds.py` helper keeps Optuna/optimizer-only helpers out of the seed.
 Unneeded Optuna/optimizer closure is intentionally pruned from the seed until and unless a later

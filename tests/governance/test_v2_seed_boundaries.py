@@ -144,6 +144,18 @@ _PIPELINE_VERIFICATION_FILES = [
 ]
 
 
+_STRATEGY_AUTHORITY_VERIFICATION_FILES = [
+    "seed_manifest.json",
+    "src/core/config/authority_mode_resolver.py",
+    "src/core/strategy/family_registry.py",
+    "src/core/strategy/family_admission.py",
+    "src/core/strategy/run_intent.py",
+    "tests/core/strategy/test_families.py",
+    "tests/core/strategy/test_family_admission.py",
+    "tests/runtime/test_strategy_authority.py",
+]
+
+
 _DETERMINISM_VERIFICATION_FILES = [
     "seed_manifest.json",
     "tests/governance/test_pipeline_fast_hash_guard.py",
@@ -544,6 +556,35 @@ def test_seed_contains_pipeline_verification_manifest() -> None:
     }
     assert "runtime pipeline orchestration (`src/core/pipeline.py`)" in readme
     assert "src/core/pipeline.py" in scope_text
+
+
+def test_seed_contains_strategy_authority_verification_manifest() -> None:
+    repo_root = Path(__file__).resolve().parents[2]
+
+    for relative_path in _STRATEGY_AUTHORITY_VERIFICATION_FILES:
+        assert (repo_root / relative_path).exists(), relative_path
+
+    manifest = json.loads((repo_root / "seed_manifest.json").read_text(encoding="utf-8"))
+    readme = (repo_root / "README.md").read_text(encoding="utf-8")
+    scope_text = (repo_root / "docs" / "SKELETON_SCOPE.md").read_text(encoding="utf-8")
+
+    assert manifest["strategy_authority_verification"] == {
+        "authority_mode_resolver": {
+            "module_file": "src/core/config/authority_mode_resolver.py",
+            "runtime_test_file": "tests/runtime/test_strategy_authority.py",
+        },
+        "family_admission": {
+            "module_file": "src/core/strategy/family_admission.py",
+            "run_intent_file": "src/core/strategy/run_intent.py",
+            "test_file": "tests/core/strategy/test_family_admission.py",
+        },
+        "family_registry": {
+            "module_file": "src/core/strategy/family_registry.py",
+            "test_file": "tests/core/strategy/test_families.py",
+        },
+    }
+    assert "admitted strategy authority helpers" in readme
+    assert "admitted strategy authority helpers" in scope_text
 
 
 def test_seed_contains_determinism_verification_manifest() -> None:

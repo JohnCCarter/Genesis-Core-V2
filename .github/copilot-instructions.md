@@ -11,6 +11,7 @@ Read `AGENTS.md` and `docs/SKELETON_SCOPE.md` before widening scope.
 - Prefer generator-driven changes in `Genesis-Core` over manual drift in this repo.
 - Keep the local-only API shell runnable and tested.
 - Keep the local MCP stdio shell local-first and safe by default.
+- Keep the admitted strategy authority helpers (`core.config.authority_mode_resolver`, `core.strategy.family_registry`, `core.strategy.family_admission`, `core.strategy.run_intent`) runnable and tested.
 - Prefer generated local `scripts/mcp/mcp_stdio.py` or `.vscode/mcp.json` for non-installed MCP startup.
 - Prefer generated local `scripts/api/api_shell.py` or editor task/debug profiles for non-installed API startup.
 - Prefer generated local `scripts/validate/pytest_suite.py` or editor task/debug profiles for non-installed pytest loops.
@@ -23,5 +24,5 @@ Read `AGENTS.md` and `docs/SKELETON_SCOPE.md` before widening scope.
 - exchange, paper, UI, and private runtime edges
 - remote MCP server and remote MCP config surfaces
 - runtime state and champion authority payloads
-- freeze-sensitive and governance-sensitive authority surfaces
+- config/runtime authority, comparison/readiness/promotion, and freeze-sensitive surfaces
 - unverified content migration for its own sake

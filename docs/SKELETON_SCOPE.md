@@ -29,6 +29,7 @@ Included in the current priority lane:
 - repo-local smoke scripts (`scripts/smoke/*.py`) for non-installed execution
 - `config/mcp_settings.json` and `mcp_server/**` for local MCP use
 - local-only API shell (`config`, `info`, `status`, `models`, `strategy`)
+- admitted strategy authority helpers (`src/core/config/authority_mode_resolver.py`, `src/core/strategy/{family_registry,family_admission,run_intent}.py`)
 - `src/core/pipeline.py` plus narrow deterministic seeding helper `src/core/utils/random_seeds.py`
 - runtime determinism guardrails for pipeline fast-hash policy and feature-cache hash stability
 - fixture-backed smoke tests and console scripts
@@ -38,7 +39,6 @@ Included in the current priority lane:
 
 Deferred to separate verified slices:
 
-- strategy authority expansion
 - config semantics and runtime authority
 - backtest authority plus comparison/readiness surfaces
 - remote MCP surfaces remain deferred (`mcp_server/remote_server.py`, remote-safe/git configs)
