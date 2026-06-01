@@ -7,9 +7,7 @@
     }
   },
   "api_entrypoints": {
-    "console_scripts": [
-      "genesis-v2-api-shell"
-    ],
+    "console_scripts": ["genesis-v2-api-shell"],
     "module_command": "python -m uvicorn core.server:app --app-dir src --reload",
     "script_commands": [
       "python scripts/api/api_shell.py",
@@ -41,8 +39,8 @@
   "championless_fallback_contract": {
     "fallback_loader": "core.strategy.champion_loader.ChampionLoader",
     "phase_one_champion_policy": "admit_verified_runtime_champion_subset",
-    "runtime_behavior": "fallback_to_timeframe_configs_when_champion_missing_or_invalid",
-    "runtime_fallback_source": "config/timeframe_configs.py"
+    "runtime_behavior": "fallback_to_runtime_seed_when_champion_missing_or_invalid",
+    "runtime_fallback_source": "config/runtime.seed.json"
   },
   "config_authority_verification": {
     "authority_mode_resolver": {
@@ -678,18 +676,13 @@
     "tests/utils/test_optuna_resume_signature.py",
     "tests/utils/test_set_global_seeds_parity.py"
   ],
-  "excluded_modules": [
-    "core.io",
-    "core.strategy.features"
-  ],
+  "excluded_modules": ["core.io", "core.strategy.features"],
   "excluded_path_prefixes": [
     "src/core/io/",
     "results/",
     "docs/analysis/edge_topology/"
   ],
-  "excluded_relative_paths": [
-    "src/core/strategy/features.py"
-  ],
+  "excluded_relative_paths": ["src/core/strategy/features.py"],
   "explicit_stateful_admissions": [
     "config/backtest_defaults.yaml",
     "config/models/**",
@@ -805,9 +798,7 @@
     "scripts/validate/pytest_suite.py"
   ],
   "mcp_entrypoints": {
-    "console_scripts": [
-      "genesis-v2-mcp-stdio"
-    ],
+    "console_scripts": ["genesis-v2-mcp-stdio"],
     "editable_install_command": "python -m pip install -e \".[mcp]\"",
     "module_command": "python -m mcp_server.server",
     "script_commands": [
@@ -861,9 +852,7 @@
     "Generated `.env` contains local-shell and Bitfinex REST credential placeholders only."
   ],
   "optimizer_package_verification": {
-    "audit_script_files": [
-      "scripts/audit/audit_optuna_objective_parity.py"
-    ],
+    "audit_script_files": ["scripts/audit/audit_optuna_objective_parity.py"],
     "dependency_contract": {
       "import_smoke_test_file": "tests/governance/test_import_smoke_backtest_optuna.py",
       "runtime_dependency": "optuna>=3.5,<5"
@@ -1506,9 +1495,7 @@
     "tool.black.extend-exclude"
   ],
   "pytest_entrypoints": {
-    "console_scripts": [
-      "genesis-v2-pytest"
-    ],
+    "console_scripts": ["genesis-v2-pytest"],
     "editable_install_command": "python -m pip install -e \".[dev]\"",
     "module_command": "python -m pytest -q",
     "script_commands": [

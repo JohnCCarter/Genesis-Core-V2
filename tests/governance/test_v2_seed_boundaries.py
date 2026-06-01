@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import ast
 import json
+import subprocess
 from pathlib import Path
-
 
 _ADMITTED_FILES = [
     "src/core/server.py",
@@ -80,6 +80,12 @@ _MCP_SCRIPT_FILES = [
 _PYTEST_SCRIPT_FILES = [
     "scripts/validate/pytest_suite.py",
     "tests/runtime/test_local_pytest_script.py",
+]
+
+
+_FETCH_SCRIPT_FILES = [
+    "scripts/data/fetch_historical.py",
+    "tests/runtime/test_local_fetch_historical_script.py",
 ]
 
 
@@ -424,8 +430,7 @@ def _is_excluded_module(module: str) -> bool:
     ):
         return False
     return any(
-        module == prefix or module.startswith(f"{prefix}.")
-        for prefix in _EXCLUDED_MODULE_PREFIXES
+        module == prefix or module.startswith(f"{prefix}.") for prefix in _EXCLUDED_MODULE_PREFIXES
     )
 
 
@@ -449,7 +454,10 @@ def test_seed_contains_skeleton_workflow_guidance() -> None:
     scope_text = (repo_root / "docs" / "SKELETON_SCOPE.md").read_text(encoding="utf-8")
 
     assert "Prioritize V2 skeleton completeness before content migration." in agents_text
-    assert "Prefer generator-driven changes in `Genesis-Core` over manual drift in this repo." in instructions_text
+    assert (
+        "Prefer generator-driven changes in `Genesis-Core` over manual drift in this repo."
+        in instructions_text
+    )
     assert "Track A — skeleton completeness" in scope_text
     assert "Track B — authority migration" in scope_text
 
@@ -576,7 +584,10 @@ def test_seed_contains_local_info_routes() -> None:
     scope_text = (repo_root / "docs" / "SKELETON_SCOPE.md").read_text(encoding="utf-8")
 
     assert "src/core/api/{account,config,info,models,paper,public,status,strategy,ui}.py" in readme
-    assert "local-only API shell (`account`, `config`, `info`, `status`, `models`, `paper`, `public`, `strategy`, `ui`)" in scope_text
+    assert (
+        "local-only API shell (`account`, `config`, `info`, `status`, `models`, `paper`, `public`, `strategy`, `ui`)"
+        in scope_text
+    )
 
 
 def test_seed_contains_local_pytest_script() -> None:
@@ -591,6 +602,19 @@ def test_seed_contains_local_pytest_script() -> None:
     assert "Non-installed local pytest launcher:" in readme
     assert "scripts/validate/pytest_suite.py" in readme
     assert "scripts/validate/pytest_suite.py" in scope_text
+
+
+def test_seed_contains_local_fetch_historical_script() -> None:
+    repo_root = Path(__file__).resolve().parents[2]
+
+    for relative_path in _FETCH_SCRIPT_FILES:
+        assert (repo_root / relative_path).exists(), relative_path
+
+    readme = (repo_root / "README.md").read_text(encoding="utf-8")
+    scope_text = (repo_root / "docs" / "SKELETON_SCOPE.md").read_text(encoding="utf-8")
+
+    assert "scripts/data/fetch_historical.py" in readme
+    assert "scripts/data/fetch_historical.py" in scope_text
 
 
 def test_seed_contains_local_smoke_scripts() -> None:
@@ -770,8 +794,14 @@ def test_seed_contains_remote_mcp_verification_manifest() -> None:
     assert "config/runtime.json" in remote_git["security"]["blocked_patterns"]
     assert not (repo_root / "scripts" / "mcp" / "start_mcp_remote.ps1").exists()
     assert not (repo_root / "scripts" / "mcp_session_preflight.py").exists()
-    assert "Genesis-Core-V2 admits constrained remote MCP semantics limited to authorization, safe-mode," in readme
-    assert "Genesis-Core-V2 admits constrained remote MCP semantics limited to authorization, safe-mode," in scope_text
+    assert (
+        "Genesis-Core-V2 admits constrained remote MCP semantics limited to authorization, safe-mode,"
+        in readme
+    )
+    assert (
+        "Genesis-Core-V2 admits constrained remote MCP semantics limited to authorization, safe-mode,"
+        in scope_text
+    )
 
 
 def test_seed_contains_account_api_verification_manifest() -> None:
@@ -871,6 +901,11 @@ def test_seed_contains_paper_ui_verification_manifest() -> None:
 def test_seed_contains_stateful_authority_verification_manifest() -> None:
     repo_root = Path(__file__).resolve().parents[2]
     champions_dir = repo_root / "config" / "strategy" / "champions"
+    runtime_seed = json.loads(
+        (repo_root / "config" / "runtime.seed.json").read_text(encoding="utf-8")
+    )
+    champion_1h = json.loads((champions_dir / "tBTCUSD_1h.json").read_text(encoding="utf-8"))
+    champion_3h = json.loads((champions_dir / "tBTCUSD_3h.json").read_text(encoding="utf-8"))
 
     for relative_path in _STATEFUL_AUTHORITY_VERIFICATION_FILES:
         assert (repo_root / relative_path).exists(), relative_path
@@ -893,12 +928,30 @@ def test_seed_contains_stateful_authority_verification_manifest() -> None:
             ],
         },
     }
+    assert manifest["championless_fallback_contract"] == {
+        "fallback_loader": "core.strategy.champion_loader.ChampionLoader",
+        "phase_one_champion_policy": "admit_verified_runtime_champion_subset",
+        "runtime_behavior": "fallback_to_runtime_seed_when_champion_missing_or_invalid",
+        "runtime_fallback_source": "config/runtime.seed.json",
+    }
     assert not (repo_root / "config" / "runtime.json").exists()
     assert {path.name for path in champions_dir.glob("*.json")} == {
         "tBTCUSD_1h.json",
         "tBTCUSD_3h.json",
     }
     assert not (champions_dir / "backup").exists()
+    assert runtime_seed["cfg"]["strategy_family"] == "ri"
+    assert (
+        runtime_seed["cfg"]["multi_timeframe"]["regime_intelligence"]["authority_mode"]
+        == "regime_module"
+    )
+    for payload in (champion_1h, champion_3h):
+        assert payload["strategy_family"] == "ri"
+        assert payload["merged_config"]["strategy_family"] == "ri"
+        assert (
+            payload["merged_config"]["multi_timeframe"]["regime_intelligence"]["authority_mode"]
+            == "regime_module"
+        )
     assert (
         "Batch F admits repo-tracked `config/runtime.seed.json` plus `config/strategy/champions/tBTCUSD_1h.json` and `config/strategy/champions/tBTCUSD_3h.json` while local `config/runtime.json`, candidate/test/backup champions, and `data/**` remain excluded."
         in readme
@@ -908,7 +961,11 @@ def test_seed_contains_stateful_authority_verification_manifest() -> None:
         in scope_text
     )
     assert (
-        "`ChampionLoader` still falls back to `config/timeframe_configs.py` when a requested champion is missing or invalid."
+        "`ChampionLoader` falls back to the repo-tracked RI baseline in `config/runtime.seed.json` when a requested champion is missing or invalid."
+        in readme
+    )
+    assert (
+        "Genesis-Core-V2 runs `ri` as the only active strategy family on runtime authority and champion-default surfaces."
         in readme
     )
 
@@ -959,7 +1016,10 @@ def test_seed_contains_transport_read_verification_manifest() -> None:
     }
     assert "_DeferredPublicExchangeClient" not in server_text
     assert "_DeferredAccountReadHelpers" not in server_text
-    assert "from core.io.bitfinex.exchange_client import aclose_http_client, get_exchange_client" in server_text
+    assert (
+        "from core.io.bitfinex.exchange_client import aclose_http_client, get_exchange_client"
+        in server_text
+    )
     assert "from core.io.bitfinex import read_helpers as bfx_read" in server_text
     assert "rest_auth" not in server_text
     assert "ws_auth" not in server_text
@@ -1025,8 +1085,14 @@ def test_seed_contains_backtest_comparison_verification_manifest() -> None:
         },
     }
     assert not (repo_root / "scripts" / "run" / "run_backtest.py").exists()
-    assert "Backtest comparison/diff semantics and associated tmp-path-isolated tests are admitted" in readme
-    assert "Backtest comparison/diff semantics and associated tmp-path-isolated tests are admitted" in scope_text
+    assert (
+        "Backtest comparison/diff semantics and associated tmp-path-isolated tests are admitted"
+        in readme
+    )
+    assert (
+        "Backtest comparison/diff semantics and associated tmp-path-isolated tests are admitted"
+        in scope_text
+    )
 
 
 def test_seed_contains_optimizer_package_verification_manifest() -> None:
@@ -1095,14 +1161,26 @@ def test_seed_contains_optimizer_package_verification_manifest() -> None:
         },
     }
     assert "optuna>=3.5,<5" in pyproject_text
-    assert "from .optuna_guard import TrialFingerprint, estimate_zero_trade, evaluate_trial_with_cache" in init_text
+    assert (
+        "from .optuna_guard import TrialFingerprint, estimate_zero_trade, evaluate_trial_with_cache"
+        in init_text
+    )
     assert "from .trial_cache import TrialResultCache" in init_text
     assert "from .results_diff import (" in init_text
     assert "core.optimizer" not in server_text
     assert "scripts.run.run_backtest" not in server_text
-    assert "Batch I1 admits the dormant optimizer package and read-only `config/optimizer/**` research corpus for import/test completeness only." in readme
-    assert "Batch I1 admits the dormant optimizer package and read-only `config/optimizer/**` research corpus for import/test completeness only." in scope_text
-    assert "Generated dependency widening for the dormant optimizer slice is limited to `optuna>=3.5,<5`" in readme
+    assert (
+        "Batch I1 admits the dormant optimizer package and read-only `config/optimizer/**` research corpus for import/test completeness only."
+        in readme
+    )
+    assert (
+        "Batch I1 admits the dormant optimizer package and read-only `config/optimizer/**` research corpus for import/test completeness only."
+        in scope_text
+    )
+    assert (
+        "Generated dependency widening for the dormant optimizer slice is limited to `optuna>=3.5,<5`"
+        in readme
+    )
 
 
 def test_seed_contains_config_authority_verification_manifest() -> None:
@@ -1128,8 +1206,14 @@ def test_seed_contains_config_authority_verification_manifest() -> None:
             "validate_smoke_test_file": "tests/integration/test_config_endpoints.py",
         },
     }
-    assert "Config runtime-authority semantics are admitted for source/verification purposes only" in readme
-    assert "Config runtime-authority semantics are admitted for source/verification purposes only" in scope_text
+    assert (
+        "Config runtime-authority semantics are admitted for source/verification purposes only"
+        in readme
+    )
+    assert (
+        "Config runtime-authority semantics are admitted for source/verification purposes only"
+        in scope_text
+    )
 
 
 def test_seed_contains_strategy_authority_verification_manifest() -> None:
@@ -1237,7 +1321,20 @@ def test_seed_excludes_legacy_and_stateful_surfaces() -> None:
         assert not (repo_root / relative_path).exists(), relative_path
 
     for prefix in _EXCLUDED_PREFIXES:
-        assert not (repo_root / prefix).exists(), prefix
+        candidate = repo_root / prefix
+        if prefix == "data":
+            if not candidate.exists():
+                continue
+            tracked = subprocess.run(
+                ["git", "ls-files", "--", prefix],
+                cwd=repo_root,
+                capture_output=True,
+                text=True,
+                check=True,
+            ).stdout.strip()
+            assert not tracked, tracked
+            continue
+        assert not candidate.exists(), prefix
 
     server_text = (repo_root / "src" / "core" / "server.py").read_text(encoding="utf-8")
     assert "core.optimizer" not in server_text
@@ -1250,7 +1347,9 @@ def test_phase_one_seed_has_no_excluded_json_payloads() -> None:
         candidate_dir = repo_root / relative_dir
         if not candidate_dir.exists():
             continue
-        leaked = sorted(path.relative_to(repo_root).as_posix() for path in candidate_dir.rglob("*.json"))
+        leaked = sorted(
+            path.relative_to(repo_root).as_posix() for path in candidate_dir.rglob("*.json")
+        )
         assert not leaked, relative_dir + "\n" + "\n".join(leaked)
 
 

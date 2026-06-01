@@ -11,12 +11,12 @@ Source Genesis-Core HEAD: `6025ad87`
 - runtime pipeline orchestration (`src/core/pipeline.py`)
 - local dependency closure required by those roots
 - admitted local-only API shell (`src/core/server.py`,
-    `src/core/api/{account,config,info,models,paper,public,status,strategy,ui}.py`)
+  `src/core/api/{account,config,info,models,paper,public,status,strategy,ui}.py`)
 - source-backed config validation seam (`src/core/config/validator.py`,
   `src/core/config/legacy_schema_v1.json`)
 - source-backed config endpoint integration smoke (`tests/integration/test_config_endpoints.py`)
 - narrow config bootstrap (`config/__init__.py`, `config/timeframe_configs.py`,
-    `config/backtest_defaults.yaml`)
+  `config/backtest_defaults.yaml`)
 - local MCP stdio shell (`mcp_server/*.py`, `.vscode/mcp.json`, `config/mcp_settings.json`)
 - local VS Code task/debug loop (`.vscode/tasks.json`, `.vscode/launch.json`)
 - local VS Code Python analysis/test settings (`.vscode/settings.json`)
@@ -27,13 +27,14 @@ Source Genesis-Core HEAD: `6025ad87`
 - repo-local MCP launcher (`scripts/mcp/mcp_stdio.py`)
 - repo-local API launcher (`scripts/api/api_shell.py`)
 - repo-local pytest launcher (`scripts/validate/pytest_suite.py`)
+- repo-local Bitfinex candle fetch script (`scripts/data/fetch_historical.py`) for local raw JSON + raw-frozen parquet refreshes under excluded `data/**`
 - repo-local smoke scripts (`scripts/smoke/{backtest_smoke,champion_smoke,evaluate_champion_smoke,fixture_smoke,model_smoke,smoke_suite}.py`)
 - admitted strategy authority helpers (`src/core/config/authority_mode_resolver.py`,
   `src/core/strategy/{family_registry,family_admission,run_intent}.py`)
 - admitted config/runtime authority semantics (`src/core/config/{authority,authority_mode_resolver,schema}.py`,
-    `src/core/api/config.py`) with repo-tracked `config/runtime.seed.json` while local runtime override remains excluded
+  `src/core/api/config.py`) with repo-tracked `config/runtime.seed.json` while local runtime override remains excluded
 - verified champion subset (`config/strategy/champions/tBTCUSD_1h.json`,
-    `config/strategy/champions/tBTCUSD_3h.json`) while candidate/test/backup champion payloads stay excluded
+  `config/strategy/champions/tBTCUSD_3h.json`) while candidate/test/backup champion payloads stay excluded
 - admitted backtest comparison/diff semantics (`src/core/utils/diffing/results_diff.py`,
   `tools/compare_backtest_results.py`) without carrying execution roots or results corpora
 - admitted constrained remote MCP semantics (`mcp_server/remote_server.py`,
@@ -50,8 +51,8 @@ Source Genesis-Core HEAD: `6025ad87`
 - runtime determinism guardrails for pipeline fast-hash policy and feature-cache hash stability
 - admitted source model payloads under `config/models/**`
 - deterministic fixture model-registry/prob-model smoke
-    (`registry/fixtures/model_registry/config/models/{registry.json,tBTCUSD_1h.json}`,
-    `core.bootstrap.model_smoke`)
+  (`registry/fixtures/model_registry/config/models/{registry.json,tBTCUSD_1h.json}`,
+  `core.bootstrap.model_smoke`)
 - local champion fixture/bootstrap smoke (`registry/fixtures/champions/tBTCUSD_1h.json`,
   `core.bootstrap.champion_smoke`)
 - live evaluate smoke backed by the local champion fixture (`core.bootstrap.evaluate_champion_smoke`)
@@ -89,11 +90,12 @@ or wider state-authority decisions are already resolved.
 Source `config/models/**` payloads are copied into the seed, while deterministic smoke
 paths use fixture-backed model registry payloads under `registry/fixtures/model_registry/**`.
 Repo-tracked `config/runtime.seed.json` is copied into the seed as the baseline authority fallback.
+Genesis-Core-V2 runs `ri` as the only active strategy family on runtime authority and champion-default surfaces. Any retained legacy material outside those active paths is archival/reference only and is not selected by default, fallback, or incumbent-comparison logic in V2.
 Generated V2 still excludes local `config/runtime.json`; if a local runtime override is later created,
 `ConfigAuthority` preserves runtime.json-over-seed precedence.
 A verified champion subset is admitted: `config/strategy/champions/tBTCUSD_1h.json` and
 `config/strategy/champions/tBTCUSD_3h.json`.
-`ChampionLoader` still falls back to `config/timeframe_configs.py` when a requested champion is missing or invalid.
+`ChampionLoader` falls back to the repo-tracked RI baseline in `config/runtime.seed.json` when a requested champion is missing or invalid.
 The admitted API shell is local-only (`account/config/info/status/models/paper/public/strategy/ui`).
 Generated `.env` contains local-shell and Bitfinex REST credential placeholders only.
 Tracked `.env.example` mirrors the same narrow values for copy-forward bootstrap.
@@ -153,6 +155,7 @@ editor-specific tasks or an editable install first.
 - `scripts/mcp/mcp_stdio.py` wraps the local MCP stdio shell with repo-root bootstrap and the generated config path.
 - `scripts/api/api_shell.py` wraps the local API shell with `src/` bootstrapping for non-installed startup.
 - `scripts/validate/pytest_suite.py` wraps `pytest` with local `src/` bootstrapping for non-installed test execution.
+- `scripts/data/fetch_historical.py` wraps the admitted Bitfinex REST read spine for local raw JSON + raw-frozen parquet refreshes under excluded `data/**`.
 - `scripts/smoke/*.py` wraps the admitted core smoke modules with local `src/` bootstrapping so the seed is runnable before install.
 
 After editable install, local module commands:
@@ -179,6 +182,11 @@ Non-installed local API launcher:
 Non-installed local pytest launcher:
 `python scripts/validate/pytest_suite.py`
 `python scripts/validate/pytest_suite.py tests/runtime/test_local_api_shell_script.py -q`
+
+Non-installed local Bitfinex candle fetch script:
+`python scripts/data/fetch_historical.py --symbol tBTCUSD --timeframes 1m 5m 15m 30m 1h 3h 6h 12h 1D 7D 14D`
+`python scripts/data/fetch_historical.py --from-raw-json --symbol tBTCUSD --timeframes 1h 1D`
+`python scripts/data/fetch_historical.py --print-config --symbol tBTCUSD --timeframes 1h 1D`
 
 Non-installed local smoke scripts:
 `python scripts/smoke/fixture_smoke.py`

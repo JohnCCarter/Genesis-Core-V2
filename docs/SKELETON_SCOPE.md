@@ -36,6 +36,7 @@ Included in the current priority lane:
 - repo-local MCP launcher (`scripts/mcp/mcp_stdio.py`) for non-installed stdio startup
 - repo-local API launcher (`scripts/api/api_shell.py`) for non-installed startup
 - repo-local pytest launcher (`scripts/validate/pytest_suite.py`) for non-installed test execution
+- repo-local Bitfinex candle fetch script (`scripts/data/fetch_historical.py`) for local raw JSON + raw-frozen parquet refreshes under excluded `data/**`
 - repo-local smoke scripts (`scripts/smoke/*.py`) for non-installed execution
 - `config/mcp_settings.json` and `mcp_server/**` for local MCP use
 - local-only API shell (`account`, `config`, `info`, `status`, `models`, `paper`, `public`, `strategy`, `ui`)
@@ -101,6 +102,7 @@ Deferred to separate verified slices:
 - Non-installed local MCP launcher: `python scripts/mcp/mcp_stdio.py`, optional config probe via `python scripts/mcp/mcp_stdio.py --print-config`
 - Non-installed local API launcher: `python scripts/api/api_shell.py`, optional reload via `python scripts/api/api_shell.py --reload`
 - Non-installed local pytest launcher: `python scripts/validate/pytest_suite.py`, optional focused run via `python scripts/validate/pytest_suite.py tests/runtime/test_local_api_shell_script.py -q`
+- Non-installed local Bitfinex candle fetch script: `python scripts/data/fetch_historical.py --symbol tBTCUSD --timeframes 1m 5m 15m 30m 1h 3h 6h 12h 1D 7D 14D`, optional raw-json conversion via `python scripts/data/fetch_historical.py --from-raw-json --symbol tBTCUSD --timeframes 1h 1D`
 - Non-installed local smoke scripts: `python scripts/smoke/fixture_smoke.py`, `python scripts/smoke/backtest_smoke.py`, `python scripts/smoke/champion_smoke.py`, `python scripts/smoke/evaluate_champion_smoke.py`, `python scripts/smoke/model_smoke.py`, `python scripts/smoke/smoke_suite.py`
 - Installable local console scripts: `genesis-v2-api-shell`, `genesis-v2-mcp-stdio`, `genesis-v2-pytest`, `genesis-v2-champion-smoke`, `genesis-v2-evaluate-champion-smoke`, `genesis-v2-fixture-smoke`, `genesis-v2-backtest-smoke`, `genesis-v2-model-smoke`, `genesis-v2-smoke-suite`
 - Installable console-script verification: `python -m pip install -e ".[dev,mcp]"`, then `pytest tests/runtime/test_installed_console_scripts.py -q`
