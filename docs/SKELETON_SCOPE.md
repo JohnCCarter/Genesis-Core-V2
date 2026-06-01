@@ -1,111 +1,249 @@
-# Genesis-Core-V2 Skeleton Scope
+# Genesis-Core-V2 Scope and Operating Boundaries
 
-## Current target
+This document complements `.github/copilot-instructions.md`.
 
-`Genesis-Core-V2` is intentionally a thin, runnable shell:
+Use it to answer four questions quickly:
 
-- minimal repo structure
+1. What is `Genesis-Core-V2` for?
+2. Which surfaces are active authority?
+3. Which surfaces are admitted but constrained?
+4. Which surfaces are still deferred?
+
+When a more specific contract, test, instruction, or boundary document exists, that more specific surface wins.
+
+## Purpose
+
+`Genesis-Core-V2` is a thin, runnable, RI-first repository optimized for faster research, stronger validation, and safer promotion.
+
+Lifecycle order in this repository is:
+
+Research -> Validate -> Promote
+
+It is intentionally narrower than `Genesis-Core`.
+
+`Genesis-Core` may still be used as:
+
+- historical reference
+- migration reference
+- audit reference
+- seed/regeneration source when a slice explicitly requires it
+
+It does **not** override admitted V2 authority surfaces without an explicit validated slice.
+
+## Current repository shape
+
+Genesis-Core-V2 currently aims to remain:
+
+- minimal in structure
+- runnable in local workflows
+- evidence-first in how changes are justified
+- RI-first on active strategy authority surfaces
+- conservative about widening transport, optimizer, and promotion paths
+
+The current shape includes:
+
 - runtime pipeline orchestration via `src/core/pipeline.py`
-- local-only API
-- Batch E1 public candles endpoint semantics with injected exchange-client verification
-- Batch E2 read-only account endpoint semantics with injected read-helper verification
-- Batch E3 local paper and UI semantics with injected helper verification
-- Batch G1 Bitfinex REST read spine with direct runtime verification
-- Batch G2 public/account route defaults bound through generated `src/core/server.py` to the admitted REST read spine only
-- Batch H1 pure runtime decision/component/intelligence helpers plus repo-tracked composable strategy configs/tests
-- Batch H2 dormant Bitfinex transport family admission without server/startup/paper-live rebinding
-- Batch I1 dormant optimizer package/diffing utility admission plus repo-tracked `config/optimizer/**` research corpus without execution-root or runtime-authority widening
-- Batch F repo-tracked runtime seed baseline plus the verified BTC champion subset
+- local-first API/UI semantics
 - local MCP stdio shell
-- constrained remote MCP HTTP semantics without deployment helpers
-- generated workflow guidance for agent-driven work
 - fixture-backed smoke tests
-- dormant admission of the remaining Bitfinex transport family only; no server rebinding or live-ready/private runtime edges
+- repo-tracked runtime seed baseline
+- verified BTC champion subset
+- admitted but constrained REST read-spine, optimizer package, and remote MCP semantics
+- constrained remote MCP HTTP semantics without deployment helpers
 
-`Genesis-Core` remains the source of truth until each slice is proven.
+## Active authority surfaces
+
+The following are active authority-bearing surfaces in V2:
+
+- `ri` is the sole active strategy family on runtime, config-authority, champion-default, and promotion-facing surfaces
+- `config/runtime.seed.json` is the repo-tracked baseline authority fallback
+- local `config/runtime.json` remains excluded and non-authoritative
+- the verified champion subset is limited to:
+  - `config/strategy/champions/tBTCUSD_1h.json`
+  - `config/strategy/champions/tBTCUSD_3h.json`
+- champion miss-path fallback resolves to `config/runtime.seed.json`
+
+Batch F admits repo-tracked `config/runtime.seed.json` plus `config/strategy/champions/tBTCUSD_1h.json` and `config/strategy/champions/tBTCUSD_3h.json` while local `config/runtime.json`, candidate/test/backup champions, and `data/**` remain excluded.
+
+Legacy may remain in the repository for:
+
+- historical comparison
+- replay comparison
+- audit purposes
+- migration reference
+
+Legacy must not function as:
+
+- runtime authority
+- promotion authority
+- default admission target
+- architectural authority
 
 ## Track A — skeleton completeness
 
-Included in the current priority lane:
+The current priority lane remains Track A — skeleton completeness.
 
-- README and local workflow docs
-- `AGENTS.md`, `.github/copilot-instructions.md`, and `.pre-commit-config.yaml`
-- `.vscode/mcp.json`, `.vscode/tasks.json`, `.vscode/launch.json`, `.vscode/settings.json`, and `.vscode/extensions.json` for local editor workflow
-- tracked local env bootstrap template (`.env.example`) plus ignored local placeholder `.env`
-- narrow local pytest/ruff/black defaults in `pyproject.toml`
-- repo-local MCP launcher (`scripts/mcp/mcp_stdio.py`) for non-installed stdio startup
-- repo-local API launcher (`scripts/api/api_shell.py`) for non-installed startup
-- repo-local pytest launcher (`scripts/validate/pytest_suite.py`) for non-installed test execution
-- repo-local Bitfinex candle fetch script (`scripts/data/fetch_historical.py`) for local raw JSON + raw-frozen parquet refreshes under excluded `data/**`
-- repo-local smoke scripts (`scripts/smoke/*.py`) for non-installed execution
-- `config/mcp_settings.json` and `mcp_server/**` for local MCP use
+In lifecycle terms, Track A is where Research and Validate are primarily executed for admitted V2 surfaces.
+
+## Admitted and constrained scope
+
+### Local workflow and repo hygiene
+
+The following are admitted as part of the normal V2 local workflow surface:
+
+- `AGENTS.md`
+- `.github/copilot-instructions.md`
+- `.pre-commit-config.yaml`
+- tracked `.env.example` plus ignored local `.env`
+- `.vscode/mcp.json`
+- `.vscode/tasks.json`
+- `.vscode/launch.json`
+- `.vscode/settings.json`
+- `.vscode/extensions.json`
+- `pyproject.toml`
+- local launchers under:
+  - `scripts/api/api_shell.py`
+  - `scripts/mcp/mcp_stdio.py`
+  - `scripts/validate/pytest_suite.py`
+  - `scripts/smoke/*.py`
+  - `scripts/data/fetch_historical.py`
+
+runtime determinism guardrails for pipeline fast-hash policy and feature-cache hash stability remain part of the admitted V2 local workflow surface.
+
+### API, runtime, and strategy seams
+
+The following runtime-facing seams are admitted:
+
 - local-only API shell (`account`, `config`, `info`, `status`, `models`, `paper`, `public`, `strategy`, `ui`)
-- admitted strategy authority helpers (`src/core/config/authority_mode_resolver.py`, `src/core/strategy/{family_registry,family_admission,run_intent}.py`)
-- admitted config/runtime authority semantics (`src/core/config/{authority,authority_mode_resolver,schema}.py`, `src/core/api/config.py`) with repo-tracked `config/runtime.seed.json` while local runtime override remains excluded
-- admitted verified champion subset (`config/strategy/champions/tBTCUSD_1h.json`, `config/strategy/champions/tBTCUSD_3h.json`) while candidate/test/backup champion payloads remain excluded
-- admitted backtest comparison/diff semantics (`src/core/utils/diffing/results_diff.py`, `tools/compare_backtest_results.py`) while execution roots and corpora remain excluded
-- admitted constrained remote MCP semantics (`mcp_server/remote_server.py`, `config/mcp_settings.remote_{safe,git}.json`) while launchers and deployment guidance remain excluded
-- Batch G1 direct Bitfinex REST read-spine verification (`src/core/io/bitfinex/{exchange_client,read_helpers}.py`, `tests/runtime/test_transport_read_spine.py`)
-- Batch G2 binds generated public/account route defaults through `src/core/server.py` to the admitted Bitfinex REST read spine only; websocket, standalone auth, and paper-route transport widening remain deferred.
-- Batch H1 admits pure runtime decision logic, composable strategy components, intelligence helper packages, and repo-tracked composable strategy configs/tests without widening transport, optimizer, or runtime-authority surfaces.
-- Batch H2 widens transport family to include the remaining Bitfinex REST/WebSocket modules as dormant package surface only; this slice does not rebind server routes, startup wiring, or paper/live execution.
-- Batch I1 admits the dormant optimizer package (`src/core/optimizer/**`), supporting diffing/Optuna helpers, and repo-tracked `config/optimizer/**` research corpus for import/test completeness only; optimizer execution roots, runtime-authority payloads, and server/startup bindings remain deferred.
-- `src/core/pipeline.py` plus narrow deterministic seeding helper `src/core/utils/random_seeds.py`
-- runtime determinism guardrails for pipeline fast-hash policy and feature-cache hash stability
-- fixture-backed smoke tests and console scripts
-- explicitly admitted non-sensitive config/model artifacts already carried into the seed
+- Batch E1 admits the public candles endpoint semantics from `src/core/api/public.py` through an injected `core.server.get_exchange_client` seam for offline verification while broader transport remains deferred.
+- Batch E2 admits only the read-only account endpoint semantics from `src/core/api/account.py` through an injected `core.server.bfx_read` seam for offline verification.
+- Batch E3 admits the local paper/UI semantics from `src/core/api/{paper,ui}.py` through injected `core.server` helper seams for offline/local verification only.
+- admitted strategy authority helpers:
+  - `src/core/config/authority_mode_resolver.py`
+  - `src/core/strategy/family_registry.py`
+  - `src/core/strategy/family_admission.py`
+  - `src/core/strategy/run_intent.py`
+- Config runtime-authority semantics are admitted for source/verification purposes only.
+- config/runtime authority semantics:
+  - `src/core/config/authority.py`
+  - `src/core/config/schema.py`
+  - `src/core/api/config.py`
 
-Config runtime-authority semantics are admitted for source/verification purposes only, including the
-authority/schema/API surfaces already present in the V2 source closure. Repo-tracked
-`config/runtime.seed.json` is carried as the baseline authority fallback while local
-`config/runtime.json`, non-authoritative champion artifacts, and live-adjacent/promotion surfaces
-remain deferred and excluded from the seed.
-Backtest comparison/diff semantics and associated tmp-path-isolated tests are admitted. Backtest
-execution roots, results corpora, non-authoritative champion payloads, local runtime override
-payloads, `scripts/run/run_backtest.py`, and remote/live edges remain deferred or excluded.
-Batch I1 admits the dormant optimizer package and read-only `config/optimizer/**` research corpus
-for import/test completeness only. Optimizer execution roots (`scripts/run/run_backtest.py`,
-`scripts/optimize/**`, preflight/validation CLIs), runtime-authority payload widening, and any
-server/startup activation remain deferred and excluded from this seed.
-Genesis-Core-V2 admits constrained remote MCP semantics limited to authorization, safe-mode,
-confirm-token, and transport-alias behavior already present in source. Operational launch scripts,
-deployment/tunnel/proxy guidance, and other live-adjacent surfaces remain deferred and are not
-included in this slice.
-Batch E1 admits the public candles endpoint semantics from `src/core/api/public.py` through an injected `core.server.get_exchange_client` seam for offline verification while broader transport remains deferred.
-Batch E2 admits only the read-only account endpoint semantics from `src/core/api/account.py` through an injected `core.server.bfx_read` seam for offline verification.
-Batch E3 admits the local paper/UI semantics from `src/core/api/{paper,ui}.py` through injected `core.server` helper seams for offline/local verification only.
-Batch G1 admits the Bitfinex REST read spine (`src/core/io/bitfinex/{exchange_client,read_helpers}.py`) for direct runtime verification.
-Batch G2 binds generated public/account route defaults through `src/core/server.py` to the admitted Bitfinex REST read spine only; websocket, standalone auth, and paper-route transport widening remain deferred.
-Batch F admits repo-tracked `config/runtime.seed.json` plus `config/strategy/champions/tBTCUSD_1h.json` and `config/strategy/champions/tBTCUSD_3h.json` while local `config/runtime.json`, candidate/test/backup champions, and `data/**` remain excluded.
-Batch I1 admits the dormant optimizer package and read-only `config/optimizer/**` research corpus for import/test completeness only. It does not admit optimizer execution roots, startup/server bindings, or runtime-authority payloads.
-`ChampionLoader` still falls back to `config/timeframe_configs.py` when a requested champion is missing or invalid.
+These surfaces are admitted for source, runtime, and verification purposes inside the current V2 scope.
+
+### Transport and MCP surfaces
+
+The following transport/MCP surfaces are admitted with explicit boundaries:
+
+- Batch G1 Bitfinex REST read spine:
+  - `src/core/io/bitfinex/exchange_client.py`
+  - `src/core/io/bitfinex/read_helpers.py`
+- Batch G2 binds generated public/account route defaults through `src/core/server.py` to the admitted Bitfinex REST read spine only; websocket, standalone auth, and paper-route transport widening remain deferred.
+- the remaining `core.io.bitfinex.*` family may exist as dormant package surface only; it must not be rebound into server routes, startup wiring, or paper/live execution
+- Batch H2 widens transport family to include the remaining Bitfinex REST/WebSocket modules as dormant package surface only; this slice does not rebind server routes, startup wiring, or paper/live execution.
+- constrained remote MCP semantics are admitted for:
+  - authorization
+  - safe mode
+  - confirm-token behavior
+  - transport-alias behavior
+
+Genesis-Core-V2 admits constrained remote MCP semantics limited to authorization, safe-mode, confirm-token, and transport-alias behavior already present in source.
+
+Operational launchers, deployment/tunnel/proxy guidance, and other live-adjacent remote surfaces remain deferred.
+
+### Optimizer, backtest, and comparison surfaces
+
+The following are admitted in a constrained form:
+
+- backtest comparison/diff semantics:
+  - `src/core/utils/diffing/results_diff.py`
+  - `tools/compare_backtest_results.py`
+- Backtest comparison/diff semantics and associated tmp-path-isolated tests are admitted.
+- dormant optimizer package:
+  - `src/core/optimizer/**`
+- supporting diffing/Optuna helpers
+- repo-tracked `config/optimizer/**` research corpus
+
+Batch I1 admits the dormant optimizer package and read-only `config/optimizer/**` research corpus for import/test completeness only.
+
+These surfaces are admitted for import/test completeness, bounded research, and comparison workflows only.
+
+They do **not** admit execution-root widening, startup/server bindings, or runtime-authority payload widening.
 
 ## Track B — authority migration
 
-Deferred to separate verified slices:
+Track B covers authority migration and other widening work that must remain deferred until separately validated.
 
-- remote MCP operational launchers and deployment/tunnel/proxy guidance remain deferred
-- activation/rebinding of the dormant Bitfinex transport family and other live-adjacent/private execution edges
-- freeze-sensitive surfaces
+In lifecycle terms, Track B is where Promote-facing authority widening is considered after successful validation.
+
+## Deferred by default
+
+The following remain deferred unless a separate validated slice explicitly admits them:
+
+- activation or rebinding of the dormant Bitfinex transport family into server/startup/paper/live runtime paths
+- remote MCP operational launchers, deployment/tunnel/proxy guidance, and other live-adjacent surfaces
+- local runtime override payloads and non-authoritative champion payloads
+- backtest execution roots, result corpora, and promotion-facing execution surfaces
+- optimizer execution roots such as `scripts/run/run_backtest.py`, `scripts/optimize/**`, and preflight/validation CLIs that widen authority or runtime behavior
+- freeze-sensitive/runtime-authority widening without explicit validation
+- unverified content migration for its own sake
 
 ## Verification loop
 
+### Baseline checks
+
 - In `Genesis-Core`: `python -m pytest tests/utils/test_open_v2_runtime_seed.py -q`
-- Regenerate the seed: `python scripts/extract/open_v2_runtime_seed.py --clean`
+- Regenerate seed artifacts from `Genesis-Core` only when an explicit slice requires it: `python scripts/extract/open_v2_runtime_seed.py --clean`
 - In `Genesis-Core-V2`: `python -m pytest -q`
-- Local task loop: `genesis-v2: api shell`, `genesis-v2: mcp stdio`, `genesis-v2: smoke suite`, `genesis-v2: pytest`
-- Local debug loop: `genesis-v2: api shell`, `genesis-v2: mcp stdio`, `genesis-v2: smoke suite`, `genesis-v2: pytest`
-- Local editor settings: `python.analysis.extraPaths`, `python.testing.*`, `python.envFile`
-- Local editor recommendations: `ms-python.python`, `ms-python.vscode-pylance`, `charliermarsh.ruff`
-- Local pre-commit workflow: `pre-commit install`, then `pre-commit run --all-files`
-- Local QA defaults: `pytest` recursion guards plus narrow `ruff`/`black` excludes in `pyproject.toml`
-- Non-installed local MCP launcher: `python scripts/mcp/mcp_stdio.py`, optional config probe via `python scripts/mcp/mcp_stdio.py --print-config`
-- Non-installed local API launcher: `python scripts/api/api_shell.py`, optional reload via `python scripts/api/api_shell.py --reload`
-- Non-installed local pytest launcher: `python scripts/validate/pytest_suite.py`, optional focused run via `python scripts/validate/pytest_suite.py tests/runtime/test_local_api_shell_script.py -q`
-- Non-installed local Bitfinex candle fetch script: `python scripts/data/fetch_historical.py --symbol tBTCUSD --timeframes 1m 5m 15m 30m 1h 3h 6h 12h 1D 7D 14D`, optional raw-json conversion via `python scripts/data/fetch_historical.py --from-raw-json --symbol tBTCUSD --timeframes 1h 1D`
-- Non-installed local smoke scripts: `python scripts/smoke/fixture_smoke.py`, `python scripts/smoke/backtest_smoke.py`, `python scripts/smoke/champion_smoke.py`, `python scripts/smoke/evaluate_champion_smoke.py`, `python scripts/smoke/model_smoke.py`, `python scripts/smoke/smoke_suite.py`
-- Installable local console scripts: `genesis-v2-api-shell`, `genesis-v2-mcp-stdio`, `genesis-v2-pytest`, `genesis-v2-champion-smoke`, `genesis-v2-evaluate-champion-smoke`, `genesis-v2-fixture-smoke`, `genesis-v2-backtest-smoke`, `genesis-v2-model-smoke`, `genesis-v2-smoke-suite`
-- Installable console-script verification: `python -m pip install -e ".[dev,mcp]"`, then `pytest tests/runtime/test_installed_console_scripts.py -q`
-- Editable-install module loop: `python -m uvicorn core.server:app --app-dir src --reload`, `python -m mcp_server.server`, `python -m pytest -q`
-- Editable-install smoke module loop: `python -m core.bootstrap.model_smoke`, `python -m core.bootstrap.champion_smoke`, `python -m core.bootstrap.evaluate_champion_smoke`, `python -m core.bootstrap.fixture_smoke`, `python -m core.bootstrap.backtest_smoke`, `python -m core.bootstrap.smoke_suite`
+
+### Local interactive workflow
+
+- Use the local VS Code task/debug loop for repeatable API, smoke, MCP, and pytest runs
+- Local VS Code tasks: `genesis-v2: api shell`, `genesis-v2: mcp stdio`, `genesis-v2: smoke suite`, `genesis-v2: pytest`
+- Local VS Code debug profiles: `genesis-v2: api shell`, `genesis-v2: mcp stdio`, `genesis-v2: smoke suite`, `genesis-v2: pytest`
+- Keep local editor settings aligned with `python.analysis.extraPaths`, `python.testing.*`, and `python.envFile`
+- Keep editor recommendations aligned with:
+  - `ms-python.python`
+  - `ms-python.vscode-pylance`
+  - `charliermarsh.ruff`
+- Use `pre-commit install` followed by `pre-commit run --all-files` for local hygiene
+
+### Non-installed launchers
+
+- MCP stdio: `python scripts/mcp/mcp_stdio.py`
+- API shell: `python scripts/api/api_shell.py`
+- Pytest wrapper: `python scripts/validate/pytest_suite.py`
+- Candle refresh: `python scripts/data/fetch_historical.py --symbol tBTCUSD --timeframes 1m 5m 15m 30m 1h 3h 6h 12h 1D 7D 14D`
+- Smoke loops:
+  - `python scripts/smoke/fixture_smoke.py`
+  - `python scripts/smoke/backtest_smoke.py`
+  - `python scripts/smoke/champion_smoke.py`
+  - `python scripts/smoke/evaluate_champion_smoke.py`
+  - `python scripts/smoke/model_smoke.py`
+  - `python scripts/smoke/smoke_suite.py`
+
+### Editable-install and console-script workflow
+
+- Installable console scripts include:
+  - `genesis-v2-api-shell`
+  - `genesis-v2-mcp-stdio`
+  - `genesis-v2-pytest`
+  - `genesis-v2-champion-smoke`
+  - `genesis-v2-evaluate-champion-smoke`
+  - `genesis-v2-fixture-smoke`
+  - `genesis-v2-backtest-smoke`
+  - `genesis-v2-model-smoke`
+  - `genesis-v2-smoke-suite`
+- Editable install verification: `python -m pip install -e ".[dev,mcp]"`
+- Installed console-script verification: `pytest tests/runtime/test_installed_console_scripts.py -q`
+- Editable module loop:
+  - `python -m uvicorn core.server:app --app-dir src --reload`
+  - `python -m mcp_server.server`
+  - `python -m pytest -q`
+  - `python -m core.bootstrap.model_smoke`
+  - `python -m core.bootstrap.champion_smoke`
+  - `python -m core.bootstrap.evaluate_champion_smoke`
+  - `python -m core.bootstrap.fixture_smoke`
+  - `python -m core.bootstrap.backtest_smoke`
+  - `python -m core.bootstrap.smoke_suite`
 - Optional local MCP install: `python -m pip install -e ".[mcp]"`

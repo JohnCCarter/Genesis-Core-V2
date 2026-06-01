@@ -18,14 +18,12 @@ This document is subordinate to the repository's higher-order governance sources
 In case of conflict, follow the higher-order documents first, especially:
 
 - `.github/copilot-instructions.md`
-- `docs/OPUS_46_GOVERNANCE.md`
+- `docs/SKELETON_SCOPE.md`
 - `docs/governance_mode.md`
 - `AGENTS.md`
 
-Role-specific interpretation may also require:
-
-- `.github/agents/Codex53.agent.md`
-- `.github/agents/Opus46.agent.md`
+When present and relevant, repository root docs such as `README.md` and `handoff.md` may provide
+additional practical context, but they must not override the authority order above.
 
 This policy focuses on where repository content should live, how modules should be split,
 and when to prefer folders, sibling modules, or local helper files.

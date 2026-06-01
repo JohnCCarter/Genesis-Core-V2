@@ -143,7 +143,7 @@ editor-specific tasks or an editable install first.
 ## Skeleton workflow
 
 - `AGENTS.md` defines the skeleton-first repo contract.
-- `.github/copilot-instructions.md` keeps local agent work aligned with generator-driven slices.
+- `.github/copilot-instructions.md` keeps local agent work aligned with the V2 operating model and validated slices.
 - `docs/SKELETON_SCOPE.md` records Track A vs Track B and the verification loop.
 - `.vscode/mcp.json` wires VS Code to the local `scripts/mcp/mcp_stdio.py` wrapper using `config/mcp_settings.json`.
 - `.vscode/tasks.json` and `.vscode/launch.json` route local API/MCP/smoke/test loops through the repo-local wrappers while keeping `PYTHONPATH=${workspaceFolder}/src` available.

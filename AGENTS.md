@@ -1,13 +1,27 @@
-# AGENTS.md — Genesis-Core-V2 Skeleton Contract
+# AGENTS.md — Genesis-Core-V2 Operating Contract
 
 ## Purpose
 
-`Genesis-Core-V2` is a generated, local-only skeleton repository.
-`Genesis-Core` remains the source of truth until a slice is explicitly admitted and verified.
+`Genesis-Core-V2` is an RI-first, evidence-first, local-first repository.
+
+`Genesis-Core` may still be used as historical, migration, and audit reference when a slice
+explicitly requires that path, but it does not override admitted V2 authority surfaces by default.
 
 ## Working rule
 
 Prioritize V2 skeleton completeness before content migration.
+
+## Lifecycle
+
+Genesis-Core-V2 runs on three lifecycle stages:
+
+1. Research
+2. Validate
+3. Promote
+
+Promotion should only happen after validated evidence.
+
+Track A and Track B below remain the compatibility map for seed/governance boundaries.
 
 ## Track A — skeleton completeness
 
@@ -49,11 +63,11 @@ Defer these to separate verified slices:
 
 ## Change workflow
 
-1. Change the generator in `Genesis-Core`.
-2. Regenerate `Genesis-Core-V2`.
-3. Run the focused generator regressions in `Genesis-Core`.
-4. Run `pytest -q` in `Genesis-Core-V2`.
-5. Commit only green, scoped slices.
+1. Define a bounded V2 slice (scope IN/OUT).
+2. Apply minimal changes directly in `Genesis-Core-V2` for V2-scoped work.
+3. Use `Genesis-Core` source refresh only when the slice explicitly depends on generator/seed regeneration.
+4. Run the relevant focused checks and `pytest -q` in `Genesis-Core-V2`.
+5. Commit only green, scoped slices with traceable evidence.
 
 ## Default
 

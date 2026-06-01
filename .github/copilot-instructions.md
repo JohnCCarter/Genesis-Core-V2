@@ -1,14 +1,166 @@
 # Copilot Instructions — Genesis-Core-V2
 
-This repository is a skeleton-first, local-only V2 seed.
+## Genesis-Core-V2 Operating Model
+
+Last update: 2026-06-01
+
+## Mission
+
+Genesis-Core-V2 exists to make research faster, validation stronger, and promotion safer.
+
+Research fast.
+Validate hard.
+Promote rarely.
+
+Genesis-Core-V2 is an evidence-first repository.
+
+Governance supports reliable decisions; it is not an end in itself.
+
+## Core Workflow
+
+Research
+↓
+Validate
+↓
+Promote
+
+Every feature, policy, strategy, experiment, and architectural decision should be traceable to one of these stages.
+
+## Strategy Family Authority
+
+Genesis-Core-V2 is an RI-first repository.
+
+RI is the sole active strategy family on runtime, config-authority, champion-default, and promotion-facing surfaces.
+
+Legacy is historical reference only.
+
+Legacy may be retained for:
+
+- historical comparison
+- replay comparison
+- audit purposes
+- migration reference
+
+Legacy must not act as:
+
+- runtime authority
+- promotion authority
+- default admission target
+- architectural authority
+
+Future development should assume RI as the active strategy family unless explicitly approved otherwise.
+
+## Research Lane
+
+Research exists to discover.
+
+Research should be lightweight, inexpensive, and fast.
+
+Research outputs are evidence surfaces, not authority surfaces.
+
+Research outputs are not runtime truth.
+
+Research outputs are not promotion evidence until validated.
+
+## Validation Lane
+
+Validation exists to verify.
+
+Validation determines whether research survives controlled testing.
+
+Validation is intentionally more rigorous than research.
+
+Validation determines credibility.
+
+Validation does not automatically grant promotion authority.
+
+## Promotion Lane
+
+Promotion exists to protect runtime integrity.
+
+Promotion determines whether a validated candidate becomes operational authority.
+
+Promotion is intentionally rare.
+
+Promotion requires evidence.
+
+Promotion never occurs because an idea appears promising.
+
+## Core Principles
+
+- Evidence Over Opinion
+- Validation Before Promotion
+- Runtime Authority Must Be Earned
+- Research Is Cheap
+- Validation Is Expensive
+- Promotion Is Rare
+- Minimal Diffs
+- Deterministic Runtime
+- Security First
+
+## Governance Philosophy
+
+Governance supports:
+
+Research
+↓
+Validate
+↓
+Promote
+
+Process should always be proportional to risk.
+
+Low-risk research should remain fast.
+
+High-risk runtime changes should remain protected.
+
+## Agent Philosophy
+
+AI agents are collaborators.
+
+AI agents may:
+
+- research
+- implement
+- validate
+- review
+
+AI agents do not create authority.
+
+Authority comes from evidence, validation, promotion decisions, and approved governance paths.
+
+## Repository Philosophy
+
+Genesis-Core-V2 prioritizes:
+
+1. Faster research
+2. Better validation
+3. Safer promotion
+4. Higher AI-agent effectiveness
+5. Lower operational complexity
+6. Clear repository structure
+
+## Operating Rule
+
+When uncertainty exists:
+
+1. Research first.
+2. Validate second.
+3. Promote last.
+
+Never reverse this order.
+
+This operating model frames repository intent. Specific scope, safety, boundary, and verification rules below remain authoritative when they are more specific.
+
 Read `AGENTS.md` and `docs/SKELETON_SCOPE.md` before widening scope.
 
 ## Default behavior
 
 - Prefer the smallest admissible slice.
-- Prioritize V2 skeleton completeness before content migration.
-- Keep `Genesis-Core` as the source of truth for authority-bearing behavior until a slice is admitted.
+- Prioritize V2 evidence quality, runnable completeness, and repository clarity before widening scope.
+- Keep `Genesis-Core` as historical reference and migration/audit source when useful; do not let it override admitted V2 authority surfaces without an explicit validated slice.
 - Prefer generator-driven changes in `Genesis-Core` over manual drift in this repo.
+- For admitted V2-scoped work, prefer direct, minimal changes in `Genesis-Core-V2`; avoid speculative cross-repo drift.
 - Keep the local-only API shell runnable and tested.
 - Keep the Batch E1 public candles endpoint semantics (`core.api.public`) bound only through the generated `core.server.get_exchange_client` surface.
 - Keep the Batch E2 read-only account semantics (`core.api.account`) bound only through the generated `core.server.bfx_read` surface.
