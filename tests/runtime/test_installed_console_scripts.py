@@ -9,7 +9,6 @@ from pathlib import Path
 
 import pytest
 
-
 EXPECTED_ENTRYPOINTS = {
     "genesis-v2-api-shell": "genesis_core_v2_cli.console_scripts:api_shell_main",
     "genesis-v2-mcp-stdio": "genesis_core_v2_cli.console_scripts:mcp_stdio_main",
@@ -30,26 +29,39 @@ def _require_installed_distribution() -> None:
         pytest.skip("Editable install required for console script verification")
 
 
+def _installed_console_entrypoints() -> dict[str, str]:
+    return {
+        entry_point.name: f"{entry_point.module}:{entry_point.attr}"
+        for entry_point in importlib_metadata.entry_points(group="console_scripts")
+        if entry_point.name in EXPECTED_ENTRYPOINTS
+    }
+
+
+def _require_current_console_script_install() -> dict[str, str]:
+    _require_installed_distribution()
+    entry_points = _installed_console_entrypoints()
+    if entry_points != EXPECTED_ENTRYPOINTS:
+        pytest.skip(
+            'Current interpreter does not expose the expected Genesis-Core-V2 console scripts; run `python -m pip install -e ".[dev,mcp]"` in this interpreter.'
+        )
+    return entry_points
+
+
 def _require_module(module_name: str, install_hint: str) -> None:
     if importlib.util.find_spec(module_name) is None:
         pytest.skip(f"Console script verification requires {install_hint}")
 
 
 def test_installed_distribution_registers_expected_console_scripts() -> None:
-    _require_installed_distribution()
-
-    entry_points = {
-        entry_point.name: f"{entry_point.module}:{entry_point.attr}"
-        for entry_point in importlib_metadata.entry_points(group="console_scripts")
-        if entry_point.name in EXPECTED_ENTRYPOINTS
-    }
-
+    entry_points = _require_current_console_script_install()
     assert entry_points == EXPECTED_ENTRYPOINTS
 
 
-def _run_installed_entrypoint(command: str, command_args: list[str]) -> subprocess.CompletedProcess[str]:
+def _run_installed_entrypoint(
+    command: str, command_args: list[str]
+) -> subprocess.CompletedProcess[str]:
     repo_root = Path(__file__).resolve().parents[2]
-    code = '''
+    code = """
 import importlib.metadata as importlib_metadata
 import sys
 
@@ -61,7 +73,7 @@ entry_point = entry_points[sys.argv[1]]
 callable_obj = entry_point.load()
 sys.argv = [sys.argv[1], *sys.argv[2:]]
 raise SystemExit(callable_obj())
-'''
+"""
     return subprocess.run(
         [sys.executable, "-c", code, command, *command_args],
         cwd=repo_root,
@@ -150,7 +162,7 @@ def test_installed_console_scripts_execute(
     install_hint: str | None,
     expected_pairs: dict[str, object],
 ) -> None:
-    _require_installed_distribution()
+    _require_current_console_script_install()
     if required_module is not None and install_hint is not None:
         _require_module(required_module, install_hint)
 

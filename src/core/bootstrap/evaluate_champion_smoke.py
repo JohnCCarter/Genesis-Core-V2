@@ -6,10 +6,10 @@ from unittest.mock import patch
 
 from core.bootstrap.champion_smoke import DEFAULT_CHAMPION_FIXTURE_PATH
 from core.bootstrap.fixture_smoke import load_fixture
+from core.strategy import evaluate as evaluate_mod
 from core.strategy.champion_loader import ChampionLoader
 from core.strategy.model_registry import ModelRegistry
 from core.strategy.prob_model import predict_proba_for
-from core.strategy import evaluate as evaluate_mod
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 FIXTURE_MODEL_ROOT = REPO_ROOT / "registry" / "fixtures" / "model_registry"
@@ -35,39 +35,47 @@ def run_evaluate_champion_smoke(path: Path | None = None) -> dict[str, object]:
     previous_registry = getattr(predict_proba_for, "_registry", None)
     predict_proba_for._registry = ModelRegistry(root=FIXTURE_MODEL_ROOT)
     try:
-        with patch.object(
-            evaluate_mod,
-            "champion_loader",
-            ChampionLoader(champions_dir=fixture_path.parent),
-        ), patch.object(
-            evaluate_mod,
-            "extract_features_live",
-            new=_fake_extract_features_live,
-        ), patch.object(
-            evaluate_mod,
-            "_detect_authoritative_regime",
-            lambda *_args, **_kwargs: "balanced",
-        ), patch.object(
-            evaluate_mod,
-            "_detect_shadow_regime_from_regime_module",
-            lambda *_args, **_kwargs: "balanced",
-        ), patch.object(
-            evaluate_mod,
-            "compute_confidence",
-            lambda *_args, **_kwargs: (
-                {"buy": 0.55, "sell": 0.45, "overall": 0.55},
-                {"versions": {"confidence": "v1"}},
+        with (
+            patch.object(
+                evaluate_mod,
+                "champion_loader",
+                ChampionLoader(champions_dir=fixture_path.parent),
             ),
-        ), patch.object(
-            evaluate_mod,
-            "compute_htf_regime",
-            lambda *_args, **_kwargs: "balanced",
-        ), patch.object(
-            evaluate_mod,
-            "decide",
-            lambda *_args, **_kwargs: (
-                "NONE",
-                {"versions": {"decision": "v1"}, "reasons": [], "state_out": {}, "size": 0.0},
+            patch.object(
+                evaluate_mod,
+                "extract_features_live",
+                new=_fake_extract_features_live,
+            ),
+            patch.object(
+                evaluate_mod,
+                "_detect_authoritative_regime",
+                lambda *_args, **_kwargs: "balanced",
+            ),
+            patch.object(
+                evaluate_mod,
+                "_detect_shadow_regime_from_regime_module",
+                lambda *_args, **_kwargs: "balanced",
+            ),
+            patch.object(
+                evaluate_mod,
+                "compute_confidence",
+                lambda *_args, **_kwargs: (
+                    {"buy": 0.55, "sell": 0.45, "overall": 0.55},
+                    {"versions": {"confidence": "v1"}},
+                ),
+            ),
+            patch.object(
+                evaluate_mod,
+                "compute_htf_regime",
+                lambda *_args, **_kwargs: "balanced",
+            ),
+            patch.object(
+                evaluate_mod,
+                "decide",
+                lambda *_args, **_kwargs: (
+                    "NONE",
+                    {"versions": {"decision": "v1"}, "reasons": [], "state_out": {}, "size": 0.0},
+                ),
             ),
         ):
             result, meta = evaluate_mod.evaluate_pipeline(
@@ -103,7 +111,9 @@ def run_evaluate_champion_smoke(path: Path | None = None) -> dict[str, object]:
         ),
         "risk_map_rows": len((effective_config.get("risk") or {}).get("risk_map") or []),
         "meta_note": (effective_config.get("meta") or {}).get("note"),
-        "precomputed_feature_keys": sorted((effective_config.get("precomputed_features") or {}).keys()),
+        "precomputed_feature_keys": sorted(
+            (effective_config.get("precomputed_features") or {}).keys()
+        ),
     }
 
 

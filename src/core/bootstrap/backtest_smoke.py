@@ -84,19 +84,24 @@ def run_backtest_fixture_smoke(path: Path | None = None) -> dict[str, Any]:
     )
     engine.candles_df = _fixture_frame(payload)
 
-    with patch.object(
-        engine.champion_loader,
-        "load_cached",
-        return_value=_DummyChampionCfg(),
-    ), patch(
-        "core.backtest.engine.evaluate_pipeline",
-        new=_fake_evaluate_pipeline,
-    ), patch(
-        "core.backtest.engine_results.shutil.which",
-        return_value=None,
-    ), patch(
-        "core.backtest.engine.tqdm",
-        new=_quiet_tqdm,
+    with (
+        patch.object(
+            engine.champion_loader,
+            "load_cached",
+            return_value=_DummyChampionCfg(),
+        ),
+        patch(
+            "core.backtest.engine.evaluate_pipeline",
+            new=_fake_evaluate_pipeline,
+        ),
+        patch(
+            "core.backtest.engine_results.shutil.which",
+            return_value=None,
+        ),
+        patch(
+            "core.backtest.engine.tqdm",
+            new=_quiet_tqdm,
+        ),
     ):
         first = engine.run(configs=configs)
         second = engine.run(configs=configs)

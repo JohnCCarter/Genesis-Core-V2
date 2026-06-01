@@ -3,7 +3,6 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-
 EXPECTED_LAUNCH_PROGRAMS = {
     "genesis-v2: api shell": "${workspaceFolder}/scripts/api/api_shell.py",
     "genesis-v2: mcp stdio": "${workspaceFolder}/scripts/mcp/mcp_stdio.py",

@@ -25,6 +25,7 @@ def test_pyproject_declares_narrow_local_tooling_defaults() -> None:
     repo_root = Path(__file__).resolve().parents[2]
     payload = tomllib.loads((repo_root / "pyproject.toml").read_text(encoding="utf-8"))
 
+    assert payload["tool"]["pytest"]["ini_options"]["pythonpath"] == ["src", "."]
     assert payload["tool"]["pytest"]["ini_options"]["norecursedirs"] == [
         "cache",
         "data",

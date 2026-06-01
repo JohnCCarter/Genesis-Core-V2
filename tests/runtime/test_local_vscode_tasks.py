@@ -3,7 +3,6 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-
 EXPECTED_TASK_ARGS = {
     "genesis-v2: api shell": ["scripts/api/api_shell.py", "--reload"],
     "genesis-v2: mcp stdio": ["scripts/mcp/mcp_stdio.py"],

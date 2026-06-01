@@ -1,3 +1,4 @@
+# ruff: noqa: E402
 from __future__ import annotations
 
 import argparse
@@ -40,7 +41,9 @@ def build_runtime_config(*, host: str, port: int, reload: bool) -> dict[str, Any
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
-    config = build_runtime_config(host=str(args.host), port=int(args.port), reload=bool(args.reload))
+    config = build_runtime_config(
+        host=str(args.host), port=int(args.port), reload=bool(args.reload)
+    )
     if args.print_config:
         print(json.dumps(config, indent=2, ensure_ascii=False, sort_keys=True))
         return 0

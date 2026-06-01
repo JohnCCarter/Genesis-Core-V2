@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import importlib
 import json
 import os
 import sys
@@ -12,6 +13,22 @@ LOCAL_REPO_ROOT = Path(__file__).resolve().parents[2]
 LOCAL_SRC_ROOT = LOCAL_REPO_ROOT / "src"
 DEFAULT_MCP_CONFIG_PATH = LOCAL_REPO_ROOT / "config" / "mcp_settings.json"
 DEFAULT_PYTEST_ARGS = ["-q"]
+
+
+def _purge_shadowed_local_package(package_name: str, *, local_prefixes: tuple[str, ...]) -> None:
+    module = sys.modules.get(package_name)
+    module_file = getattr(module, "__file__", None)
+    if module_file is None:
+        return
+    try:
+        normalized_module_file = str(Path(module_file).resolve())
+    except Exception:
+        normalized_module_file = str(module_file)
+    if any(normalized_module_file.startswith(prefix) for prefix in local_prefixes):
+        return
+    for name in tuple(sys.modules):
+        if name == package_name or name.startswith(f"{package_name}."):
+            sys.modules.pop(name, None)
 
 
 def _prefer_local_paths() -> None:
@@ -27,13 +44,17 @@ def _prefer_local_paths() -> None:
             continue
         filtered.append(entry)
     sys.path[:] = [str(LOCAL_SRC_ROOT), str(LOCAL_REPO_ROOT), *filtered]
+    _purge_shadowed_local_package("core", local_prefixes=(normalized_local_src,))
+    _purge_shadowed_local_package("mcp_server", local_prefixes=(normalized_local_repo,))
 
 
 def _prefer_local_pythonpath() -> None:
     normalized_src = str(LOCAL_SRC_ROOT)
     existing = [entry for entry in os.environ.get("PYTHONPATH", "").split(os.pathsep) if entry]
     if normalized_src not in existing:
-        os.environ["PYTHONPATH"] = os.pathsep.join([normalized_src, *existing]) if existing else normalized_src
+        os.environ["PYTHONPATH"] = (
+            os.pathsep.join([normalized_src, *existing]) if existing else normalized_src
+        )
 
 
 def _load_api_server_module():
@@ -61,8 +82,8 @@ def _build_api_parser() -> argparse.ArgumentParser:
 
 def _build_api_runtime_config(args: argparse.Namespace) -> dict[str, Any]:
     server_mod = _load_api_server_module()
-    app = getattr(server_mod, "app")
-    routes = getattr(app, "routes", [])
+    app = server_mod.app
+    routes = app.routes
     return {
         "app": "core.server:app",
         "app_dir": str(LOCAL_SRC_ROOT),
@@ -169,14 +190,34 @@ def pytest_suite_main(argv: list[str] | None = None) -> int:
     return int(pytest.main(config["pytest_args"]))
 
 
-_prefer_local_paths()
+def _run_smoke_entrypoint(module_name: str) -> int:
+    _prefer_local_paths()
+    return importlib.import_module(module_name).main()
 
-from core.bootstrap.backtest_smoke import main as backtest_smoke_main
-from core.bootstrap.champion_smoke import main as champion_smoke_main
-from core.bootstrap.evaluate_champion_smoke import main as evaluate_champion_smoke_main
-from core.bootstrap.fixture_smoke import main as fixture_smoke_main
-from core.bootstrap.model_smoke import main as model_smoke_main
-from core.bootstrap.smoke_suite import main as smoke_suite_main
+
+def backtest_smoke_main() -> int:
+    return _run_smoke_entrypoint("core.bootstrap.backtest_smoke")
+
+
+def champion_smoke_main() -> int:
+    return _run_smoke_entrypoint("core.bootstrap.champion_smoke")
+
+
+def evaluate_champion_smoke_main() -> int:
+    return _run_smoke_entrypoint("core.bootstrap.evaluate_champion_smoke")
+
+
+def fixture_smoke_main() -> int:
+    return _run_smoke_entrypoint("core.bootstrap.fixture_smoke")
+
+
+def model_smoke_main() -> int:
+    return _run_smoke_entrypoint("core.bootstrap.model_smoke")
+
+
+def smoke_suite_main() -> int:
+    return _run_smoke_entrypoint("core.bootstrap.smoke_suite")
+
 
 __all__ = [
     "api_shell_main",

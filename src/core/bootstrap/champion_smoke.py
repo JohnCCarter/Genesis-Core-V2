@@ -22,7 +22,7 @@ def load_champion_fixture(path: Path | None = None) -> dict[str, Any]:
 
 def run_champion_smoke(path: Path | None = None) -> dict[str, Any]:
     fixture_path = Path(path) if path is not None else DEFAULT_CHAMPION_FIXTURE_PATH
-    payload = load_champion_fixture(fixture_path)
+    load_champion_fixture(fixture_path)
     loader = ChampionLoader(champions_dir=fixture_path.parent)
 
     first = loader.load("tBTCUSD", "1h")
