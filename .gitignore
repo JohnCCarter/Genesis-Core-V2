@@ -8,7 +8,7 @@ __pycache__/
 cache/
 logs/
 results/
-data/
+/data/
 .env
 config/runtime.json
 .nonce_tracker.json
