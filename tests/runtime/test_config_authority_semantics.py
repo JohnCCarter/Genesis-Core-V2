@@ -111,10 +111,14 @@ def test_config_authority_api_semantics_are_tmp_path_isolated(monkeypatch, tmp_p
     assert baseline.status_code == 200
     baseline_body = baseline.json()
     assert int(baseline_body.get("version") or 0) == 0
-    assert baseline_body.get("cfg", {}).get("strategy_family") == "legacy"
-    assert baseline_body.get("cfg", {}).get("multi_timeframe", {}).get("regime_intelligence", {}).get(
-        "authority_mode"
-    ) == "legacy"
+    assert baseline_body.get("cfg", {}).get("strategy_family") == "ri"
+    assert (
+        baseline_body.get("cfg", {})
+        .get("multi_timeframe", {})
+        .get("regime_intelligence", {})
+        .get("authority_mode")
+        == "regime_module"
+    )
     assert not tmp_runtime_path.exists()
 
     validate = client.post("/config/runtime/validate", json=_ri_authority_patch())
@@ -166,7 +170,10 @@ def test_config_authority_api_semantics_are_tmp_path_isolated(monkeypatch, tmp_p
 
     persisted = json.loads(tmp_runtime_path.read_text(encoding="utf-8"))
     assert persisted["cfg"]["strategy_family"] == "ri"
-    assert persisted["cfg"]["multi_timeframe"]["regime_intelligence"]["authority_mode"] == "regime_module"
+    assert (
+        persisted["cfg"]["multi_timeframe"]["regime_intelligence"]["authority_mode"]
+        == "regime_module"
+    )
     assert "regime_unified" not in persisted["cfg"]
     assert tmp_audit_path.exists()
 
@@ -182,11 +189,23 @@ def test_config_authority_api_semantics_are_tmp_path_isolated(monkeypatch, tmp_p
     assert rejected.status_code == 400
     assert rejected.json() == {"detail": "non_whitelisted_field"}
 
-    conflict = client.post(
+    rejected_legacy = client.post(
         "/config/runtime/propose",
         headers={"Authorization": "Bearer test-secret"},
         json={
             "patch": _legacy_runtime_patch(),
+            "actor": "test",
+            "expected_version": 1,
+        },
+    )
+    assert rejected_legacy.status_code == 400
+    assert rejected_legacy.json() == {"detail": "bad_request"}
+
+    conflict = client.post(
+        "/config/runtime/propose",
+        headers={"Authorization": "Bearer test-secret"},
+        json={
+            "patch": _ri_authority_patch(),
             "actor": "test",
             "expected_version": 0,
         },

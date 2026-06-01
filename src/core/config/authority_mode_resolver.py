@@ -8,9 +8,9 @@ ALLOWED_AUTHORITY_MODES = {AUTHORITY_MODE_LEGACY, AUTHORITY_MODE_REGIME_MODULE}
 
 AUTHORITY_MODE_SOURCE_CANONICAL = "multi_timeframe.regime_intelligence.authority_mode"
 AUTHORITY_MODE_SOURCE_ALIAS = "regime_unified.authority_mode"
-AUTHORITY_MODE_SOURCE_DEFAULT = "default_legacy"
-AUTHORITY_MODE_SOURCE_CANONICAL_INVALID_FALLBACK = "canonical_invalid_fallback_legacy"
-AUTHORITY_MODE_SOURCE_ALIAS_INVALID_FALLBACK = "alias_invalid_fallback_legacy"
+AUTHORITY_MODE_SOURCE_DEFAULT = "default_regime_module"
+AUTHORITY_MODE_SOURCE_CANONICAL_INVALID_FALLBACK = "canonical_invalid_fallback_regime_module"
+AUTHORITY_MODE_SOURCE_ALIAS_INVALID_FALLBACK = "alias_invalid_fallback_regime_module"
 
 AUTHORITY_MODE_CANONICAL_PATH = (
     "multi_timeframe",
@@ -28,7 +28,7 @@ def normalize_authority_mode_strict(value: Any) -> str | None:
 
 
 def normalize_authority_mode_permissive(value: Any) -> str | None:
-    normalized = str(value).strip().lower() if value is not None else AUTHORITY_MODE_LEGACY
+    normalized = str(value).strip().lower() if value is not None else AUTHORITY_MODE_REGIME_MODULE
     return normalized if normalized in ALLOWED_AUTHORITY_MODES else None
 
 
@@ -132,9 +132,9 @@ def resolve_authority_mode_with_source_permissive(
     Precedence contract:
     1) `multi_timeframe.regime_intelligence.authority_mode` (canonical)
     2) `regime_unified.authority_mode` (compatibility alias)
-    3) default legacy fallback
+    3) default regime-module fallback
 
-    If canonical key is present but invalid, fallback is always legacy even when alias is valid.
+    If canonical key is present but invalid, fallback is always regime-module even when alias is valid.
     """
 
     cfg = dict(configs or {})
@@ -150,7 +150,7 @@ def resolve_authority_mode_with_source_permissive(
         )
         if canonical_mode is not None:
             return canonical_mode, AUTHORITY_MODE_SOURCE_CANONICAL
-        return AUTHORITY_MODE_LEGACY, AUTHORITY_MODE_SOURCE_CANONICAL_INVALID_FALLBACK
+        return AUTHORITY_MODE_REGIME_MODULE, AUTHORITY_MODE_SOURCE_CANONICAL_INVALID_FALLBACK
 
     alias_cfg = cfg.get("regime_unified")
     alias_present = isinstance(alias_cfg, dict) and ("authority_mode" in alias_cfg)
@@ -158,9 +158,9 @@ def resolve_authority_mode_with_source_permissive(
         alias_mode = normalize_authority_mode_permissive(alias_cfg.get("authority_mode"))
         if alias_mode is not None:
             return alias_mode, AUTHORITY_MODE_SOURCE_ALIAS
-        return AUTHORITY_MODE_LEGACY, AUTHORITY_MODE_SOURCE_ALIAS_INVALID_FALLBACK
+        return AUTHORITY_MODE_REGIME_MODULE, AUTHORITY_MODE_SOURCE_ALIAS_INVALID_FALLBACK
 
-    return AUTHORITY_MODE_LEGACY, AUTHORITY_MODE_SOURCE_DEFAULT
+    return AUTHORITY_MODE_REGIME_MODULE, AUTHORITY_MODE_SOURCE_DEFAULT
 
 
 def resolve_authority_mode_permissive(configs: dict[str, Any] | None) -> str:

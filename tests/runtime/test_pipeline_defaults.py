@@ -11,7 +11,9 @@ from core.pipeline import GenesisPipeline
 
 def test_pipeline_uses_backtest_defaults_for_costs(monkeypatch: pytest.MonkeyPatch) -> None:
     repo_root = Path(__file__).resolve().parents[2]
-    defaults = yaml.safe_load((repo_root / "config" / "backtest_defaults.yaml").read_text(encoding="utf-8"))
+    defaults = yaml.safe_load(
+        (repo_root / "config" / "backtest_defaults.yaml").read_text(encoding="utf-8")
+    )
 
     assert defaults["commission"] == pytest.approx(0.0)
     assert defaults["slippage"] == pytest.approx(0.0005)
@@ -26,7 +28,9 @@ def test_pipeline_uses_backtest_defaults_for_costs(monkeypatch: pytest.MonkeyPat
     assert engine.position_tracker.slippage_rate == pytest.approx(0.0005)
 
 
-def test_pipeline_setup_environment_sets_seed_and_canonical_env(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_pipeline_setup_environment_sets_seed_and_canonical_env(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     original_env = os.environ.copy()
 
     try:

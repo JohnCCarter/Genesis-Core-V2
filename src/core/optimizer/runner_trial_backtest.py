@@ -68,9 +68,9 @@ def _run_backtest_direct(
         overrides = payload.get("overrides", {})
 
         mode_sig = (
-            f"fw{os.environ.get('GENESIS_FAST_WINDOW','')}"
-            f"pc{os.environ.get('GENESIS_PRECOMPUTE_FEATURES','')}"
-            f"htf{os.environ.get('GENESIS_HTF_EXITS','')}"
+            f"fw{os.environ.get('GENESIS_FAST_WINDOW', '')}"
+            f"pc{os.environ.get('GENESIS_PRECOMPUTE_FEATURES', '')}"
+            f"htf{os.environ.get('GENESIS_HTF_EXITS', '')}"
         )
         cache_key = (
             f"{trial.symbol}_{trial.timeframe}_{trial.start_date}_{trial.end_date}_{mode_sig}"

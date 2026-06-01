@@ -194,9 +194,11 @@ def _detect_authoritative_regime(candles: dict[str, Any], configs: dict[str, Any
     return _detect_intelligence_authoritative_regime_legacy(
         candles,
         configs,
-        fallback_detect_regime_unified=lambda fallback_candles: _regime_unified.detect_regime_unified(
-            fallback_candles,
-            ema_period=50,
+        fallback_detect_regime_unified=lambda fallback_candles: (
+            _regime_unified.detect_regime_unified(
+                fallback_candles,
+                ema_period=50,
+            )
         ),
     )
 

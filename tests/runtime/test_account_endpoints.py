@@ -88,7 +88,22 @@ def test_account_positions_and_orders_filter_test_symbols(monkeypatch) -> None:
 
     async def fake_orders():
         real_order = [0, 0, 0, "tBTCUSD", 0, 0, 0.01, 0, "EXCHANGE MARKET", 0, 0, 0, 0, "ACTIVE"]
-        test_order = [0, 0, 0, "tTESTDOGE:TESTUSD", 0, 0, 25.0, 0, "EXCHANGE MARKET", 0, 0, 0, 0, "ACTIVE"]
+        test_order = [
+            0,
+            0,
+            0,
+            "tTESTDOGE:TESTUSD",
+            0,
+            0,
+            25.0,
+            0,
+            "EXCHANGE MARKET",
+            0,
+            0,
+            0,
+            0,
+            "ACTIVE",
+        ]
         return [real_order, test_order]
 
     import core.server as srv

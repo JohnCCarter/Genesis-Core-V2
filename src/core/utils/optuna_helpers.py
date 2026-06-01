@@ -366,7 +366,7 @@ def ask_tell_optimize(
         if guard.seen(sig):
             study.tell(trial, state=optuna.trial.TrialState.PRUNED)
             if show_progress:
-                print(f"[{i+1}/{n_trials}] DUPLICATE -> pruned", file=sys.stderr)
+                print(f"[{i + 1}/{n_trials}] DUPLICATE -> pruned", file=sys.stderr)
             continue
         # reserve the signature to avoid races
         guard.add(sig)
@@ -374,17 +374,17 @@ def ask_tell_optimize(
             value = objective(trial)
             study.tell(trial, value)
             if show_progress:
-                print(f"[{i+1}/{n_trials}] value={value:.6f}")
+                print(f"[{i + 1}/{n_trials}] value={value:.6f}")
         except optuna.TrialPruned as exc:
             study.tell(trial, state=optuna.trial.TrialState.PRUNED)
             if show_progress:
-                print(f"[{i+1}/{n_trials}] PRUNED: {exc}")
+                print(f"[{i + 1}/{n_trials}] PRUNED: {exc}")
         except Exception as exc:  # keep going on failures
             study.tell(trial, state=optuna.trial.TrialState.FAIL)
             guard.remove(sig)
             LOGGER.warning("Optuna trial failed (%s): %s", sig, exc)
             if show_progress:
-                print(f"[{i+1}/{n_trials}] FAIL: {exc}", file=sys.stderr)
+                print(f"[{i + 1}/{n_trials}] FAIL: {exc}", file=sys.stderr)
 
 
 # --- Reproducibility helpers -------------------------------------------------

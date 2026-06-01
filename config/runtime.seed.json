@@ -1,36 +1,33 @@
 {
   "version": 0,
   "cfg": {
-    "strategy_family": "legacy",
+    "strategy_family": "ri",
     "thresholds": {
-      "entry_conf_overall": 0.26,
+      "entry_conf_overall": 0.25,
       "regime_proba": {
-        "ranging": 0.5,
-        "bull": 0.52,
-        "bear": 0.48,
-        "balanced": 0.5
+        "balanced": 0.36
       },
       "signal_adaptation": {
-        "atr_period": 28,
+        "atr_period": 14,
         "zones": {
           "low": {
-            "entry_conf_overall": 0.24,
-            "regime_proba": 0.36
+            "entry_conf_overall": 0.16,
+            "regime_proba": 0.33
           },
           "mid": {
-            "entry_conf_overall": 0.3,
-            "regime_proba": 0.44
+            "entry_conf_overall": 0.4,
+            "regime_proba": 0.51
           },
           "high": {
-            "entry_conf_overall": 0.36,
-            "regime_proba": 0.56
+            "entry_conf_overall": 0.32,
+            "regime_proba": 0.57
           }
         }
       }
     },
     "gates": {
-      "hysteresis_steps": 2,
-      "cooldown_bars": 0
+      "hysteresis_steps": 3,
+      "cooldown_bars": 2
     },
     "risk": {
       "risk_map": [
@@ -73,6 +70,9 @@
           "3h": { "timeframe": "1D" },
           "6h": { "timeframe": "1D" }
         }
+      },
+      "regime_intelligence": {
+        "authority_mode": "regime_module"
       }
     },
     "ev": {

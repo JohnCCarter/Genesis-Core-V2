@@ -15,7 +15,7 @@ class FamilyStatus(StrEnum):
 
 class ComparisonDecision(StrEnum):
     PROMOTE = "promote"
-    KEEP_LEGACY = "keep_legacy"
+    KEEP_INCUMBENT = "keep_incumbent"
     NO_PROMOTION = "no_promotion"
     INVALID = "invalid"
 
@@ -30,8 +30,8 @@ class DecisionReason(StrEnum):
     MISSING_STABILITY = "missing_stability"
     TRADE_THRESHOLD_NOT_MET = "trade_threshold_not_met"
     PROFIT_FACTOR_MARGIN_NOT_MET = "profit_factor_margin_not_met"
-    DRAWDOWN_WORSE_THAN_LEGACY = "drawdown_worse_than_legacy"
-    STABILITY_BELOW_LEGACY = "stability_below_legacy"
+    DRAWDOWN_WORSE_THAN_INCUMBENT = "drawdown_worse_than_incumbent"
+    STABILITY_BELOW_INCUMBENT = "stability_below_incumbent"
     OVERRIDE_REQUIRED = "override_required"
     SIGNOFF_REQUIRED = "signoff_required"
     PROMOTION_APPROVED = "promotion_approved"
@@ -64,15 +64,15 @@ class MetricSnapshot:
 class ComparisonResult:
     decision: ComparisonDecision
     reasons: tuple[DecisionReason, ...]
-    legacy_metrics: MetricSnapshot
-    ri_metrics: MetricSnapshot
+    incumbent_metrics: MetricSnapshot
+    candidate_metrics: MetricSnapshot
 
     def to_dict(self) -> dict[str, object]:
         return {
             "decision": str(self.decision),
             "reasons": [str(reason) for reason in self.reasons],
-            "legacy_metrics": self.legacy_metrics.to_dict(),
-            "ri_metrics": self.ri_metrics.to_dict(),
+            "incumbent_metrics": self.incumbent_metrics.to_dict(),
+            "candidate_metrics": self.candidate_metrics.to_dict(),
         }
 
 

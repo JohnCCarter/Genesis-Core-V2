@@ -594,8 +594,7 @@ def _build_compare_url(remote_url: str | None, *, base_branch: str, head_branch:
     if not web_base:
         return None
     return (
-        f"{web_base}/compare/"
-        f"{quote(base_branch, safe='')}...{quote(head_branch, safe='')}?expand=1"
+        f"{web_base}/compare/{quote(base_branch, safe='')}...{quote(head_branch, safe='')}?expand=1"
     )
 
 

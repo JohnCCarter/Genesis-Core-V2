@@ -152,7 +152,7 @@ class HTFFibonacciExitEngine:
             # Log why no exits trigger
             return [
                 ExitAction(
-                    action="DEBUG", reason=f"levels_out_of_reach_{nearest/atr:.1f}_ATR", size=0.0
+                    action="DEBUG", reason=f"levels_out_of_reach_{nearest / atr:.1f}_ATR", size=0.0
                 )
             ]
 

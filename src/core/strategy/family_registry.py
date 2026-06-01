@@ -4,8 +4,9 @@ from dataclasses import dataclass
 from typing import Any, Literal
 
 from core.config.authority_mode_resolver import (
+    AUTHORITY_MODE_LEGACY,
     AUTHORITY_MODE_REGIME_MODULE,
-    resolve_authority_mode_permissive,
+    normalize_authority_mode_strict,
 )
 
 StrategyFamily = Literal["legacy", "ri"]
@@ -92,6 +93,28 @@ def _get_nested_value(data: dict[str, Any], path: str) -> Any:
     return current
 
 
+def _has_nested_value(data: dict[str, Any], path: str) -> bool:
+    current: Any = data
+    parts = path.split(".")
+    for part in parts[:-1]:
+        if not isinstance(current, dict) or part not in current:
+            return False
+        current = current.get(part)
+    return isinstance(current, dict) and parts[-1] in current
+
+
+def _resolve_explicit_authority_mode(config: dict[str, Any]) -> str | None:
+    if _has_nested_value(config, "multi_timeframe.regime_intelligence.authority_mode"):
+        return normalize_authority_mode_strict(
+            _get_nested_value(config, "multi_timeframe.regime_intelligence.authority_mode")
+        )
+    if _has_nested_value(config, "regime_unified.authority_mode"):
+        return normalize_authority_mode_strict(
+            _get_nested_value(config, "regime_unified.authority_mode")
+        )
+    return None
+
+
 def _normalize_declared_strategy_family(value: Any) -> StrategyFamily | None:
     if value is None:
         return None
@@ -116,7 +139,7 @@ def matches_threshold_cluster(config: dict[str, Any], cluster: dict[str, float])
 
 
 def matches_ri_cluster(config: dict[str, Any]) -> bool:
-    authority_mode = resolve_authority_mode_permissive(config)
+    authority_mode = _resolve_explicit_authority_mode(config)
     atr_period = _get_nested_value(config, "thresholds.signal_adaptation.atr_period")
     hysteresis_steps = _get_nested_value(config, "gates.hysteresis_steps")
     cooldown_bars = _get_nested_value(config, "gates.cooldown_bars")
@@ -144,11 +167,15 @@ def has_ri_signature_markers(config: dict[str, Any]) -> bool:
 
 
 def classify_strategy_family(config: dict[str, Any]) -> StrategyFamily:
-    authority_mode = resolve_authority_mode_permissive(config)
+    authority_mode = _resolve_explicit_authority_mode(config)
     if authority_mode == AUTHORITY_MODE_REGIME_MODULE:
         if matches_ri_cluster(config):
             return STRATEGY_FAMILY_RI
         raise StrategyFamilyValidationError("invalid_strategy_family:hybrid_regime_module")
+    if authority_mode == AUTHORITY_MODE_LEGACY:
+        if has_ri_signature_markers(config):
+            raise StrategyFamilyValidationError("invalid_strategy_family:hybrid_legacy_signature")
+        return STRATEGY_FAMILY_LEGACY
     if has_ri_signature_markers(config):
         raise StrategyFamilyValidationError("invalid_strategy_family:hybrid_legacy_signature")
     return STRATEGY_FAMILY_LEGACY
@@ -163,7 +190,7 @@ def validate_strategy_family_name(value: Any) -> StrategyFamily:
 
 def validate_strategy_family_config(config: dict[str, Any]) -> StrategyFamily:
     family = validate_strategy_family_name(config.get("strategy_family"))
-    authority_mode = resolve_authority_mode_permissive(config)
+    authority_mode = _resolve_explicit_authority_mode(config)
     ri_definition = FAMILY_REGISTRY[STRATEGY_FAMILY_RI]
 
     if family == STRATEGY_FAMILY_LEGACY:
@@ -195,7 +222,7 @@ def validate_strategy_family_config(config: dict[str, Any]) -> StrategyFamily:
 
 def validate_strategy_family_identity_config(config: dict[str, Any]) -> StrategyFamily:
     family = validate_strategy_family_name(config.get("strategy_family"))
-    authority_mode = resolve_authority_mode_permissive(config)
+    authority_mode = _resolve_explicit_authority_mode(config)
 
     if family == STRATEGY_FAMILY_LEGACY:
         if authority_mode == AUTHORITY_MODE_REGIME_MODULE:

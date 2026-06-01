@@ -190,7 +190,7 @@ def validate_strategy_family_admission(
 
 
 def validate_optimizer_family_admission(
-    opt_cfg: dict[str, Any]
+    opt_cfg: dict[str, Any],
 ) -> tuple[StrategyFamily, RunIntent | None]:
     resolved_family = validate_optimizer_strategy_family_identity(opt_cfg)
     run_intent = extract_optimizer_run_intent(opt_cfg)

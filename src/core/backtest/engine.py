@@ -665,9 +665,11 @@ class BacktestEngine:
                     build_cache_metadata=lambda candle_count: _build_precompute_cache_metadata(
                         candle_count=candle_count
                     ),
-                    validate_cache=lambda npz, candle_count: _validate_metadata_bearing_precompute_cache(
-                        npz,
-                        candle_count=candle_count,
+                    validate_cache=lambda npz, candle_count: (
+                        _validate_metadata_bearing_precompute_cache(
+                            npz,
+                            candle_count=candle_count,
+                        )
                     ),
                     load_cache_payload=_load_precompute_cache_payload,
                 )

@@ -66,9 +66,7 @@ def _resolve_get_exchange_client():
     server_mod = _resolve_server_module()
     if server_mod is not None and hasattr(server_mod, "get_exchange_client"):
         return server_mod.get_exchange_client
-    raise RuntimeError(
-        "Batch E3 paper verification requires `core.server.get_exchange_client`."
-    )
+    raise RuntimeError("Batch E3 paper verification requires `core.server.get_exchange_client`.")
 
 
 def _resolve_real_from_test():

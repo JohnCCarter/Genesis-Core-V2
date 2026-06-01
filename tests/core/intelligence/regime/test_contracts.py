@@ -70,8 +70,8 @@ def test_shadow_regime_observability_roundtrip_preserves_shape() -> None:
     payload = {
         "authoritative_source": "regime_unified.detect_regime_unified",
         "shadow_source": "regime.detect_regime_from_candles",
-        "authority_mode": "legacy",
-        "authority_mode_source": "default_legacy",
+        "authority_mode": "regime_module",
+        "authority_mode_source": "default_regime_module",
         "authority": "ranging",
         "shadow": "bull",
         "mismatch": True,

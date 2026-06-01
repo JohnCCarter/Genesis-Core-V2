@@ -16,7 +16,7 @@ from core.config.authority_mode_resolver import (
 @pytest.mark.parametrize(
     ("cfg", "expected"),
     [
-        ({}, ("legacy", AUTHORITY_MODE_SOURCE_DEFAULT)),
+        ({}, ("regime_module", AUTHORITY_MODE_SOURCE_DEFAULT)),
         (
             {"regime_unified": {"authority_mode": "regime_module"}},
             ("regime_module", AUTHORITY_MODE_SOURCE_ALIAS),
@@ -33,11 +33,11 @@ from core.config.authority_mode_resolver import (
                 "multi_timeframe": {"regime_intelligence": {"authority_mode": "invalid_mode"}},
                 "regime_unified": {"authority_mode": "regime_module"},
             },
-            ("legacy", AUTHORITY_MODE_SOURCE_CANONICAL_INVALID_FALLBACK),
+            ("regime_module", AUTHORITY_MODE_SOURCE_CANONICAL_INVALID_FALLBACK),
         ),
         (
             {"regime_unified": {"authority_mode": "invalid_mode"}},
-            ("legacy", AUTHORITY_MODE_SOURCE_ALIAS_INVALID_FALLBACK),
+            ("regime_module", AUTHORITY_MODE_SOURCE_ALIAS_INVALID_FALLBACK),
         ),
     ],
 )
@@ -66,7 +66,7 @@ def test_strict_vs_permissive_asymmetry_none_value(
     cfg: dict[str, object], expected_source: str, expected_error: str
 ) -> None:
     assert resolve_authority_mode_with_source_permissive(cfg) == (
-        "legacy",
+        "regime_module",
         expected_source,
     )
 

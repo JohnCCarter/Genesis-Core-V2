@@ -12,7 +12,7 @@ from pydantic import ValidationError
 from core.config.authority_mode_resolver import canonicalize_authority_mode_alias_strict
 from core.config.schema import RuntimeConfig, RuntimeSnapshot
 from core.strategy.family_registry import (
-    STRATEGY_FAMILY_LEGACY,
+    STRATEGY_FAMILY_RI,
     StrategyFamilyValidationError,
     classify_strategy_family,
 )
@@ -21,13 +21,29 @@ from core.utils.logging_redaction import get_logger
 
 _LOGGER = get_logger(__name__)
 
-_MISSING_STRATEGY_FAMILY_BACKCOMPAT_MSG = (
-    "missing_strategy_family_backcompat_requires_legacy_signature"
-)
+_MISSING_STRATEGY_FAMILY_BACKCOMPAT_MSG = "missing_strategy_family_backcompat_requires_ri_signature"
+
+_DEFAULT_RI_RUNTIME_CFG: dict[str, Any] = {
+    "strategy_family": "ri",
+    "thresholds": {
+        "entry_conf_overall": 0.25,
+        "regime_proba": {"balanced": 0.36},
+        "signal_adaptation": {
+            "atr_period": 14,
+            "zones": {
+                "low": {"entry_conf_overall": 0.16, "regime_proba": 0.33},
+                "mid": {"entry_conf_overall": 0.40, "regime_proba": 0.51},
+                "high": {"entry_conf_overall": 0.32, "regime_proba": 0.57},
+            },
+        },
+    },
+    "gates": {"hysteresis_steps": 3, "cooldown_bars": 2},
+    "multi_timeframe": {"regime_intelligence": {"authority_mode": "regime_module"}},
+}
 
 
 class _MissingStrategyFamilyBackcompatError(Exception):
-    """Internal control-flow marker for legacy-only strategy_family backcompat."""
+    """Internal control-flow marker for RI-only strategy_family backcompat."""
 
 
 def _resolve_repo_root() -> Path:
@@ -87,10 +103,14 @@ def _normalize_loaded_runtime_cfg(cfg: dict[str, Any]) -> dict[str, Any]:
         raise _MissingStrategyFamilyBackcompatError(
             _MISSING_STRATEGY_FAMILY_BACKCOMPAT_MSG,
         ) from exc
-    if inferred_family != STRATEGY_FAMILY_LEGACY:
+    if inferred_family != STRATEGY_FAMILY_RI:
         _raise_missing_strategy_family_backcompat_error()
-    normalized["strategy_family"] = STRATEGY_FAMILY_LEGACY
+    normalized["strategy_family"] = STRATEGY_FAMILY_RI
     return normalized
+
+
+def _build_default_runtime_cfg() -> dict[str, Any]:
+    return RuntimeConfig(**_DEFAULT_RI_RUNTIME_CFG).model_dump_canonical()
 
 
 def _load_latest_audit_signature(audit_path: Path) -> tuple[int, str] | None:
@@ -193,7 +213,7 @@ class ConfigAuthority:
                     _LOGGER.debug("seed_read_error: %s", e)
                 except Exception as e:
                     _LOGGER.debug("seed_read_error: %s", e)
-            cfg = RuntimeConfig(strategy_family="legacy").model_dump_canonical()
+            cfg = _build_default_runtime_cfg()
             return 0, cfg
         data = json.loads(self.path.read_text(encoding="utf-8"))
         version = int(data.get("version") or 0)
@@ -314,7 +334,7 @@ class ConfigAuthority:
                 }:
                     raise ValueError("non_whitelisted_field")
                 if k == "strategy_family":
-                    if str(v).strip().lower() not in {"legacy", "ri"}:
+                    if str(v).strip().lower() not in {"ri"}:
                         raise ValueError("invalid_value:strategy_family")
                 if k == "exit":
                     _validate_exit_patch_whitelist(v)
@@ -480,7 +500,6 @@ class ConfigAuthority:
                         if authority_mode is not None and str(
                             authority_mode
                         ).strip().lower() not in {
-                            "legacy",
                             "regime_module",
                         }:
                             raise ValueError("invalid_value:regime_intelligence.authority_mode")

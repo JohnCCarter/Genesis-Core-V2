@@ -974,7 +974,7 @@ def run_optuna_impl(
 
         if duplicate_ratio > 0.5:
             print(
-                f"\n⚠️  WARNING: High duplicate rate ({duplicate_ratio*100:.1f}%)\n"
+                f"\n⚠️  WARNING: High duplicate rate ({duplicate_ratio * 100:.1f}%)\n"
                 f"   {duplicate_count}/{total_trials_attempted} trials were duplicates.\n"
                 f"   This suggests:\n"
                 f"   - Search space may be too narrow\n"
@@ -1002,7 +1002,7 @@ def run_optuna_impl(
 
         if zero_trade_ratio > 0.5:
             print(
-                f"\n⚠️  WARNING: High zero-trade rate ({zero_trade_ratio*100:.1f}%)\n"
+                f"\n⚠️  WARNING: High zero-trade rate ({zero_trade_ratio * 100:.1f}%)\n"
                 f"   {zero_trade_count}/{total_trials_attempted} trials produced 0 trades.\n"
                 f"   This suggests:\n"
                 f"   - Entry confidence thresholds too high\n"
@@ -1017,7 +1017,7 @@ def run_optuna_impl(
 
         if pruned_ratio > 0.5:
             print(
-                f"\n⚠️  WARNING: High pruned rate ({pruned_ratio*100:.1f}%)\n"
+                f"\n⚠️  WARNING: High pruned rate ({pruned_ratio * 100:.1f}%)\n"
                 f"   {pruned_count}/{total_trials_attempted} trials were pruned.\n"
                 f"   This suggests:\n"
                 f"   - Pruner is too aggressive (warmup/interval too low)\n"

@@ -36,14 +36,14 @@ def test_models_expose_explicit_status_enum() -> None:
 
 
 def test_ri_wins_and_can_be_promoted() -> None:
-    legacy = _metrics(
-        "legacy",
+    incumbent = _metrics(
+        "ri",
         profit_factor=1.20,
         max_drawdown=0.12,
         trades_per_year=80.0,
         stability=0.80,
     )
-    ri = _metrics(
+    candidate = _metrics(
         "ri",
         profit_factor=1.26,
         max_drawdown=0.10,
@@ -51,23 +51,30 @@ def test_ri_wins_and_can_be_promoted() -> None:
         stability=0.85,
     )
 
-    comparison = compare_families(legacy, ri)
+    comparison = compare_families(incumbent, candidate)
     promotion = apply_promotion(comparison, override_flag=True, signoff_flag=True)
+    payload = comparison.to_dict()
 
     assert comparison.decision is ComparisonDecision.PROMOTE
     assert promotion.decision is ComparisonDecision.PROMOTE
     assert promotion.reasons == (DecisionReason.PROMOTION_APPROVED,)
+    assert tuple(payload.keys()) == (
+        "decision",
+        "reasons",
+        "incumbent_metrics",
+        "candidate_metrics",
+    )
 
 
 def test_ri_slightly_better_but_below_margin_results_in_no_promotion() -> None:
-    legacy = _metrics(
-        "legacy",
+    incumbent = _metrics(
+        "ri",
         profit_factor=1.20,
         max_drawdown=0.12,
         trades_per_year=80.0,
         stability=0.80,
     )
-    ri = _metrics(
+    candidate = _metrics(
         "ri",
         profit_factor=1.24,
         max_drawdown=0.10,
@@ -75,23 +82,23 @@ def test_ri_slightly_better_but_below_margin_results_in_no_promotion() -> None:
         stability=0.85,
     )
 
-    comparison = compare_families(legacy, ri)
+    comparison = compare_families(incumbent, candidate)
     promotion = apply_promotion(comparison, override_flag=True, signoff_flag=True)
 
-    assert comparison.decision is ComparisonDecision.KEEP_LEGACY
+    assert comparison.decision is ComparisonDecision.KEEP_INCUMBENT
     assert DecisionReason.PROFIT_FACTOR_MARGIN_NOT_MET in comparison.reasons
     assert promotion.decision is ComparisonDecision.NO_PROMOTION
 
 
 def test_ri_worse_drawdown_is_rejected() -> None:
-    legacy = _metrics(
-        "legacy",
+    incumbent = _metrics(
+        "ri",
         profit_factor=1.20,
         max_drawdown=0.12,
         trades_per_year=80.0,
         stability=0.80,
     )
-    ri = _metrics(
+    candidate = _metrics(
         "ri",
         profit_factor=1.30,
         max_drawdown=0.13,
@@ -99,23 +106,23 @@ def test_ri_worse_drawdown_is_rejected() -> None:
         stability=0.85,
     )
 
-    comparison = compare_families(legacy, ri)
+    comparison = compare_families(incumbent, candidate)
     promotion = apply_promotion(comparison, override_flag=True, signoff_flag=True)
 
-    assert comparison.decision is ComparisonDecision.KEEP_LEGACY
-    assert DecisionReason.DRAWDOWN_WORSE_THAN_LEGACY in comparison.reasons
+    assert comparison.decision is ComparisonDecision.KEEP_INCUMBENT
+    assert DecisionReason.DRAWDOWN_WORSE_THAN_INCUMBENT in comparison.reasons
     assert promotion.decision is ComparisonDecision.NO_PROMOTION
 
 
 def test_low_trades_returns_invalid() -> None:
-    legacy = _metrics(
-        "legacy",
+    incumbent = _metrics(
+        "ri",
         profit_factor=1.20,
         max_drawdown=0.12,
         trades_per_year=80.0,
         stability=0.80,
     )
-    ri = _metrics(
+    candidate = _metrics(
         "ri",
         profit_factor=1.30,
         max_drawdown=0.10,
@@ -123,21 +130,21 @@ def test_low_trades_returns_invalid() -> None:
         stability=0.85,
     )
 
-    comparison = compare_families(legacy, ri)
+    comparison = compare_families(incumbent, candidate)
 
     assert comparison.decision is ComparisonDecision.INVALID
     assert comparison.reasons == (DecisionReason.TRADE_THRESHOLD_NOT_MET,)
 
 
 def test_missing_override_rejects_promotion() -> None:
-    legacy = _metrics(
-        "legacy",
+    incumbent = _metrics(
+        "ri",
         profit_factor=1.20,
         max_drawdown=0.12,
         trades_per_year=80.0,
         stability=0.80,
     )
-    ri = _metrics(
+    candidate = _metrics(
         "ri",
         profit_factor=1.30,
         max_drawdown=0.10,
@@ -145,7 +152,7 @@ def test_missing_override_rejects_promotion() -> None:
         stability=0.85,
     )
 
-    comparison = compare_families(legacy, ri)
+    comparison = compare_families(incumbent, candidate)
     promotion = apply_promotion(comparison, override_flag=False, signoff_flag=True)
 
     assert comparison.decision is ComparisonDecision.PROMOTE

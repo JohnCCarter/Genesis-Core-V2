@@ -14,9 +14,8 @@ ROOT = Path(__file__).resolve().parents[3]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from config import timeframe_configs  # noqa: E402
-
 CHAMPIONS_DIR = ROOT / "config" / "strategy" / "champions"
+RUNTIME_SEED_PATH = ROOT / "config" / "runtime.seed.json"
 
 
 @dataclass(slots=True)
@@ -97,6 +96,18 @@ class ChampionLoader:
             loaded_at=datetime.now(UTC).isoformat(),
         )
 
+    def _load_runtime_seed_config(self) -> dict[str, Any] | None:
+        try:
+            payload = json.loads(RUNTIME_SEED_PATH.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            return None
+        cfg = payload.get("cfg")
+        if not isinstance(cfg, dict):
+            return None
+        if str(cfg.get("strategy_family") or "").strip().lower() != "ri":
+            return None
+        return cfg
+
     def _load_from_disk(self, symbol: str, timeframe: str) -> _CacheEntry:
         champion_path = self._champion_path(symbol, timeframe)
         config_data: dict[str, Any] | None = None
@@ -122,12 +133,10 @@ class ChampionLoader:
                     except OSError:
                         mtime = None
         if config_data is None:
-            fallback_source = timeframe
-            try:
-                config_data = timeframe_configs.get_timeframe_config(timeframe)
-            except ValueError:
-                config_data = timeframe_configs.get_timeframe_config("1h")
-                fallback_source = "fallback_1h"
+            fallback_source = "runtime_seed"
+            config_data = self._load_runtime_seed_config()
+            if config_data is None:
+                raise ValueError("champion_runtime_seed_unavailable")
             version = "baseline"
             source = f"baseline:{fallback_source}"
             exists = False

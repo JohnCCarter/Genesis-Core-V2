@@ -118,7 +118,7 @@ def _ri_optimizer_research_config(
 @pytest.mark.parametrize(
     ("cfg", "expected"),
     [
-        ({}, ("legacy", AUTHORITY_MODE_SOURCE_DEFAULT)),
+        ({}, ("regime_module", AUTHORITY_MODE_SOURCE_DEFAULT)),
         (
             {"regime_unified": {"authority_mode": "regime_module"}},
             ("regime_module", AUTHORITY_MODE_SOURCE_ALIAS),
@@ -135,19 +135,19 @@ def _ri_optimizer_research_config(
                 "multi_timeframe": {"regime_intelligence": {"authority_mode": "invalid_mode"}},
                 "regime_unified": {"authority_mode": "regime_module"},
             },
-            ("legacy", AUTHORITY_MODE_SOURCE_CANONICAL_INVALID_FALLBACK),
+            ("regime_module", AUTHORITY_MODE_SOURCE_CANONICAL_INVALID_FALLBACK),
         ),
         (
             {"regime_unified": {"authority_mode": "invalid_mode"}},
-            ("legacy", AUTHORITY_MODE_SOURCE_ALIAS_INVALID_FALLBACK),
+            ("regime_module", AUTHORITY_MODE_SOURCE_ALIAS_INVALID_FALLBACK),
         ),
     ],
     ids=[
-        "default_legacy",
+        "default_regime_module",
         "alias_regime_module",
         "canonical_legacy_wins",
-        "canonical_invalid_falls_back_to_legacy",
-        "alias_invalid_falls_back_to_legacy",
+        "canonical_invalid_falls_back_to_regime_module",
+        "alias_invalid_falls_back_to_regime_module",
     ],
 )
 def test_strategy_authority_resolver_contract(
@@ -160,7 +160,10 @@ def test_strategy_family_registry_contract() -> None:
     cfg = _canonical_ri_config(strategy_family="ri")
 
     assert resolve_strategy_family(cfg) == STRATEGY_FAMILY_RI
-    assert inject_strategy_family({"thresholds": {"entry_conf_overall": 0.6}})["strategy_family"] == STRATEGY_FAMILY_LEGACY
+    assert (
+        inject_strategy_family({"thresholds": {"entry_conf_overall": 0.6}})["strategy_family"]
+        == STRATEGY_FAMILY_LEGACY
+    )
 
     with pytest.raises(StrategyFamilyValidationError, match="cross_family_promotion"):
         validate_cross_family_promotion("legacy", "ri")

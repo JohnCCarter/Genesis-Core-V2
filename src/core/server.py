@@ -1,3 +1,4 @@
+# ruff: noqa: I001
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -33,6 +34,7 @@ from core.config.settings import get_settings  # noqa: F401
 from core.io.bitfinex import read_helpers as bfx_read  # noqa: F401
 from core.io.bitfinex.exchange_client import aclose_http_client, get_exchange_client  # noqa: F401
 from core.utils.logging_redaction import get_logger
+
 _LOGGER = get_logger("core.server")
 
 # Minsta orderstorlek per test-ticker (kan uppdateras via probing)

@@ -1,4 +1,4 @@
-﻿"""
+"""
 Tests for Optuna default config caching optimization.
 """
 
@@ -103,9 +103,9 @@ class TestDefaultConfigCaching:
             avg_warm_time = sum(warm_times) / len(warm_times)
 
             # Cached calls should be at least 10x faster
-            assert avg_warm_time < cold_time / 10, (
-                f"Cache not effective: cold={cold_time:.6f}s, " f"avg_warm={avg_warm_time:.6f}s"
-            )
+            assert (
+                avg_warm_time < cold_time / 10
+            ), f"Cache not effective: cold={cold_time:.6f}s, avg_warm={avg_warm_time:.6f}s"
 
     def test_cache_returns_copy_safe_for_mutation(self):
         """Returned config should be safe to mutate without affecting cache."""

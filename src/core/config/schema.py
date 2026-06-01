@@ -151,7 +151,7 @@ class RegimeDefinitionConfig(RuntimeSection):
 
 
 class RegimeIntelligenceConfig(RuntimeSection):
-    authority_mode: Literal["legacy", "regime_module"] = Field(default="legacy")
+    authority_mode: Literal["regime_module"] = Field(default="regime_module")
     regime_definition: RegimeDefinitionConfig | None = None
 
 
@@ -162,7 +162,7 @@ class RegimeUnifiedAliasConfig(RuntimeSection):
     `multi_timeframe.regime_intelligence.authority_mode`.
     """
 
-    authority_mode: Literal["legacy", "regime_module"] = Field(default="legacy")
+    authority_mode: Literal["regime_module"] = Field(default="regime_module")
 
 
 class ResearchBullHighPersistenceOverrideConfig(RuntimeSection):
@@ -308,7 +308,7 @@ class HTFExitConfig(RuntimeSection):
 
 
 class RuntimeConfig(RuntimeSection):
-    strategy_family: Literal["legacy", "ri"]
+    strategy_family: Literal["ri"] = Field(default="ri")
     thresholds: Thresholds = Field(default_factory=Thresholds)
     gates: Gates = Field(default_factory=Gates)
     risk: Risk = Field(default_factory=Risk)
