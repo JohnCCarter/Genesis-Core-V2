@@ -1,0 +1,114 @@
+name: Champion Freeze Guard (V2)
+
+# Enforces frozen champion config during the current validation/paper period in V2.
+# Blocks changes to config/strategy/champions/ on all non-archive branches while freeze is active.
+
+permissions:
+  contents: read
+
+on:
+  push:
+    branches-ignore:
+      - "archive/**"
+      - "Archive/**"
+  pull_request:
+    branches-ignore:
+      - "archive/**"
+      - "Archive/**"
+  workflow_dispatch:
+
+jobs:
+  check-champion-freeze:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check if in freeze period
+        id: check-period
+        run: |
+          # V2 freeze period configuration (UTC)
+          # Update these dates intentionally as part of explicit governance decisions.
+          # Lifecycle framing: Research -> Validate -> Promote
+          # Freeze protects promotion-facing champion authority during Validate.
+          FREEZE_START="2026-06-01"
+          FREEZE_END="2026-12-31"
+
+          CURRENT_DATE=$(date -u +%Y-%m-%d)
+
+          FREEZE_START_EPOCH=$(date -d "$FREEZE_START" +%s)
+          FREEZE_END_EPOCH=$(date -d "$FREEZE_END" +%s)
+          CURRENT_EPOCH=$(date -d "$CURRENT_DATE" +%s)
+
+          if [ "$CURRENT_EPOCH" -ge "$FREEZE_START_EPOCH" ] && [ "$CURRENT_EPOCH" -le "$FREEZE_END_EPOCH" ]; then
+            echo "in_freeze=true" >> "$GITHUB_OUTPUT"
+            echo "freeze_start=$FREEZE_START" >> "$GITHUB_OUTPUT"
+            echo "freeze_end=$FREEZE_END" >> "$GITHUB_OUTPUT"
+            echo "::notice::V2 champion freeze period active: $FREEZE_START to $FREEZE_END"
+          else
+            echo "in_freeze=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Not in V2 champion freeze period (active window: $FREEZE_START to $FREEZE_END)"
+          fi
+
+      - name: Check for champion changes (PR)
+        if: steps.check-period.outputs.in_freeze == 'true' && github.event_name == 'pull_request'
+        run: |
+          echo "Checking for V2 changes to config/strategy/champions/ in PR..."
+
+          git fetch --no-tags origin "${{ github.base_ref }}"
+
+          CHANGED_FILES=$(git diff --name-only "origin/${{ github.base_ref }}...HEAD" -- config/strategy/champions/)
+
+          if [ -n "$CHANGED_FILES" ]; then
+            echo "::error::CHAMPION FREEZE VIOLATION detected in Genesis-Core-V2!"
+            echo "::error::The following champion files were modified during freeze period:"
+            echo "$CHANGED_FILES" | while read -r file; do
+              echo "::error::  - $file"
+            done
+            echo "::error::Freeze period: ${{ steps.check-period.outputs.freeze_start }} to ${{ steps.check-period.outputs.freeze_end }}"
+            echo "::error::Champion configs are FROZEN during Validate/Promotion protection window."
+            echo "::error::If urgent changes are required, update FREEZE_END in .github/workflows/champion-freeze-guard.yml via explicit governance decision."
+            exit 1
+          else
+            echo "::notice::No champion changes detected. Check passed."
+          fi
+
+      - name: Check for champion changes (push)
+        if: steps.check-period.outputs.in_freeze == 'true' && github.event_name == 'push'
+        run: |
+          echo "Checking for V2 changes to config/strategy/champions/ in push..."
+
+          if git rev-parse HEAD~1 >/dev/null 2>&1; then
+            CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD -- config/strategy/champions/)
+
+            if [ -n "$CHANGED_FILES" ]; then
+              echo "::error::CHAMPION FREEZE VIOLATION detected in Genesis-Core-V2!"
+              echo "::error::The following champion files were modified during freeze period:"
+              echo "$CHANGED_FILES" | while read -r file; do
+                echo "::error::  - $file"
+              done
+              echo "::error::Freeze period: ${{ steps.check-period.outputs.freeze_start }} to ${{ steps.check-period.outputs.freeze_end }}"
+              echo "::error::Champion configs are FROZEN during Validate/Promotion protection window."
+              echo "::error::If urgent changes are required, update FREEZE_END in .github/workflows/champion-freeze-guard.yml via explicit governance decision."
+              exit 1
+            else
+              echo "::notice::No champion changes detected. Check passed."
+            fi
+          else
+            echo "::notice::First commit or no previous commit found. Skipping check."
+          fi
+
+      - name: Summary
+        if: always()
+        run: |
+          if [ "${{ steps.check-period.outputs.in_freeze }}" == "true" ]; then
+            echo "Champion Freeze Guard (V2): ACTIVE"
+            echo "Freeze period: ${{ steps.check-period.outputs.freeze_start }} to ${{ steps.check-period.outputs.freeze_end }}"
+            echo "Protected path: config/strategy/champions/"
+            echo "Enforcement: all non-archive branches"
+          else
+            echo "Champion Freeze Guard (V2): INACTIVE (outside freeze window)"
+          fi
