@@ -86,6 +86,13 @@ def raw_candles_dir() -> Path:
     return Path("data/raw/bitfinex/candles")
 
 
+def raw_frozen_candles_path(symbol: str, timeframe: str) -> Path:
+    """Return path for raw-frozen candle parquet."""
+
+    suffix = timeframe_filename_suffix(timeframe)
+    return Path("data/raw") / f"{symbol}_{suffix}_frozen.parquet"
+
+
 def get_candles_path(symbol: str, timeframe: str, *, allow_legacy: bool = True) -> Path:
     """Return existing candle parquet for symbol/timeframe (curated preferred)."""
     suffixes = _month_suffix_candidates(timeframe)
