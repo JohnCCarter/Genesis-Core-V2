@@ -171,7 +171,7 @@ def run_premortem(
                 )
             ),
             mitigation="Use a valid run-intent and only allow promote-phase for promotion/freeze intents.",
-        )
+        ),
     ]
 
     if (
@@ -182,11 +182,7 @@ def run_premortem(
     ):
         risk_score = min(
             100,
-            sum(
-                _SEVERITY_WEIGHT[risk.severity]
-                for risk in risks
-                if risk.triggered
-            ),
+            sum(_SEVERITY_WEIGHT[risk.severity] for risk in risks if risk.triggered),
         )
         return PremortemReport(
             decision=PremortemDecision.BLOCK,
