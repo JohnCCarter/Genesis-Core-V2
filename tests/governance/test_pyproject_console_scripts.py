@@ -12,6 +12,7 @@ def test_pyproject_declares_local_tooling_console_scripts() -> None:
         "genesis-v2-api-shell": "genesis_core_v2_cli.console_scripts:api_shell_main",
         "genesis-v2-mcp-stdio": "genesis_core_v2_cli.console_scripts:mcp_stdio_main",
         "genesis-v2-pytest": "genesis_core_v2_cli.console_scripts:pytest_suite_main",
+        "genesis-v2-qwen-builder": "genesis_core_v2_cli.console_scripts:qwen_builder_main",
         "genesis-v2-champion-smoke": "genesis_core_v2_cli.console_scripts:champion_smoke_main",
         "genesis-v2-evaluate-champion-smoke": "genesis_core_v2_cli.console_scripts:evaluate_champion_smoke_main",
         "genesis-v2-fixture-smoke": "genesis_core_v2_cli.console_scripts:fixture_smoke_main",

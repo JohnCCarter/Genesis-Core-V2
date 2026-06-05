@@ -22,12 +22,12 @@ DEFAULT_MAX_TOKENS = 4096
 API_KEY_ENV = "NVIDIA_API_KEY"
 
 
-def _first_present_env(*keys: str) -> tuple[str, str] | tuple[None, None]:
+def _first_configured_env_name(*keys: str) -> str | None:
     for key in keys:
         value = os.environ.get(key)
         if value and str(value).strip():
-            return str(value), key
-    return None, None
+            return key
+    return None
 
 
 def _load_local_env() -> None:
@@ -49,10 +49,8 @@ def build_parser() -> argparse.ArgumentParser:
     prompt_group.add_argument("--prompt")
     prompt_group.add_argument("--prompt-file", type=Path)
     parser.add_argument("--system")
-    default_base, _ = _first_present_env("NVIDIA_API_BASE", "LLM_API_BASE", "OPENAI_API_BASE")
-    default_model, _ = _first_present_env("NVIDIA_QWEN_MODEL", "LLM_MODEL", "NVIDIA_GLM_MODEL")
-    parser.add_argument("--base-url", default=default_base or DEFAULT_API_BASE)
-    parser.add_argument("--model", default=default_model or DEFAULT_MODEL)
+    parser.add_argument("--base-url", default=DEFAULT_API_BASE)
+    parser.add_argument("--model", default=DEFAULT_MODEL)
     parser.add_argument("--temperature", type=float, default=DEFAULT_TEMPERATURE)
     parser.add_argument("--top-p", type=float, default=DEFAULT_TOP_P)
     parser.add_argument("--max-tokens", type=int, default=DEFAULT_MAX_TOKENS)
@@ -71,15 +69,9 @@ def build_runtime_config(
     stream: bool,
     system_prompt: str | None,
 ) -> dict[str, Any]:
-    api_key, api_key_env = _first_present_env(
-        API_KEY_ENV, "LLM_API_KEY", "OPENAI_API_KEY", "GLM_API_KEY"
-    )
-    normalized_api_key = api_key or ""
     return {
         "api_base": base_url,
-        "api_key_env": api_key_env or API_KEY_ENV,
         "env_file": str(ENV_FILE),
-        "has_api_key": bool(normalized_api_key and normalized_api_key != "change-me"),
         "max_tokens": int(max_tokens),
         "model": model,
         "repo_root": str(REPO_ROOT),
@@ -136,6 +128,16 @@ def _build_response_payload(completion: Any, *, requested_model: str) -> dict[st
     if usage_payload is not None:
         payload["usage"] = usage_payload
     return payload
+
+
+def _write_completion_content(completion: Any) -> None:
+    choice = completion.choices[0]
+    message = choice.message
+    content = getattr(message, "content", "") or ""
+    if content:
+        sys.stdout.write(str(content))
+        sys.stdout.write("\n")
+        sys.stdout.flush()
 
 
 def _write_cold_start_note(*, stream: bool) -> None:
@@ -199,6 +201,35 @@ def _raise_user_facing_request_error(exc: Exception, *, api_key_env: str) -> Non
     raise exc
 
 
+def _configured_credential_env() -> str:
+    credential_env = _first_configured_env_name(
+        API_KEY_ENV, "LLM_API_KEY", "OPENAI_API_KEY", "GLM_API_KEY"
+    )
+    credential_value = os.environ.get(credential_env or "", "").strip()
+    if not credential_env or not credential_value or credential_value == "change-me":
+        raise SystemExit(
+            f"Set {credential_env or API_KEY_ENV} (or LLM_API_KEY) in {ENV_FILE.name} or the shell before calling this builder helper."
+        )
+    return credential_env
+
+
+def _alias_openai_credential(credential_env: str) -> tuple[bool, str | None]:
+    if credential_env == "OPENAI_API_KEY":
+        return False, None
+    inherited_openai_key = os.environ.get("OPENAI_API_KEY")
+    os.environ["OPENAI_API_KEY"] = os.environ[credential_env]
+    return True, inherited_openai_key
+
+
+def _restore_openai_credential(*, aliased: bool, inherited_openai_key: str | None) -> None:
+    if not aliased:
+        return
+    if inherited_openai_key is None:
+        os.environ.pop("OPENAI_API_KEY", None)
+    else:
+        os.environ["OPENAI_API_KEY"] = inherited_openai_key
+
+
 def main(argv: list[str] | None = None) -> int:
     _load_local_env()
     args = build_parser().parse_args(argv)
@@ -215,15 +246,7 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps(config, indent=2, ensure_ascii=False, sort_keys=True))
         return 0
 
-    api_key, api_key_env = _first_present_env(
-        API_KEY_ENV, "LLM_API_KEY", "OPENAI_API_KEY", "GLM_API_KEY"
-    )
-    normalized_api_key = api_key or ""
-    normalized_api_key_env = api_key_env or API_KEY_ENV
-    if not normalized_api_key or normalized_api_key == "change-me":
-        raise SystemExit(
-            f"Set {normalized_api_key_env} (or LLM_API_KEY) in {ENV_FILE.name} or the shell before calling this builder helper."
-        )
+    credential_env = _configured_credential_env()
 
     prompt = _resolve_prompt(args)
     try:
@@ -233,7 +256,13 @@ def main(argv: list[str] | None = None) -> int:
             'genesis-v2-qwen-builder requires the `openai` package; install with `python -m pip install -e "."`.'
         ) from exc
 
-    client = OpenAI(base_url=config["api_base"], api_key=normalized_api_key)
+    aliased_openai_key, inherited_openai_key = _alias_openai_credential(credential_env)
+    try:
+        client = OpenAI(base_url=str(config["api_base"]))
+    finally:
+        _restore_openai_credential(
+            aliased=aliased_openai_key, inherited_openai_key=inherited_openai_key
+        )
     messages = _build_messages(prompt, args.system)
     _write_cold_start_note(stream=bool(args.stream))
     try:
@@ -254,16 +283,9 @@ def main(argv: list[str] | None = None) -> int:
             "The provider request timed out. Retry with --stream for earlier feedback and verify base URL/model settings."
         ) from exc
     except APIStatusError as exc:
-        _raise_user_facing_request_error(exc, api_key_env=normalized_api_key_env)
+        _raise_user_facing_request_error(exc, api_key_env=credential_env)
 
-    print(
-        json.dumps(
-            _build_response_payload(completion, requested_model=config["model"]),
-            indent=2,
-            ensure_ascii=False,
-            sort_keys=True,
-        )
-    )
+    _write_completion_content(completion)
     return 0
 
 
