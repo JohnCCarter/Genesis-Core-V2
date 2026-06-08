@@ -1,0 +1,34 @@
+name: Feature request
+description: Propose a bounded, evidence-oriented improvement to Genesis-Core-V2.
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or opportunity
+      description: What problem are you trying to solve?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed slice
+      description: Describe the smallest useful slice to implement now.
+    validations:
+      required: true
+  - type: textarea
+    id: boundaries
+    attributes:
+      label: Scope boundaries
+      description: What is in scope, and what must stay deferred?
+    validations:
+      required: true
+  - type: textarea
+    id: validation
+    attributes:
+      label: Validation plan
+      description: Which focused tests, checks, or evidence would prove the slice works?
+    validations:
+      required: true

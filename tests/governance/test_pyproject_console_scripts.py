@@ -32,6 +32,7 @@ def test_pyproject_declares_narrow_local_tooling_defaults() -> None:
         "logs",
         "results",
         ".venv",
+        ".hypothesis",
     ]
     assert payload["tool"]["ruff"]["extend-exclude"] == [
         ".venv/",

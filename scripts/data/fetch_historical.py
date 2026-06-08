@@ -16,6 +16,25 @@ DEFAULT_SYMBOL = "tBTCUSD"
 _prefer_local_src_called = False
 
 
+def _purge_shadowed_core_modules() -> None:
+    local_src = SRC_ROOT.resolve()
+    for name, module in list(sys.modules.items()):
+        if name != "core" and not name.startswith("core."):
+            continue
+
+        module_file = getattr(module, "__file__", None)
+        if not module_file:
+            continue
+
+        try:
+            resolved_file = Path(module_file).resolve()
+        except OSError:
+            continue
+
+        if resolved_file != local_src and local_src not in resolved_file.parents:
+            sys.modules.pop(name, None)
+
+
 def _prefer_local_src() -> None:
     global _prefer_local_src_called
     if _prefer_local_src_called:
@@ -33,6 +52,7 @@ def _prefer_local_src() -> None:
     desired_prefix = [normalized_src, normalized_repo]
     filtered_existing = [entry for entry in existing if entry not in desired_prefix]
     os.environ["PYTHONPATH"] = os.pathsep.join([*desired_prefix, *filtered_existing])
+    _purge_shadowed_core_modules()
     _prefer_local_src_called = True
 
 
@@ -76,6 +96,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--limit", type=int, default=historical_candles_mod.DEFAULT_LIMIT)
     parser.add_argument("--timeout", type=float, default=historical_candles_mod.DEFAULT_TIMEOUT)
     parser.add_argument("--from-raw-json", action="store_true")
+    parser.add_argument("--duckdb-summary", action="store_true")
     parser.add_argument("--print-config", action="store_true")
     return parser
 
@@ -87,15 +108,17 @@ def build_runtime_config(
     limit: int,
     timeout: float,
     from_raw_json: bool,
+    duckdb_summary: bool,
     output_root: Path = REPO_ROOT,
 ) -> dict[str, Any]:
     historical_candles_mod = _resolve_historical_candles_module()
     normalized_timeframes = historical_candles_mod.normalize_timeframes(timeframes)
+    mode = "duckdb_summary" if duckdb_summary else ("from_raw_json" if from_raw_json else "fetch")
     return {
         "cwd": str(output_root.resolve()),
         "repo_root": str(output_root.resolve()),
         "src_root": str(SRC_ROOT.resolve()),
-        "mode": "from_raw_json" if from_raw_json else "fetch",
+        "mode": mode,
         "symbol": symbol,
         "timeframes": normalized_timeframes,
         "limit": max(1, min(int(limit), historical_candles_mod.DEFAULT_LIMIT)),
@@ -115,12 +138,19 @@ def main(argv: list[str] | None = None) -> int:
         limit=args.limit,
         timeout=args.timeout,
         from_raw_json=bool(args.from_raw_json),
+        duckdb_summary=bool(args.duckdb_summary),
     )
     if args.print_config:
         print(json.dumps(config, indent=2, ensure_ascii=False, sort_keys=True))
         return 0
 
-    if args.from_raw_json:
+    if args.duckdb_summary:
+        manifest = historical_candles_mod.summarize_candle_parquet_with_duckdb(
+            repo_root=REPO_ROOT,
+            symbol=args.symbol,
+            timeframes=args.timeframes,
+        )
+    elif args.from_raw_json:
         manifest = historical_candles_mod.convert_raw_json_dumps_to_parquet(
             repo_root=REPO_ROOT,
             symbol=args.symbol,

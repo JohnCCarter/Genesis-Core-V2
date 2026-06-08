@@ -143,7 +143,7 @@ def mcp_stdio_main(argv: list[str] | None = None) -> int:
     except ModuleNotFoundError as exc:
         missing_name = getattr(exc, "name", "mcp")
         raise SystemExit(
-            f'genesis-v2-mcp-stdio requires the [{missing_name}] dependency; install with `python -m pip install -e ".[mcp]"`.'
+            f'genesis-v2-mcp-stdio requires the [{missing_name}] dependency; install with `uv sync --extra mcp`.'
         ) from exc
 
     config = _build_mcp_runtime_config(server_mod)
@@ -184,7 +184,7 @@ def pytest_suite_main(argv: list[str] | None = None) -> int:
         import pytest
     except ModuleNotFoundError as exc:
         raise SystemExit(
-            'genesis-v2-pytest requires pytest; install with `python -m pip install -e ".[dev]"`.'
+            'genesis-v2-pytest requires pytest; install with `uv sync --extra dev`.'
         ) from exc
 
     return int(pytest.main(config["pytest_args"]))
