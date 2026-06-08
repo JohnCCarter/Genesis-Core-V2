@@ -232,6 +232,29 @@ renamed, or folded back into better domain modules.
 
 ## Layout rules for `src/`
 
+### Rule 0: Use `index.md` only for major subsystem folders
+
+Major subsystem folders may include a local `index.md` to explain local responsibility and reduce
+architectural drift for both humans and agents.
+
+Do not add `index.md` to every small leaf folder. Prefer it only where a subsystem has meaningful
+ownership, multiple modules, and clear governance or authority boundaries.
+
+When present, each subsystem `index.md` should document:
+
+- Purpose
+- Scope IN
+- Scope OUT
+- Inputs
+- Outputs
+- Invariants
+- Must Not
+- Related tests
+- Governance boundaries
+- Lifecycle role / authority level
+
+See `docs/subsystem-index-and-premortem-convention.md` for the full convention and premortem rules.
+
 ### Rule 1: Keep modules near their owning domain
 
 Code should live in the nearest domain folder that owns the behavior.

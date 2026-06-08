@@ -7,6 +7,13 @@ from core.decision.models import (
     MetricSnapshot,
     PromotionResult,
 )
+from core.decision.premortem import (
+    PremortemDecision,
+    PremortemReport,
+    PremortemRisk,
+    PremortemSeverity,
+    run_premortem,
+)
 from core.decision.promotion import apply_promotion
 from core.decision.validation import (
     DEFAULT_TRADE_THRESHOLD,
@@ -22,9 +29,14 @@ __all__ = [
     "DecisionReason",
     "FamilyStatus",
     "MetricSnapshot",
+    "PremortemDecision",
+    "PremortemReport",
+    "PremortemRisk",
+    "PremortemSeverity",
     "PromotionResult",
     "apply_promotion",
     "compare_families",
     "enforce_trade_threshold",
+    "run_premortem",
     "validate_metrics",
 ]
