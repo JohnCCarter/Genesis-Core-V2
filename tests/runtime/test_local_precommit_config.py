@@ -19,4 +19,5 @@ def test_local_precommit_config_encodes_narrow_dev_hooks() -> None:
         "end-of-file-fixer",
         "trailing-whitespace",
         "check-json",
+        "gitleaks",
     ]

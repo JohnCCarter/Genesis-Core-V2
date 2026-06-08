@@ -149,16 +149,19 @@ editor-specific tasks or an editable install first.
 - `.vscode/tasks.json` and `.vscode/launch.json` route local API/MCP/smoke/test loops through the repo-local wrappers while keeping `PYTHONPATH=${workspaceFolder}/src` available.
 - `.vscode/settings.json` aligns Python analysis/test discovery with the `src/` layout and local `.env` placeholder.
 - `.vscode/extensions.json` recommends the Python/Pylance/Ruff stack for local skeleton work.
+- `.github/ISSUE_TEMPLATE/*.yml` keeps bug/feature intake aligned with the repo's bounded governance workflow.
 - `.env.example` keeps the narrow local placeholder values tracked even though `.env` stays ignored.
-- `.pre-commit-config.yaml` keeps a narrow local formatting/lint/sanity hook loop tracked in the seed.
-- `pyproject.toml` carries narrow local pytest/ruff/black defaults for the generated V2 workspace.
+- `.pre-commit-config.yaml` keeps a narrow local formatting/lint/sanity/secret-scan hook loop tracked in the seed.
+- `docs/adr/0000-template.md` provides the repo-local ADR starter for architecture and workflow decisions.
+- `pyproject.toml` carries narrow local pytest/ruff/black defaults plus tracked dev-tooling dependencies for the generated V2 workspace.
 - `scripts/mcp/mcp_stdio.py` wraps the local MCP stdio shell with repo-root bootstrap and the generated config path.
 - `scripts/api/api_shell.py` wraps the local API shell with `src/` bootstrapping for non-installed startup.
 - `scripts/validate/pytest_suite.py` wraps `pytest` with local `src/` bootstrapping for non-installed test execution.
+- `scripts/audit/pip_audit.py` wraps `pip-audit` with the current repo-local baseline ignore policy for repeatable dependency scans.
 - `scripts/data/fetch_historical.py` wraps the admitted Bitfinex REST read spine for local raw JSON + raw-frozen parquet refreshes under excluded `data/**`.
 - `scripts/smoke/*.py` wraps the admitted core smoke modules with local `src/` bootstrapping so the seed is runnable before install.
 
-After editable install, local module commands:
+After `uv sync --extra dev --extra mcp`, local module commands:
 
 Local API shell: `python -m uvicorn core.server:app --app-dir src --reload`
 Local MCP stdio shell: `python -m mcp_server.server`
@@ -186,6 +189,7 @@ Non-installed local pytest launcher:
 Non-installed local Bitfinex candle fetch script:
 `python scripts/data/fetch_historical.py --symbol tBTCUSD --timeframes 1m 5m 15m 30m 1h 3h 6h 12h 1D 7D 14D`
 `python scripts/data/fetch_historical.py --from-raw-json --symbol tBTCUSD --timeframes 1h 1D`
+`python scripts/data/fetch_historical.py --duckdb-summary --symbol tBTCUSD --timeframes 1h 1D`
 `python scripts/data/fetch_historical.py --print-config --symbol tBTCUSD --timeframes 1h 1D`
 
 Non-installed local smoke scripts:
@@ -215,13 +219,22 @@ Console scripts after editable install:
 `genesis-v2-model-smoke`
 
 Suggested install verification:
-`python -m pip install -e ".[dev,mcp]"`
-then run `pytest tests/runtime/test_installed_console_scripts.py -q`
+`uv sync --extra dev --extra mcp`
+then run `uv run pytest tests/runtime/test_installed_console_scripts.py -q`
+
+Optional regression-test loop:
+`uv run pytest tests/backtest/test_compare_backtest_results.py -q`
 
 Local pre-commit workflow:
-`pre-commit install`
-then run `pre-commit run --all-files`
+`uv run pre-commit install`
+then run `uv run pre-commit run --all-files`
+
+Local dependency audit:
+`uv run python scripts/audit/pip_audit.py`
+
+Strict dependency audit (no baseline ignores):
+`uv run python scripts/audit/pip_audit.py --strict`
 
 Optional local MCP install:
-`python -m pip install -e ".[mcp]"`
+`uv sync --extra mcp`
 then connect the `genesis-core-v2` server from `.vscode/mcp.json`

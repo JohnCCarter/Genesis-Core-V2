@@ -93,7 +93,9 @@ The following are admitted as part of the normal V2 local workflow surface:
 
 - `AGENTS.md`
 - `.github/copilot-instructions.md`
+- `.github/ISSUE_TEMPLATE/*.yml`
 - `.pre-commit-config.yaml`
+- `docs/adr/0000-template.md`
 - tracked `.env.example` plus ignored local `.env`
 - `.vscode/mcp.json`
 - `.vscode/tasks.json`
@@ -103,6 +105,7 @@ The following are admitted as part of the normal V2 local workflow surface:
 - `pyproject.toml`
 - local launchers under:
   - `scripts/api/api_shell.py`
+  - `scripts/audit/pip_audit.py`
   - `scripts/mcp/mcp_stdio.py`
   - `scripts/validate/pytest_suite.py`
   - `scripts/smoke/*.py`
@@ -206,14 +209,18 @@ The following remain deferred unless a separate validated slice explicitly admit
   - `ms-python.python`
   - `ms-python.vscode-pylance`
   - `charliermarsh.ruff`
-- Use `pre-commit install` followed by `pre-commit run --all-files` for local hygiene
+- Use `pre-commit install` followed by `pre-commit run --all-files` for local formatting/lint/sanity/secret-scan hygiene
+- Use `uv run python scripts/audit/pip_audit.py` for local dependency-audit hygiene
+- Keep ADR drafts anchored to `docs/adr/0000-template.md` and repo contribution intake anchored to `.github/ISSUE_TEMPLATE/*.yml`
 
 ### Non-installed launchers
 
 - MCP stdio: `python scripts/mcp/mcp_stdio.py`
 - API shell: `python scripts/api/api_shell.py`
+- Dependency audit: `python scripts/audit/pip_audit.py`
 - Pytest wrapper: `python scripts/validate/pytest_suite.py`
 - Candle refresh: `python scripts/data/fetch_historical.py --symbol tBTCUSD --timeframes 1m 5m 15m 30m 1h 3h 6h 12h 1D 7D 14D`
+- Candle summary (DuckDB, read-only): `python scripts/data/fetch_historical.py --duckdb-summary --symbol tBTCUSD --timeframes 1h 1D`
 - Smoke loops:
   - `python scripts/smoke/fixture_smoke.py`
   - `python scripts/smoke/backtest_smoke.py`
@@ -234,8 +241,8 @@ The following remain deferred unless a separate validated slice explicitly admit
   - `genesis-v2-backtest-smoke`
   - `genesis-v2-model-smoke`
   - `genesis-v2-smoke-suite`
-- Editable install verification: `python -m pip install -e ".[dev,mcp]"`
-- Installed console-script verification: `pytest tests/runtime/test_installed_console_scripts.py -q`
+- Editable install verification: `uv sync --extra dev --extra mcp`
+- Installed console-script verification: `uv run pytest tests/runtime/test_installed_console_scripts.py -q`
 - Editable module loop:
   - `python -m uvicorn core.server:app --app-dir src --reload`
   - `python -m mcp_server.server`
@@ -246,4 +253,4 @@ The following remain deferred unless a separate validated slice explicitly admit
   - `python -m core.bootstrap.fixture_smoke`
   - `python -m core.bootstrap.backtest_smoke`
   - `python -m core.bootstrap.smoke_suite`
-- Optional local MCP install: `python -m pip install -e ".[mcp]"`
+- Optional local MCP install: `uv sync --extra mcp`

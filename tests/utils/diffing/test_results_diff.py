@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import pytest
+from hypothesis import given, settings
+from hypothesis import strategies as st
 
 from core.utils.diffing.results_diff import (
     check_backtest_comparability,
@@ -20,6 +22,13 @@ def _base_results(*, score_version: str | None = None) -> dict:
     return payload
 
 
+_metric_keys = st.text(alphabet="abcdefghijklmnopqrstuvwxyz_", min_size=1, max_size=8)
+_metric_values = st.one_of(
+    st.integers(),
+    st.floats(allow_nan=False, allow_infinity=False, width=32),
+)
+
+
 def test_diff_metrics_basic():
     old = {"total_return": 0.10, "num_trades": 50}
     new = {"total_return": 0.12, "num_trades": 40}
@@ -33,6 +42,31 @@ def test_diff_metrics_regression_flag():
     new = {"total_return": 0.05}
     diff = diff_metrics(old, new, regression_thresholds={"total_return": -0.01})
     assert diff["total_return"].regression is True
+
+
+@settings(deadline=None, max_examples=100)
+@given(
+    old_metrics=st.dictionaries(_metric_keys, _metric_values, max_size=8),
+    new_metrics=st.dictionaries(_metric_keys, _metric_values, max_size=8),
+)
+def test_diff_metrics_property_preserves_union_and_numeric_delta(old_metrics, new_metrics):
+    diff = diff_metrics(old_metrics, new_metrics)
+
+    assert set(diff) == set(old_metrics) | set(new_metrics)
+
+    for key, delta in diff.items():
+        old_value = old_metrics.get(key)
+        new_value = new_metrics.get(key)
+
+        expected_old = old_value
+        expected_new = new_value
+        expected_delta = (float(new_value) if new_value is not None else 0.0) - (
+            float(old_value) if old_value is not None else 0.0
+        )
+
+        assert delta.old == expected_old
+        assert delta.new == expected_new
+        assert delta.delta == pytest.approx(expected_delta)
 
 
 def test_diff_backtest_results():

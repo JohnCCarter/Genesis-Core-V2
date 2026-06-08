@@ -29,6 +29,19 @@ _WORKFLOW_FILES = [
 ]
 
 
+_ADR_FILES = [
+    "docs/adr/0000-template.md",
+    "docs/adr/README.md",
+]
+
+
+_ISSUE_TEMPLATE_FILES = [
+    ".github/ISSUE_TEMPLATE/bug_report.yml",
+    ".github/ISSUE_TEMPLATE/feature_request.yml",
+    ".github/ISSUE_TEMPLATE/config.yml",
+]
+
+
 _TASK_FILES = [
     ".vscode/tasks.json",
     "tests/runtime/test_local_vscode_tasks.py",
@@ -62,6 +75,12 @@ _EXTENSIONS_FILES = [
 _API_SCRIPT_FILES = [
     "scripts/api/api_shell.py",
     "tests/runtime/test_local_api_shell_script.py",
+]
+
+
+_AUDIT_SCRIPT_FILES = [
+    "scripts/audit/pip_audit.py",
+    "tests/runtime/test_local_pip_audit_script.py",
 ]
 
 
@@ -462,6 +481,51 @@ def test_seed_contains_skeleton_workflow_guidance() -> None:
     assert "Track B — authority migration" in scope_text
 
 
+def test_seed_contains_adr_template_workflow() -> None:
+    repo_root = Path(__file__).resolve().parents[2]
+
+    for relative_path in _ADR_FILES:
+        assert (repo_root / relative_path).exists(), relative_path
+
+    manifest = json.loads((repo_root / "seed_manifest.json").read_text(encoding="utf-8"))
+    readme = (repo_root / "README.md").read_text(encoding="utf-8")
+    scope_text = (repo_root / "docs" / "SKELETON_SCOPE.md").read_text(encoding="utf-8")
+
+    assert manifest["adr_verification"] == {
+        "template": {
+            "tracked_files": [
+                "docs/adr/0000-template.md",
+                "docs/adr/README.md",
+            ],
+            "governance_test_file": "tests/governance/test_v2_seed_boundaries.py",
+        }
+    }
+    assert "docs/adr/0000-template.md" in readme
+    assert "docs/adr/0000-template.md" in scope_text
+
+
+def test_seed_contains_issue_template_workflow() -> None:
+    repo_root = Path(__file__).resolve().parents[2]
+
+    for relative_path in _ISSUE_TEMPLATE_FILES:
+        assert (repo_root / relative_path).exists(), relative_path
+
+    manifest = json.loads((repo_root / "seed_manifest.json").read_text(encoding="utf-8"))
+    readme = (repo_root / "README.md").read_text(encoding="utf-8")
+    scope_text = (repo_root / "docs" / "SKELETON_SCOPE.md").read_text(encoding="utf-8")
+
+    assert manifest["issue_template_verification"] == {
+        "tracked_files": [
+            ".github/ISSUE_TEMPLATE/bug_report.yml",
+            ".github/ISSUE_TEMPLATE/feature_request.yml",
+            ".github/ISSUE_TEMPLATE/config.yml",
+        ],
+        "governance_test_file": "tests/governance/test_v2_seed_boundaries.py",
+    }
+    assert ".github/ISSUE_TEMPLATE/*.yml" in readme
+    assert ".github/ISSUE_TEMPLATE/*.yml" in scope_text
+
+
 def test_seed_contains_local_mcp_shell() -> None:
     repo_root = Path(__file__).resolve().parents[2]
 
@@ -574,6 +638,28 @@ def test_seed_contains_local_api_shell_script() -> None:
     assert "scripts/api/api_shell.py" in scope_text
 
 
+def test_seed_contains_local_dependency_audit_script() -> None:
+    repo_root = Path(__file__).resolve().parents[2]
+
+    for relative_path in _AUDIT_SCRIPT_FILES:
+        assert (repo_root / relative_path).exists(), relative_path
+
+    manifest = json.loads((repo_root / "seed_manifest.json").read_text(encoding="utf-8"))
+    readme = (repo_root / "README.md").read_text(encoding="utf-8")
+    scope_text = (repo_root / "docs" / "SKELETON_SCOPE.md").read_text(encoding="utf-8")
+
+    assert manifest["audit_verification"] == {
+        "dependency_audit": {
+            "runtime_test_file": "tests/runtime/test_local_pip_audit_script.py",
+            "tracked_file": "scripts/audit/pip_audit.py",
+        }
+    }
+    assert "scripts/audit/pip_audit.py" in readme
+    assert "scripts/audit/pip_audit.py" in scope_text
+    assert "uv run python scripts/audit/pip_audit.py" in readme
+    assert "python scripts/audit/pip_audit.py" in scope_text
+
+
 def test_seed_contains_local_info_routes() -> None:
     repo_root = Path(__file__).resolve().parents[2]
 
@@ -648,7 +734,7 @@ def test_seed_contains_installed_console_script_loop() -> None:
     assert "genesis-v2-model-smoke" in readme
     assert "genesis-v2-api-shell" in scope_text
     assert "genesis-v2-model-smoke" in scope_text
-    assert 'python -m pip install -e ".[dev,mcp]"' in scope_text
+    assert "uv sync --extra dev --extra mcp" in scope_text
     assert "tests/runtime/test_installed_console_scripts.py" in scope_text
 
 
@@ -663,10 +749,10 @@ def test_seed_contains_install_verification_manifest() -> None:
     scope_text = (repo_root / "docs" / "SKELETON_SCOPE.md").read_text(encoding="utf-8")
 
     assert manifest["install_verification"] == {
-        "editable_install_command": 'python -m pip install -e ".[dev,mcp]"',
-        "installed_console_script_test_command": "pytest tests/runtime/test_installed_console_scripts.py -q",
+        "editable_install_command": "uv sync --extra dev --extra mcp",
+        "installed_console_script_test_command": "uv run pytest tests/runtime/test_installed_console_scripts.py -q",
         "installed_console_script_test_file": "tests/runtime/test_installed_console_scripts.py",
-        "optional_mcp_install_command": 'python -m pip install -e ".[mcp]"',
+        "optional_mcp_install_command": "uv sync --extra mcp",
     }
     assert manifest["install_verification"]["editable_install_command"] in readme
     assert manifest["install_verification"]["editable_install_command"] in scope_text

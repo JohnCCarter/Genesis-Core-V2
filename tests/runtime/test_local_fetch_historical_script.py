@@ -8,6 +8,8 @@ import sys
 from pathlib import Path
 
 import pandas as pd
+import pytest
+from pandera.errors import SchemaError, SchemaErrors
 
 
 def _load_fetch_script_module():
@@ -161,3 +163,103 @@ def test_local_fetch_historical_script_converts_existing_raw_json_to_parquet(
     assert frame["close"].tolist() == [11.5, 12.5]
     assert manifest["mode"] == "from_raw_json"
     assert manifest["files"]["1D"]["rows"] == 2
+
+
+def test_build_candles_frame_rejects_invalid_candle_ranges() -> None:
+    module = _load_fetch_script_module()
+    historical_candles_mod = module._resolve_historical_candles_module()
+
+    invalid_candles = [
+        {
+            "timestamp_ms": 1717200000000,
+            "timestamp_utc": "2024-06-01T00:00:00+00:00",
+            "open": 10.0,
+            "high": 9.0,
+            "low": 9.5,
+            "close": 9.75,
+            "volume": 100.0,
+        }
+    ]
+
+    with pytest.raises(
+        (SchemaError, SchemaErrors), match="high must be >= low|high must be >= open"
+    ):
+        historical_candles_mod.build_candles_frame(invalid_candles)
+
+
+def test_local_fetch_historical_script_prints_duckdb_runtime_config() -> None:
+    repo_root = Path(__file__).resolve().parents[2]
+
+    completed = subprocess.run(
+        [
+            sys.executable,
+            str(repo_root / "scripts" / "data" / "fetch_historical.py"),
+            "--print-config",
+            "--duckdb-summary",
+            "--symbol",
+            "tBTCUSD",
+            "--timeframes",
+            "1h",
+            "1D",
+        ],
+        cwd=repo_root,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    payload = json.loads(completed.stdout)
+
+    assert payload["mode"] == "duckdb_summary"
+    assert payload["timeframes"] == ["1h", "1D"]
+
+
+def test_local_fetch_historical_script_duckdb_summary_reads_existing_parquet(
+    tmp_path: Path,
+) -> None:
+    pytest.importorskip("duckdb")
+
+    module = _load_fetch_script_module()
+    historical_candles_mod = module._resolve_historical_candles_module()
+    candles = [
+        {
+            "timestamp_ms": 1717200000000,
+            "timestamp_utc": "2024-06-01T00:00:00+00:00",
+            "open": 10.0,
+            "high": 12.0,
+            "low": 9.5,
+            "close": 11.5,
+            "volume": 100.0,
+        },
+        {
+            "timestamp_ms": 1717286400000,
+            "timestamp_utc": "2024-06-02T00:00:00+00:00",
+            "open": 11.5,
+            "high": 13.0,
+            "low": 10.5,
+            "close": 12.5,
+            "volume": 101.0,
+        },
+    ]
+
+    historical_candles_mod.write_candle_artifacts(
+        repo_root=tmp_path,
+        symbol="tBTCUSD",
+        timeframe="1h",
+        candles=candles,
+        limit=2,
+        source="test_fixture",
+    )
+
+    manifest = historical_candles_mod.summarize_candle_parquet_with_duckdb(
+        repo_root=tmp_path,
+        symbol="tBTCUSD",
+        timeframes=["1h"],
+    )
+
+    assert manifest["mode"] == "duckdb_summary"
+    assert manifest["files"]["1h"]["rows"] == 2
+    assert manifest["files"]["1h"]["parquet_path"] == "data/raw/tBTCUSD_1h_frozen.parquet"
+    assert manifest["files"]["1h"]["min_close"] == 11.5
+    assert manifest["files"]["1h"]["max_close"] == 12.5
+    assert manifest["files"]["1h"]["avg_close"] == 12.0
+    assert manifest["files"]["1h"]["total_volume"] == 201.0

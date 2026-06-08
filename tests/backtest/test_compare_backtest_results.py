@@ -222,6 +222,27 @@ def test_build_ri_p1_off_parity_artifact_required_fields() -> None:
     assert artifact["size_tolerance"] == "1e-12"
 
 
+def test_build_ri_p1_off_parity_artifact_data_regression(data_regression) -> None:
+    rows = [
+        {"row_id": 1, "action": "LONG", "reason": ["ENTRY_LONG"], "size": 1.0},
+        {"row_id": 2, "action": "NONE", "reason": "COOLDOWN", "size": 0.0},
+    ]
+
+    artifact = build_ri_p1_off_parity_artifact(
+        run_id="ri-20260303-004",
+        git_sha="abc1234",
+        symbols=["tTESTBTC:TESTUSD"],
+        timeframes=["1h"],
+        start_utc="2025-01-01T00:00:00Z",
+        end_utc="2025-01-31T23:59:59Z",
+        baseline_artifact_ref="results/evaluation/ri_p1_off_parity_v1_baseline.json",
+        baseline_rows=rows,
+        candidate_rows=rows,
+    )
+
+    data_regression.check(artifact)
+
+
 def test_main_legacy_compare_path_unchanged(tmp_path: Path, capsys) -> None:
     baseline = {
         "score": 1.0,
