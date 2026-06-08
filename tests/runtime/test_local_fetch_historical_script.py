@@ -210,7 +210,9 @@ def test_local_fetch_historical_script_prints_duckdb_runtime_config() -> None:
     assert payload["timeframes"] == ["1h", "1D"]
 
 
-def test_local_fetch_historical_script_duckdb_summary_reads_existing_parquet(tmp_path: Path) -> None:
+def test_local_fetch_historical_script_duckdb_summary_reads_existing_parquet(
+    tmp_path: Path,
+) -> None:
     pytest.importorskip("duckdb")
 
     module = _load_fetch_script_module()

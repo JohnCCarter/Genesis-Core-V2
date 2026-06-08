@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+import pytest
 from hypothesis import given, settings
 from hypothesis import strategies as st
-import pytest
 
 from core.utils.diffing.results_diff import (
     check_backtest_comparability,

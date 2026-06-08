@@ -40,8 +40,14 @@ _CANDLES_FRAME_SCHEMA = pa.DataFrameSchema(
         "volume": pa.Column(float, nullable=False, checks=Check.ge(0.0)),
     },
     checks=[
-        Check(lambda frame: frame["timestamp"].is_monotonic_increasing, error="timestamps must be sorted"),
-        Check(lambda frame: not frame["timestamp"].duplicated().any(), error="timestamps must be unique"),
+        Check(
+            lambda frame: frame["timestamp"].is_monotonic_increasing,
+            error="timestamps must be sorted",
+        ),
+        Check(
+            lambda frame: not frame["timestamp"].duplicated().any(),
+            error="timestamps must be unique",
+        ),
         Check(lambda frame: (frame["high"] >= frame["low"]).all(), error="high must be >= low"),
         Check(lambda frame: (frame["high"] >= frame["open"]).all(), error="high must be >= open"),
         Check(lambda frame: (frame["high"] >= frame["close"]).all(), error="high must be >= close"),
@@ -271,7 +277,9 @@ def summarize_candle_parquet_with_duckdb(
         for timeframe in normalized_timeframes:
             parquet_path = repo_root / raw_frozen_candles_path(symbol, timeframe)
             if not parquet_path.exists():
-                raise FileNotFoundError(f"Missing candle parquet for {symbol} {timeframe}: {parquet_path}")
+                raise FileNotFoundError(
+                    f"Missing candle parquet for {symbol} {timeframe}: {parquet_path}"
+                )
 
             summary = connection.execute(
                 """

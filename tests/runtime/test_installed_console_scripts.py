@@ -42,7 +42,7 @@ def _require_current_console_script_install() -> dict[str, str]:
     entry_points = _installed_console_entrypoints()
     if entry_points != EXPECTED_ENTRYPOINTS:
         pytest.skip(
-            'Current interpreter does not expose the expected Genesis-Core-V2 console scripts; run `uv sync --extra dev --extra mcp` in this interpreter.'
+            "Current interpreter does not expose the expected Genesis-Core-V2 console scripts; run `uv sync --extra dev --extra mcp` in this interpreter."
         )
     return entry_points
 
@@ -102,7 +102,7 @@ raise SystemExit(callable_obj())
             "genesis-v2-mcp-stdio",
             ["--print-config"],
             "mcp",
-            'the optional `[mcp]` extra (`uv sync --extra mcp`)',
+            "the optional `[mcp]` extra (`uv sync --extra mcp`)",
             {
                 "server_name": "genesis-core-v2",
                 "log_level": "INFO",
@@ -112,7 +112,7 @@ raise SystemExit(callable_obj())
             "genesis-v2-pytest",
             ["--print-config"],
             "pytest",
-            'the local test dependencies (`uv sync --extra dev`)',
+            "the local test dependencies (`uv sync --extra dev`)",
             {
                 "pytest_args": ["-q"],
             },

@@ -1,18 +1,18 @@
 action_mismatch_count: 0
 added_row_count: 0
 baseline_artifact_ref: results/evaluation/ri_p1_off_parity_v1_baseline.json
-end_utc: "2025-01-31T23:59:59Z"
+end_utc: '2025-01-31T23:59:59Z'
 git_sha: abc1234
 missing_row_count: 0
-mode: "OFF"
+mode: 'OFF'
 parity_verdict: PASS
 reason_mismatch_count: 0
 run_id: ri-20260303-004
 size_mismatch_count: 0
 size_tolerance: 1e-12
-start_utc: "2025-01-01T00:00:00Z"
+start_utc: '2025-01-01T00:00:00Z'
 symbols:
-  - tTESTBTC:TESTUSD
+- tTESTBTC:TESTUSD
 timeframes:
-  - 1h
+- 1h
 window_spec_id: ri_p1_off_parity_v1

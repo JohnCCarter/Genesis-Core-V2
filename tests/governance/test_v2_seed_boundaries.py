@@ -734,7 +734,7 @@ def test_seed_contains_installed_console_script_loop() -> None:
     assert "genesis-v2-model-smoke" in readme
     assert "genesis-v2-api-shell" in scope_text
     assert "genesis-v2-model-smoke" in scope_text
-    assert 'uv sync --extra dev --extra mcp' in scope_text
+    assert "uv sync --extra dev --extra mcp" in scope_text
     assert "tests/runtime/test_installed_console_scripts.py" in scope_text
 
 
@@ -749,10 +749,10 @@ def test_seed_contains_install_verification_manifest() -> None:
     scope_text = (repo_root / "docs" / "SKELETON_SCOPE.md").read_text(encoding="utf-8")
 
     assert manifest["install_verification"] == {
-        "editable_install_command": 'uv sync --extra dev --extra mcp',
+        "editable_install_command": "uv sync --extra dev --extra mcp",
         "installed_console_script_test_command": "uv run pytest tests/runtime/test_installed_console_scripts.py -q",
         "installed_console_script_test_file": "tests/runtime/test_installed_console_scripts.py",
-        "optional_mcp_install_command": 'uv sync --extra mcp',
+        "optional_mcp_install_command": "uv sync --extra mcp",
     }
     assert manifest["install_verification"]["editable_install_command"] in readme
     assert manifest["install_verification"]["editable_install_command"] in scope_text
