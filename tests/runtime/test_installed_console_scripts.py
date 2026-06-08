@@ -13,6 +13,7 @@ EXPECTED_ENTRYPOINTS = {
     "genesis-v2-api-shell": "genesis_core_v2_cli.console_scripts:api_shell_main",
     "genesis-v2-mcp-stdio": "genesis_core_v2_cli.console_scripts:mcp_stdio_main",
     "genesis-v2-pytest": "genesis_core_v2_cli.console_scripts:pytest_suite_main",
+    "genesis-v2-qwen-builder": "genesis_core_v2_cli.console_scripts:qwen_builder_main",
     "genesis-v2-champion-smoke": "genesis_core_v2_cli.console_scripts:champion_smoke_main",
     "genesis-v2-evaluate-champion-smoke": "genesis_core_v2_cli.console_scripts:evaluate_champion_smoke_main",
     "genesis-v2-fixture-smoke": "genesis_core_v2_cli.console_scripts:fixture_smoke_main",
@@ -61,21 +62,20 @@ def _run_installed_entrypoint(
     command: str, command_args: list[str]
 ) -> subprocess.CompletedProcess[str]:
     repo_root = Path(__file__).resolve().parents[2]
+    target = EXPECTED_ENTRYPOINTS[command]
     code = """
-import importlib.metadata as importlib_metadata
+import importlib
 import sys
 
-entry_points = {
-    entry_point.name: entry_point
-    for entry_point in importlib_metadata.entry_points(group='console_scripts')
-}
-entry_point = entry_points[sys.argv[1]]
-callable_obj = entry_point.load()
-sys.argv = [sys.argv[1], *sys.argv[2:]]
+module_name, _, attr_name = sys.argv[1].partition(':')
+if not module_name or not attr_name:
+    raise SystemExit(f'Invalid entrypoint target: {sys.argv[1]!r}')
+callable_obj = getattr(importlib.import_module(module_name), attr_name)
+sys.argv = [module_name, *sys.argv[2:]]
 raise SystemExit(callable_obj())
 """
     return subprocess.run(
-        [sys.executable, "-c", code, command, *command_args],
+        [sys.executable, "-c", code, target, *command_args],
         cwd=repo_root,
         capture_output=True,
         text=True,
@@ -115,6 +115,16 @@ raise SystemExit(callable_obj())
             "the local test dependencies (`uv sync --extra dev`)",
             {
                 "pytest_args": ["-q"],
+            },
+        ),
+        (
+            "genesis-v2-qwen-builder",
+            ["--print-config"],
+            None,
+            None,
+            {
+                "api_base": "https://integrate.api.nvidia.com/v1",
+                "model": "qwen/qwen3-coder-480b-a35b-instruct",
             },
         ),
         (
