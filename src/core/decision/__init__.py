@@ -1,3 +1,8 @@
+from core.decision.candidate_builder import (
+    CandidateBuildPacket,
+    build_candidate_packet,
+    metric_snapshot_from_mapping,
+)
 from core.decision.comparison import PROMOTION_MARGIN_PF, compare_families
 from core.decision.models import (
     ComparisonDecision,
@@ -26,6 +31,7 @@ __all__ = [
     "PROMOTION_MARGIN_PF",
     "ComparisonDecision",
     "ComparisonResult",
+    "CandidateBuildPacket",
     "DecisionReason",
     "FamilyStatus",
     "MetricSnapshot",
@@ -35,8 +41,10 @@ __all__ = [
     "PremortemSeverity",
     "PromotionResult",
     "apply_promotion",
+    "build_candidate_packet",
     "compare_families",
     "enforce_trade_threshold",
+    "metric_snapshot_from_mapping",
     "run_premortem",
     "validate_metrics",
 ]
