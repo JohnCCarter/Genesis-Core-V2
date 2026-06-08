@@ -49,6 +49,7 @@ Source Genesis-Core HEAD: `6025ad87`
 - Batch I1 admits the dormant optimizer package (`src/core/optimizer/**`), supporting diffing/Optuna helpers, and repo-tracked `config/optimizer/**` research corpus for import/test completeness only.
 - runtime-only governance guardrails
 - runtime determinism guardrails for pipeline fast-hash policy and feature-cache hash stability
+- subsystem-local `index.md` guidance in major folders plus deterministic premortem reflection convention
 - admitted source model payloads under `config/models/**`
 - deterministic fixture model-registry/prob-model smoke
   (`registry/fixtures/model_registry/config/models/{registry.json,tBTCUSD_1h.json}`,
@@ -139,6 +140,12 @@ Repo-local pytest launcher is generated so the seed can run its test loop withou
 editor-specific tasks or an editable install first.
 Repo-local smoke scripts are generated so the seed can run its core smoke loops without relying on
 editor-specific tasks or an editable install first.
+Major subsystem folders may include a local `index.md` that explains purpose, boundaries,
+invariants, related tests, and lifecycle role. These files are local navigation aids for humans and
+agents; they do not override the repository's governance or authority contracts.
+Premortem reflection in V2 is deterministic, evidence-based, and fail-closed. If a premortem claim
+cannot be tied to a metric, run-intent, threshold, signoff, or another deterministic evidence
+surface, it does not belong in V2 premortem.
 
 ## Skeleton workflow
 

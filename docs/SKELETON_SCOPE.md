@@ -94,6 +94,7 @@ The following are admitted as part of the normal V2 local workflow surface:
 - `AGENTS.md`
 - `.github/copilot-instructions.md`
 - `.github/ISSUE_TEMPLATE/*.yml`
+- `docs/subsystem-index-and-premortem-convention.md`
 - `.pre-commit-config.yaml`
 - `docs/adr/0000-template.md`
 - tracked `.env.example` plus ignored local `.env`
@@ -112,6 +113,10 @@ The following are admitted as part of the normal V2 local workflow surface:
   - `scripts/data/fetch_historical.py`
 
 runtime determinism guardrails for pipeline fast-hash policy and feature-cache hash stability remain part of the admitted V2 local workflow surface.
+
+Major subsystem folders may carry a local `index.md` that explains purpose, boundaries, invariants,
+tests, and lifecycle role. These local indexes are guidance surfaces only; they do not override
+tests, governance documents, or authority-bearing contracts.
 
 ### API, runtime, and strategy seams
 
