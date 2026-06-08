@@ -9,6 +9,7 @@ from pathlib import Path
 
 import pandas as pd
 import pytest
+from pandera.errors import SchemaError, SchemaErrors
 
 
 def _load_fetch_script_module():
@@ -180,7 +181,9 @@ def test_build_candles_frame_rejects_invalid_candle_ranges() -> None:
         }
     ]
 
-    with pytest.raises(Exception, match="high must be >= low|high must be >= open"):
+    with pytest.raises(
+        (SchemaError, SchemaErrors), match="high must be >= low|high must be >= open"
+    ):
         historical_candles_mod.build_candles_frame(invalid_candles)
 
 

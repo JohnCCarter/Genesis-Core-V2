@@ -4,7 +4,7 @@ import json
 from collections.abc import Callable, Iterable
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, TypedDict
 
 import pandas as pd
 import pandera.pandas as pa
@@ -19,6 +19,25 @@ DEFAULT_SOURCE = "bitfinex_v2_rest_hist"
 DEFAULT_TIMEFRAMES = ["1m", "5m", "15m", "30m", "1h", "3h", "6h", "12h", "1D", "7D", "14D"]
 
 ClientFactory = Callable[[], Any]
+
+
+class CandleDuckdbFileSummary(TypedDict):
+    parquet_path: str
+    rows: int
+    first_timestamp_utc: str | None
+    last_timestamp_utc: str | None
+    min_close: float | None
+    max_close: float | None
+    avg_close: float | None
+    total_volume: float | None
+
+
+class CandleDuckdbSummaryManifest(TypedDict):
+    symbol: str
+    mode: str
+    retrieved_at_utc: str
+    files: dict[str, CandleDuckdbFileSummary]
+
 
 _UTC_TIMESTAMP_DTYPE = pd.DatetimeTZDtype(tz="UTC")
 _FLOAT_DTYPE = "float64"
@@ -260,12 +279,12 @@ def summarize_candle_parquet_with_duckdb(
     repo_root: Path,
     symbol: str,
     timeframes: Iterable[str],
-) -> dict[str, Any]:
+) -> CandleDuckdbSummaryManifest:
     import duckdb
 
     normalized_timeframes = normalize_timeframes(timeframes)
     repo_root = repo_root.resolve()
-    manifest: dict[str, Any] = {
+    manifest: CandleDuckdbSummaryManifest = {
         "symbol": symbol,
         "mode": "duckdb_summary",
         "retrieved_at_utc": datetime.now(UTC).isoformat(),

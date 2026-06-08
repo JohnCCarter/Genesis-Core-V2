@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import importlib
 import json
 import os
 import sys
@@ -16,23 +17,11 @@ DEFAULT_SYMBOL = "tBTCUSD"
 _prefer_local_src_called = False
 
 
-def _purge_shadowed_core_modules() -> None:
-    local_src = SRC_ROOT.resolve()
-    for name, module in list(sys.modules.items()):
-        if name != "core" and not name.startswith("core."):
-            continue
-
-        module_file = getattr(module, "__file__", None)
-        if not module_file:
-            continue
-
-        try:
-            resolved_file = Path(module_file).resolve()
-        except OSError:
-            continue
-
-        if resolved_file != local_src and local_src not in resolved_file.parents:
+def _reload_local_core_package() -> None:
+    for name in list(sys.modules):
+        if name == "core" or name.startswith("core."):
             sys.modules.pop(name, None)
+    importlib.invalidate_caches()
 
 
 def _prefer_local_src() -> None:
@@ -52,7 +41,7 @@ def _prefer_local_src() -> None:
     desired_prefix = [normalized_src, normalized_repo]
     filtered_existing = [entry for entry in existing if entry not in desired_prefix]
     os.environ["PYTHONPATH"] = os.pathsep.join([*desired_prefix, *filtered_existing])
-    _purge_shadowed_core_modules()
+    _reload_local_core_package()
     _prefer_local_src_called = True
 
 
@@ -95,8 +84,9 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--limit", type=int, default=historical_candles_mod.DEFAULT_LIMIT)
     parser.add_argument("--timeout", type=float, default=historical_candles_mod.DEFAULT_TIMEOUT)
-    parser.add_argument("--from-raw-json", action="store_true")
-    parser.add_argument("--duckdb-summary", action="store_true")
+    mode_group = parser.add_mutually_exclusive_group()
+    mode_group.add_argument("--from-raw-json", action="store_true")
+    mode_group.add_argument("--duckdb-summary", action="store_true")
     parser.add_argument("--print-config", action="store_true")
     return parser
 

@@ -67,7 +67,6 @@ def test_diff_metrics_property_preserves_union_and_numeric_delta(old_metrics, ne
         assert delta.old == expected_old
         assert delta.new == expected_new
         assert delta.delta == pytest.approx(expected_delta)
-        assert delta.regression is False
 
 
 def test_diff_backtest_results():

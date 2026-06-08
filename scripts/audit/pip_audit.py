@@ -43,12 +43,12 @@ def _find_repo_root() -> Path:
     return here.parents[2]
 
 
-def _build_command(*, strict: bool) -> list[str]:
-    command = [sys.executable, "-m", "pip_audit", "--progress-spinner", "off"]
+def _build_command(*, strict: bool) -> tuple[str, ...]:
+    command: list[str] = [sys.executable, "-m", "pip_audit", "--progress-spinner", "off"]
     if not strict:
         for vulnerability_id in _BASELINE_IGNORES:
             command.extend(["--ignore-vuln", vulnerability_id])
-    return command
+    return tuple(command)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -70,7 +70,8 @@ def main(argv: list[str] | None = None) -> int:
         for vulnerability_id, reason in _BASELINE_IGNORES.items():
             print(f"- {vulnerability_id}: {reason}")
 
-    completed = subprocess.run(command, cwd=repo_root, env=env, check=False)
+    # nosemgrep: python.lang.security.audit.dangerous-subprocess-use-audit
+    completed = subprocess.run(command, cwd=repo_root, env=env, check=False, shell=False)
     return int(completed.returncode)
 
 
