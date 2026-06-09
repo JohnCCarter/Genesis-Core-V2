@@ -129,8 +129,9 @@ def _ensure_utf8_stdio() -> None:
 
         try:
             reconfigure(encoding="utf-8", errors="strict")
-        except Exception:
+        except (AttributeError, OSError, TypeError, ValueError) as exc:
             # If the host/capture layer does not support reconfigure, avoid crashing.
+            logger.debug("Skipping %s reconfigure due to host limitations: %s", stream_name, exc)
             continue
 
 
