@@ -23,16 +23,7 @@ import sys
 from pathlib import Path
 from typing import Final
 
-_BASELINE_IGNORES: Final[dict[str, str]] = {
-    "CVE-2025-53366": "optional mcp extra remains pinned below the fixed major line in this bounded slice",
-    "CVE-2025-53365": "optional mcp extra remains pinned below the fixed major line in this bounded slice",
-    "CVE-2025-66416": "optional mcp extra remains pinned below the fixed major line in this bounded slice",
-    "PYSEC-2024-161": "pyarrow stays on the admitted parquet compatibility line in this bounded slice",
-    "PYSEC-2026-113": "pyarrow stays on the admitted parquet compatibility line in this bounded slice",
-    "CVE-2025-71176": "pytest is a dev-only dependency and its major upgrade is deferred to a separate slice",
-    "PYSEC-2026-161": "starlette is transitively pinned by the current FastAPI line in this bounded slice",
-    "CVE-2025-62727": "starlette is transitively pinned by the current FastAPI line in this bounded slice",
-}
+_BASELINE_IGNORES: Final[dict[str, str]] = {}
 
 
 def _find_repo_root() -> Path:

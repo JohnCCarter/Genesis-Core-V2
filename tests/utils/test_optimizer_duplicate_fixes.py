@@ -20,6 +20,8 @@ except ImportError:
 
 from core.optimizer.runner import _estimate_optuna_search_space, _run_optuna, run_optimizer
 
+pytestmark = [pytest.mark.filterwarnings("ignore::optuna.exceptions.ExperimentalWarning")]
+
 
 def test_estimate_search_space_narrow():
     """Test detection of narrow search spaces."""

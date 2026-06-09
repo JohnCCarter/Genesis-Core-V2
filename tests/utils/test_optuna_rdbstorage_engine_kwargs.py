@@ -6,6 +6,8 @@ import pytest
 
 import core.optimizer.runner as runner
 
+pytestmark = [pytest.mark.filterwarnings("ignore::optuna.exceptions.ExperimentalWarning")]
+
 
 def _patch_study_capture(monkeypatch):
     calls: dict[str, Any] = {}
