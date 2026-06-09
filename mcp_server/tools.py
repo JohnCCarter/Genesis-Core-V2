@@ -51,7 +51,7 @@ GIT_WORKFLOW_SUPPORTED_OPERATIONS = {
 
 
 def _redact_remote_url_credentials(remote_url: str | None) -> str | None:
-    """Remove userinfo from remote URLs before returning them to clients."""
+    """Remove URL userinfo; preserve safe inputs and use "<redacted>" only on hard failures."""
 
     if not remote_url or "://" not in remote_url:
         return remote_url
@@ -63,8 +63,8 @@ def _redact_remote_url_credentials(remote_url: str | None) -> str | None:
             return remote_url
         netloc = netloc.split("@", 1)[1]
         return urlunsplit((parts.scheme, netloc, parts.path, parts.query, parts.fragment))
-    except ValueError as exc:
-        logger.debug("Unable to sanitize remote URL due to parse error: %s", exc)
+    except ValueError:
+        logger.debug("Malformed remote URL; using fallback redaction path.")
         if "@" not in remote_url:
             return remote_url
         try:
