@@ -7,10 +7,7 @@
   },
   "tasks": [
     {
-      "args": [
-        "scripts/api/api_shell.py",
-        "--reload"
-      ],
+      "args": ["scripts/api/api_shell.py", "--reload"],
       "command": "python",
       "isBackground": true,
       "label": "genesis-v2: api shell",
@@ -22,9 +19,7 @@
       "type": "shell"
     },
     {
-      "args": [
-        "scripts/mcp/mcp_stdio.py"
-      ],
+      "args": ["scripts/mcp/mcp_stdio.py"],
       "command": "python",
       "isBackground": true,
       "label": "genesis-v2: mcp stdio",
@@ -36,9 +31,7 @@
       "type": "shell"
     },
     {
-      "args": [
-        "scripts/smoke/smoke_suite.py"
-      ],
+      "args": ["scripts/smoke/smoke_suite.py"],
       "command": "python",
       "label": "genesis-v2: smoke suite",
       "presentation": {
@@ -48,10 +41,7 @@
       "type": "shell"
     },
     {
-      "args": [
-        "scripts/validate/pytest_suite.py",
-        "-q"
-      ],
+      "args": ["scripts/validate/pytest_suite.py", "-q"],
       "command": "python",
       "group": {
         "isDefault": true,
