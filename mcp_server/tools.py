@@ -51,7 +51,7 @@ GIT_WORKFLOW_SUPPORTED_OPERATIONS = {
 
 
 def _redact_remote_url_credentials(remote_url: str | None) -> str | None:
-    """Remove userinfo from HTTP(S) remote URLs before returning them to clients."""
+    """Remove userinfo from remote URLs before returning them to clients."""
 
     if not remote_url or "://" not in remote_url:
         return remote_url
@@ -64,8 +64,15 @@ def _redact_remote_url_credentials(remote_url: str | None) -> str | None:
         netloc = netloc.split("@", 1)[1]
         return urlunsplit((parts.scheme, netloc, parts.path, parts.query, parts.fragment))
     except ValueError as exc:
-        logger.debug("Unable to sanitize remote URL '%s': %s", remote_url, exc)
-        return remote_url
+        logger.debug("Unable to sanitize remote URL due to parse error: %s", exc)
+        if "@" not in remote_url:
+            return remote_url
+        try:
+            scheme, rest = remote_url.split("://", 1)
+            host_part = rest.split("@", 1)[1]
+            return f"{scheme}://{host_part}"
+        except ValueError:
+            return "<redacted>"
 
 
 async def read_file(file_path: str, config: MCPConfig) -> dict[str, Any]:
@@ -349,7 +356,7 @@ async def get_project_structure(config: MCPConfig) -> dict[str, Any]:
                     allowed_root.relative_to(project_root)
                     if allowed_root.exists():
                         allowed_roots.append(allowed_root)
-                except ValueError:
+                except (ValueError, OSError, RuntimeError):
                     continue
 
             if not allowed_roots:
