@@ -46,6 +46,7 @@ The current shape includes:
 - local-first API/UI semantics
 - local MCP stdio shell
 - fixture-backed smoke tests
+- repo-tracked research knowledge product under `docs/research/**`
 - repo-tracked runtime seed baseline
 - verified BTC champion subset
 - admitted but constrained REST read-spine, optimizer package, and remote MCP semantics
@@ -95,6 +96,7 @@ The following are admitted as part of the normal V2 local workflow surface:
 - `.github/copilot-instructions.md`
 - `.github/ISSUE_TEMPLATE/*.yml`
 - `docs/subsystem-index-and-premortem-convention.md`
+- `docs/research/**`
 - `.pre-commit-config.yaml`
 - `docs/adr/0000-template.md`
 - tracked `.env.example` plus ignored local `.env`
@@ -107,12 +109,17 @@ The following are admitted as part of the normal V2 local workflow surface:
 - local launchers under:
   - `scripts/api/api_shell.py`
   - `scripts/audit/pip_audit.py`
+  - `scripts/audit/research_wiki_lint.py`
   - `scripts/mcp/mcp_stdio.py`
   - `scripts/validate/pytest_suite.py`
   - `scripts/smoke/*.py`
   - `scripts/data/fetch_historical.py`
 
 runtime determinism guardrails for pipeline fast-hash policy and feature-cache hash stability remain part of the admitted V2 local workflow surface.
+
+`docs/research/**` is admitted as a repo-tracked, derivative, non-authoritative research knowledge
+product for durable human/agent context. It does not become runtime or promotion authority by
+virtue of being tracked.
 
 Major subsystem folders may carry a local `index.md` that explains purpose, boundaries, invariants,
 tests, and lifecycle role. These local indexes are guidance surfaces only; they do not override

@@ -50,6 +50,8 @@ Source Genesis-Core HEAD: `6025ad87`
 - runtime-only governance guardrails
 - runtime determinism guardrails for pipeline fast-hash policy and feature-cache hash stability
 - subsystem-local `index.md` guidance in major folders plus deterministic premortem reflection convention
+- repo-tracked research knowledge product under `docs/research/**` plus the local
+  `scripts/audit/research_wiki_lint.py` structural lint entrypoint
 - admitted source model payloads under `config/models/**`
 - deterministic fixture model-registry/prob-model smoke
   (`registry/fixtures/model_registry/config/models/{registry.json,tBTCUSD_1h.json}`,
@@ -81,7 +83,8 @@ Source Genesis-Core HEAD: `6025ad87`
 - `config/strategy/candidates/**`
 - `docs/mcp/**`
 - `data/**`
-- branch-local research corpora and historical explanation surfaces
+- branch-local research corpora and historical explanation surfaces outside the admitted
+  repo-tracked `docs/research/**` knowledge product
 
 ## Notes
 
@@ -146,6 +149,9 @@ agents; they do not override the repository's governance or authority contracts.
 Premortem reflection in V2 is deterministic, evidence-based, and fail-closed. If a premortem claim
 cannot be tied to a metric, run-intent, threshold, signoff, or another deterministic evidence
 surface, it does not belong in V2 premortem.
+Repo-tracked research knowledge under `docs/research/**` is admitted as a derivative,
+plain-Markdown, non-authoritative context layer for humans and agents. Untracked or broader
+historical research corpora remain excluded unless separately admitted.
 
 ## Skeleton workflow
 
@@ -160,6 +166,8 @@ surface, it does not belong in V2 premortem.
 - `.env.example` keeps the narrow local placeholder values tracked even though `.env` stays ignored.
 - `.pre-commit-config.yaml` keeps a narrow local formatting/lint/sanity/secret-scan hook loop tracked in the seed.
 - `docs/adr/0000-template.md` provides the repo-local ADR starter for architecture and workflow decisions.
+- `docs/research/**` provides the repo-tracked Karpathy-style research wiki / durable knowledge layer,
+  while `scripts/audit/research_wiki_lint.py` provides a structural check for that surface.
 - `pyproject.toml` carries narrow local pytest/ruff/black defaults plus tracked dev-tooling dependencies for the generated V2 workspace.
 - `scripts/mcp/mcp_stdio.py` wraps the local MCP stdio shell with repo-root bootstrap and the generated config path.
 - `scripts/api/api_shell.py` wraps the local API shell with `src/` bootstrapping for non-installed startup.

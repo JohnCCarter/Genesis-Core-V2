@@ -50,6 +50,31 @@ GIT_WORKFLOW_SUPPORTED_OPERATIONS = {
 }
 
 
+def _redact_remote_url_credentials(remote_url: str | None) -> str | None:
+    """Remove URL userinfo; preserve safe inputs and use "<redacted>" only on hard failures."""
+
+    if not remote_url or "://" not in remote_url:
+        return remote_url
+
+    try:
+        parts = urlsplit(remote_url)
+        netloc = parts.netloc
+        if "@" not in netloc:
+            return remote_url
+        netloc = netloc.split("@", 1)[1]
+        return urlunsplit((parts.scheme, netloc, parts.path, parts.query, parts.fragment))
+    except ValueError:
+        logger.debug("Malformed remote URL; using fallback redaction path.")
+        if "@" not in remote_url:
+            return remote_url
+        try:
+            scheme, rest = remote_url.split("://", 1)
+            host_part = rest.split("@", 1)[1]
+            return f"{scheme}://{host_part}"
+        except ValueError:
+            return "<redacted>"
+
+
 async def read_file(file_path: str, config: MCPConfig) -> dict[str, Any]:
     """
     Read the contents of a file in the project.
@@ -331,7 +356,7 @@ async def get_project_structure(config: MCPConfig) -> dict[str, Any]:
                     allowed_root.relative_to(project_root)
                     if allowed_root.exists():
                         allowed_roots.append(allowed_root)
-                except Exception:
+                except (ValueError, OSError, RuntimeError):
                     continue
 
             if not allowed_roots:
@@ -352,7 +377,7 @@ async def get_project_structure(config: MCPConfig) -> dict[str, Any]:
                         candidate.relative_to(parent)
                         candidate_has_parent = True
                         break
-                    except Exception:
+                    except ValueError:
                         continue
                 if candidate_has_parent:
                     continue
@@ -367,7 +392,7 @@ async def get_project_structure(config: MCPConfig) -> dict[str, Any]:
                         f.relative_to(d)
                         file_is_covered = True
                         break
-                    except Exception:
+                    except ValueError:
                         continue
                 if file_is_covered:
                     continue
@@ -734,17 +759,7 @@ async def get_git_status(
                     filtered_untracked_files.append(path)
             untracked_files = filtered_untracked_files
 
-        if remote_url and "://" in remote_url:
-            try:
-                parts = urlsplit(remote_url)
-                netloc = parts.netloc
-                if "@" in netloc:
-                    netloc = netloc.split("@", 1)[1]
-                    remote_url = urlunsplit(
-                        (parts.scheme, netloc, parts.path, parts.query, parts.fragment)
-                    )
-            except Exception:
-                pass
+        remote_url = _redact_remote_url_credentials(remote_url)
 
         is_dirty = bool(modified_files or staged_files or untracked_files)
 
@@ -822,17 +837,7 @@ async def get_git_repo_state(config: MCPConfig) -> dict[str, Any]:
             git_env=git_env,
         )
         remote_url = remote_res.stdout.strip() or None
-        if remote_url and "://" in remote_url:
-            try:
-                parts = urlsplit(remote_url)
-                netloc = parts.netloc
-                if "@" in netloc:
-                    netloc = netloc.split("@", 1)[1]
-                    remote_url = urlunsplit(
-                        (parts.scheme, netloc, parts.path, parts.query, parts.fragment)
-                    )
-            except Exception:
-                pass
+        remote_url = _redact_remote_url_credentials(remote_url)
 
         return {
             "success": True,
@@ -925,17 +930,7 @@ async def git_workflow_operation(
             git_env=git_env,
         )
         remote_url = remote_res.stdout.strip() or None
-        if remote_url and "://" in remote_url:
-            try:
-                parts = urlsplit(remote_url)
-                netloc = parts.netloc
-                if "@" in netloc:
-                    netloc = netloc.split("@", 1)[1]
-                    remote_url = urlunsplit(
-                        (parts.scheme, netloc, parts.path, parts.query, parts.fragment)
-                    )
-            except Exception:
-                pass
+        remote_url = _redact_remote_url_credentials(remote_url)
 
         current_branch = branch_res.stdout.strip() or "HEAD"
         head_sha = head_res.stdout.strip()
