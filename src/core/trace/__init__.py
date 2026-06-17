@@ -21,6 +21,11 @@ from core.trace.reader import (
     read_evidence,
     read_run,
 )
+from core.trace.recorder import (
+    new_run_id,
+    record_candidate_build,
+    resolve_actor_from_env,
+)
 from core.trace.writer import TraceWriter, rebuild_index
 
 __all__ = [
@@ -33,11 +38,14 @@ __all__ = [
     "follow_parents",
     "index_path",
     "latest_run",
+    "new_run_id",
     "parse_packet",
     "read_events",
     "read_evidence",
     "read_run",
     "rebuild_index",
+    "record_candidate_build",
+    "resolve_actor_from_env",
     "run_dir",
     "run_json_path",
     "trace_root",

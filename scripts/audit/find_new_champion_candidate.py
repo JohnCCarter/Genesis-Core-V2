@@ -123,10 +123,30 @@ def main() -> int:
         "--candidate-config",
         help="Optional path to candidate artifact/config JSON (merged_config/cfg/parameters)",
     )
+    parser.add_argument(
+        "--trace",
+        action="store_true",
+        help="Emit an agent-readable run-trace under results/trace/ (opt-in, side-effect-free)",
+    )
     args = parser.parse_args()
 
     output_dir = Path(args.output).resolve()
     output_dir.mkdir(parents=True, exist_ok=True)
+
+    trace_writer = None
+    if args.trace:
+        try:
+            from core.trace import TraceWriter, new_run_id, resolve_actor_from_env
+
+            trace_writer = TraceWriter(
+                run_id=new_run_id(),
+                actor=resolve_actor_from_env(),
+                intent="candidate_search",
+                symbol=args.symbol,
+                timeframe=args.timeframe,
+            )
+        except Exception:  # fail-open: tracing must never block the search
+            trace_writer = None
 
     seed_cfg = _load_runtime_seed_cfg()
 
@@ -158,6 +178,16 @@ def main() -> int:
             promotion_override_flag=True,
             promotion_signoff_flag=True,
         )
+
+        if trace_writer is not None:
+            from core.trace import record_candidate_build
+
+            record_candidate_build(
+                packet,
+                incumbent=incumbent_snapshot,
+                candidate=candidate_snapshot,
+                writer=trace_writer,
+            )
 
         eval_item = {
             "spec": {
@@ -206,6 +236,16 @@ def main() -> int:
             promotion_signoff_flag=True,
         )
 
+        if trace_writer is not None:
+            from core.trace import record_candidate_build
+
+            record_candidate_build(
+                packet,
+                incumbent=incumbent_snapshot,
+                candidate=candidate_snapshot,
+                writer=trace_writer,
+            )
+
         eval_item = {
             "spec": {
                 "label": "artifact_candidate",
@@ -222,6 +262,20 @@ def main() -> int:
 
     if best_eval is None:
         raise RuntimeError("No candidate evaluations were produced")
+
+    if trace_writer is not None:
+        try:
+            ready = bool(best_eval["candidate_packet"]["ready_for_promotion"])
+            status = "PASS" if ready else "WAIT"
+            trace_writer.record_gate(
+                stage="promotion_readiness",
+                status=status,
+                criteria_snapshot={"best_spec": best_eval["spec"], "ready_for_promotion": ready},
+                issued_by="governance-kernel",
+            )
+            trace_writer.close(outcome=status)
+        except Exception:  # fail-open: tracing must never block the search
+            pass
 
     now = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
     run_payload = {

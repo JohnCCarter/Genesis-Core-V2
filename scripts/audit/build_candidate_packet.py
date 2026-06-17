@@ -79,6 +79,11 @@ def main() -> int:
         action="store_true",
         help="Exit with code 2 when ready_for_promotion=false",
     )
+    parser.add_argument(
+        "--trace",
+        action="store_true",
+        help="Emit an agent-readable run-trace under results/trace/ (opt-in, side-effect-free)",
+    )
 
     args = parser.parse_args()
 
@@ -98,6 +103,18 @@ def main() -> int:
         promotion_margin=float(args.promotion_margin),
         minimum_trade_threshold=float(args.minimum_trade_threshold),
     )
+
+    if args.trace:
+        from core.trace import record_candidate_build
+
+        record_candidate_build(
+            packet,
+            incumbent=incumbent_metrics,
+            candidate=candidate_metrics,
+            intent=str(args.promotion_run_intent),
+            promotion_margin=float(args.promotion_margin),
+            minimum_trade_threshold=float(args.minimum_trade_threshold),
+        )
 
     payload = packet.to_dict()
     print(json.dumps(payload, indent=2, ensure_ascii=False, sort_keys=True))
