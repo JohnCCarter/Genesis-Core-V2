@@ -202,3 +202,14 @@ def test_secrets_are_redacted_before_serialization_and_hash() -> None:
     assert payload["inputs"]["apiKey"] != secret
     # The content hash is computed over the redacted body, so the secret never enters it.
     assert secret not in packet.content_hash()
+
+
+def test_content_hash_stable_across_redacted_round_trip() -> None:
+    # Redaction must be idempotent: a packet read back from an already-redacted
+    # payload must hash to the same content_hash, or read_evidence(hash) breaks.
+    packet = _evidence(inputs={"apiKey": "SUPERSECRETVALUE", "note": "ok"})
+    round_tripped = EvidencePacket.from_payload(packet.to_payload())
+    assert round_tripped.content_hash() == packet.content_hash()
+    # And a second round-trip stays stable too.
+    twice = EvidencePacket.from_payload(round_tripped.to_payload())
+    assert twice.content_hash() == packet.content_hash()

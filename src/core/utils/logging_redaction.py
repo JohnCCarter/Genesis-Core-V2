@@ -15,12 +15,20 @@ SENSITIVE_KEYS = {
 }
 
 
+# Forms _mask itself produces; recognised so re-masking is idempotent (a value
+# read back from an already-redacted payload must hash to the same content_hash).
+_MASKED_FORM = re.compile(r"\A(?:\*\*\*|.{3}\.\.\.)\Z")
+
+
 def _mask(value: Any) -> Any:
     try:
         s = str(value)
     except Exception:
         return "***"
     if not s:
+        return s
+    if _MASKED_FORM.match(s):
+        # Already masked — return unchanged so masking is idempotent.
         return s
     # Visa högst 3 första tecken för felsökning, annars maska helt
     return (s[:3] + "...") if len(s) > 6 else "***"

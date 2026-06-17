@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import pytest
@@ -131,6 +132,28 @@ def test_unknown_packet_type_fails_closed(tmp_path: Path) -> None:
     )
     with pytest.raises(TraceReadError):
         read_events("run_bad", root=tmp_path)
+
+
+def test_non_object_event_line_fails_closed(tmp_path: Path) -> None:
+    # A valid-JSON line that is not an object must raise a typed error, not an
+    # untyped AttributeError from payload.get(...).
+    _writer(tmp_path, run_id="run_arr")
+    events_path("run_arr", root=tmp_path).write_text("[]\n", encoding="utf-8")
+    with pytest.raises(TraceReadError):
+        read_events("run_arr", root=tmp_path)
+
+
+def test_schema_invalid_packet_fails_closed(tmp_path: Path) -> None:
+    # A structurally-parseable packet whose body violates the schema (gate status
+    # outside PASS/FAIL/WAIT/HALT) must not be silently accepted.
+    _writer(tmp_path, run_id="run_badstatus")
+    payload = GateResult(envelope=_env(), stage="promotion", status="PASS").to_payload()
+    payload["status"] = "BOGUS"
+    events_path("run_badstatus", root=tmp_path).write_text(
+        json.dumps(payload) + "\n", encoding="utf-8"
+    )
+    with pytest.raises(TraceReadError):
+        read_events("run_badstatus", root=tmp_path)
 
 
 def test_corrupt_run_json_fails_closed(tmp_path: Path) -> None:

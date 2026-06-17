@@ -15,6 +15,12 @@ import json
 from pathlib import Path
 
 from core.packets.models import DecisionPacket, EvidencePacket, GateResult, RunRecord
+from core.packets.validators import (
+    PacketValidationError,
+    validate_decision_packet,
+    validate_evidence_packet,
+    validate_gate_result,
+)
 from core.trace.paths import events_path, index_path, run_dir, run_json_path, trace_root
 
 Packet = EvidencePacket | DecisionPacket | GateResult
@@ -23,6 +29,12 @@ _PACKET_BY_TYPE: dict[str, type[Packet]] = {
     "evidence": EvidencePacket,
     "decision": DecisionPacket,
     "gate_result": GateResult,
+}
+
+_VALIDATOR_BY_TYPE = {
+    "evidence": validate_evidence_packet,
+    "decision": validate_decision_packet,
+    "gate_result": validate_gate_result,
 }
 
 
@@ -39,11 +51,22 @@ class TraceReadError(TraceError):
 
 
 def parse_packet(payload: dict) -> Packet:
-    packet_type = payload.get("packet_type")
-    cls = _PACKET_BY_TYPE.get(str(packet_type))
+    if not isinstance(payload, dict):
+        # A JSON line that is valid but not an object (e.g. [] or "x") must fail
+        # closed, not raise an untyped AttributeError downstream.
+        raise TraceReadError(f"trace record is not a JSON object: {payload!r}")
+    packet_type = str(payload.get("packet_type"))
+    cls = _PACKET_BY_TYPE.get(packet_type)
     if cls is None:
-        raise TraceReadError(f"unknown packet_type: {packet_type!r}")
-    return cls.from_payload(payload)
+        raise TraceReadError(f"unknown packet_type: {payload.get('packet_type')!r}")
+    try:
+        packet = cls.from_payload(payload)
+        _VALIDATOR_BY_TYPE[packet_type](packet)
+    except (PacketValidationError, ValueError, TypeError) as exc:
+        # Schema-invalid records (bad gate status, empty actor id, non-finite
+        # metric, …) must not be silently accepted on the inter-agent surface.
+        raise TraceReadError(f"invalid {packet_type} packet: {exc}") from exc
+    return packet
 
 
 def _load_json(path: Path) -> dict:
