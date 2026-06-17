@@ -105,7 +105,11 @@ def test_premortem_phases_both_recorded(tmp_path: Path) -> None:
     record_candidate_build(
         packet, incumbent=incumbent, candidate=candidate, run_id="run_pm", root=tmp_path
     )
-    kinds = [e.decision_kind for e in read_events("run_pm", root=tmp_path) if isinstance(e, DecisionPacket)]
+    kinds = [
+        e.decision_kind
+        for e in read_events("run_pm", root=tmp_path)
+        if isinstance(e, DecisionPacket)
+    ]
     assert kinds.count("premortem") == 2
 
 
