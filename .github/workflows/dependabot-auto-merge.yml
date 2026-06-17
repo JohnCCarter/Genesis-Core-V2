@@ -1,9 +1,9 @@
 name: Dependabot auto-merge
 
-# Auto-merges low-risk Dependabot PRs (patch bumps + GitHub Actions) once the
-# required status checks pass. Branch protection still gates the merge, so a
-# breaking bump that fails CI is never merged. Minor/major bumps of runtime/dev
-# deps are intentionally left for manual review.
+# Auto-merges low-risk Dependabot PRs (patch + minor bumps + GitHub Actions)
+# once the required status checks pass. Branch protection still gates the merge,
+# so a breaking bump that fails CI is never merged. Only semver-MAJOR bumps of
+# runtime/dev deps are left for manual review.
 #
 # Uses pull_request_target (needs write token to enable auto-merge) but never
 # checks out the PR's code — only trusted metadata + the gh CLI run — so there is
@@ -27,6 +27,7 @@ jobs:
       - name: Enable auto-merge for low-risk updates
         if: >-
           ${{ steps.meta.outputs.update-type == 'version-update:semver-patch' ||
+              steps.meta.outputs.update-type == 'version-update:semver-minor' ||
               contains(steps.meta.outputs.package-ecosystem, 'github') }}
         run: gh pr merge --auto --squash "$PR_URL"
         env:
