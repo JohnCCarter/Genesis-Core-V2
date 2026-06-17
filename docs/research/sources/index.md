@@ -42,6 +42,12 @@ For the current research product, the most common raw-source seams are:
 External sources are allowed when they are clearly linked, bounded, and treated as derivative input.
 They do not become V2 authority merely by being cited here.
 
+The external repos and frameworks surveyed for pattern absorption (for example AutoGen, LangGraph,
+Temporal, MLflow, OPA, Sigstore) are captured as a single bounded, derivative summary in
+`external-pattern-scan-report.md`, with decisions in `docs/adr/0001-absorption-tiers-solo-agents.md` and
+`docs/adr/0002-run-trace-packet-contract.md`. They are pattern sources only. See `patterns.md` Pattern 7
+for the absorption rule.
+
 ## Next use
 
 When a new source family becomes important for repeated research work, record it here and keep the
