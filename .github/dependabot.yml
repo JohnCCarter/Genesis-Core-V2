@@ -15,6 +15,12 @@ updates:
       # gain. Security updates still flow regardless of this ignore. Revisit only
       # as a deliberate, reviewed bump.
       - dependency-name: "fastapi"
+      # Held at 12.x deliberately: websockets only backs the dormant (Track B,
+      # inert) Bitfinex WS family. A 12->16 major has no driver (no CVE, code not
+      # wired into runtime) and would land a dead `WebSocketClientProtocol`
+      # reference. Bump deliberately (with a version-robust annotation + ws tests)
+      # only when the WS transport is actually activated. Security updates still flow.
+      - dependency-name: "websockets"
 
   # GitHub Actions used in workflows (enables moving to SHA-pinned refs later)
   - package-ecosystem: "github-actions"
