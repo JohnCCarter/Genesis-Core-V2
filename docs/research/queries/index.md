@@ -33,6 +33,10 @@ Every durable query answer should include:
 - `2026-06-17-champion-1h-trade-frequency.md` - filed answer that the tracked 1h champion is
   effectively inert (entry gate too high) while a real but cost-fragile edge exists at a lower
   gate; the 3h re-tune was neutral-to-worse. Post-freeze validation target (Issue #12).
+- `2026-06-17-karpathy-wiki-fidelity-review.md` — filed answer comparing the V2
+  research wiki to Karpathy's `llm-wiki` gist: faithful in form (layers, loop,
+  index/log), deliberately divergent in motor (human-gated, derivative,
+  non-authoritative); largest gap is semantic lint.
 
 ## Next use
 
