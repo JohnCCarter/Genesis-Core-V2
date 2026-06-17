@@ -167,6 +167,24 @@ def test_pbo_respects_combination_cap():
     assert res.n_combinations == 100
 
 
+def test_pbo_all_equal_is_half_not_zero():
+    # Degenerate all-identical performance has no overfitting signal; mid-rank
+    # ties + half-weighted boundary must yield ~0.5, not 0 (the old <= drove it
+    # to 0, falsely claiming "never overfit").
+    M = np.ones((256, 6))
+    res = pbo_cscv(M, n_partitions=8, metric="mean")
+    assert res.pbo == pytest.approx(0.5)
+
+
+def test_pbo_cap_samples_without_materializing_full_space():
+    # C(20, 10) = 184_756 splits; the cap must be honoured by sampling, not by
+    # building the whole space first. Exercises the sampling path.
+    rng = np.random.default_rng(5)
+    M = rng.normal(0.0, 1.0, size=(256, 8))
+    res = pbo_cscv(M, n_partitions=20, max_combinations=50)
+    assert res.n_combinations == 50
+
+
 # --------------------------------------------------------------------------- #
 # Benjamini-Hochberg FDR
 # --------------------------------------------------------------------------- #
@@ -202,3 +220,10 @@ def test_bh_empty():
     res = benjamini_hochberg([], alpha=0.05)
     assert res.n_significant == 0
     assert res.adjusted_pvalues == []
+
+
+def test_bh_rejects_nan_pvalues():
+    # A single NaN would propagate through the reverse cumulative minimum and
+    # corrupt every adjusted p-value; it must be rejected up front.
+    with pytest.raises(ValueError):
+        benjamini_hochberg([0.01, float("nan"), 0.2])

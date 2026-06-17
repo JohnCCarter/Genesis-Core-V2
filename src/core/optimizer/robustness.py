@@ -300,12 +300,22 @@ def pbo_cscv(
     block_indices = np.array_split(np.arange(T), n_partitions)
     s = n_partitions
     all_blocks = list(range(s))
-    is_choices = list(combinations(all_blocks, s // 2))
+    total_choices = math.comb(s, s // 2)
 
     rng = np.random.default_rng(random_state)
-    if max_combinations is not None and len(is_choices) > max_combinations:
-        picked = rng.choice(len(is_choices), size=max_combinations, replace=False)
-        is_choices = [is_choices[i] for i in picked]
+    if max_combinations is not None and total_choices > max_combinations:
+        # Sample distinct IS/OOS splits WITHOUT materializing the full
+        # C(S, S/2) space, which explodes for larger n_partitions
+        # (e.g. C(30, 15) ~ 1.5e8) and would blow up before the cap applied.
+        seen: set[tuple[int, ...]] = set()
+        is_choices = []
+        while len(is_choices) < max_combinations:
+            combo = tuple(sorted(int(b) for b in rng.choice(s, size=s // 2, replace=False)))
+            if combo not in seen:
+                seen.add(combo)
+                is_choices.append(combo)
+    else:
+        is_choices = list(combinations(all_blocks, s // 2))
 
     def _perf(block: np.ndarray) -> np.ndarray:
         if metric == "mean":
@@ -322,14 +332,24 @@ def pbo_cscv(
         oos_perf = _perf(M[oos_rows])
 
         n_star = int(np.argmax(is_perf))
-        # Relative OOS rank of the IS-best strategy (1 = worst .. N = best).
-        rank = float(np.sum(oos_perf <= oos_perf[n_star]))
+        # Relative OOS rank of the IS-best strategy (1 = worst .. N = best),
+        # using mid-ranks so ties do not inflate the rank: an all-equal OOS
+        # block maps to the median rather than the maximum.
+        less = float(np.sum(oos_perf < oos_perf[n_star]))
+        equal = float(np.sum(oos_perf == oos_perf[n_star]))
+        rank = less + (equal + 1.0) / 2.0
         omega = rank / (N + 1.0)
         omega = min(max(omega, 1e-9), 1.0 - 1e-9)
         logits.append(math.log(omega / (1.0 - omega)))
 
     arr = np.asarray(logits, dtype=float)
-    pbo = float(np.mean(arr <= 0.0)) if arr.size else float("nan")
+    if arr.size:
+        # Overfit when the IS-best ranks below the OOS median (logit < 0);
+        # exact-median ties (logit == 0) count as half so a fully degenerate
+        # all-equal matrix yields ~0.5 instead of 0 or 1.
+        pbo = float(np.mean(arr < 0.0) + 0.5 * np.mean(arr == 0.0))
+    else:
+        pbo = float("nan")
     return PBOResult(
         pbo=pbo,
         logits=logits,
@@ -364,6 +384,10 @@ def benjamini_hochberg(pvalues: Sequence[float], alpha: float = 0.05) -> FDRResu
         return FDRResult(
             rejected=[], adjusted_pvalues=[], threshold=0.0, n_significant=0, alpha=alpha
         )
+    if not np.all(np.isfinite(p)):
+        # A single NaN would otherwise propagate through the reverse cumulative
+        # minimum and corrupt every adjusted p-value.
+        raise ValueError("p-values must be finite (no NaN/inf)")
 
     order = np.argsort(p)
     ranks = np.arange(1, m + 1)
