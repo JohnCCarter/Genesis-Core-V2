@@ -28,6 +28,8 @@ A good handoff should include:
 
 - `2026-06-08-wiki-recovery.md` — records the bounded recovery of the lost research wiki and
   ecosystem inventory surfaces so future sessions can resume from the restored repo state
+- `2026-06-17-config-merges-and-github-hardening.md` - baton-pass for the config-separation,
+  branch-merge, and GitHub-hardening session; points to the next research focus and Issue #12
 
 ## Naming suggestion
 

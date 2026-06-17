@@ -173,3 +173,22 @@ Suggested kinds:
   read exactly what a prior agent did (`run_id` locator vs reproducible `content_hash` identity).
 - Recorded the absorption rationale as `Pattern 7` in `docs/research/patterns.md` so later sessions meet
   the why before touching external-pattern work.
+
+## [2026-06-17] question | champion 1h trade-frequency finding (Issue #12)
+
+- Filed `queries/2026-06-17-champion-1h-trade-frequency.md`: the tracked `tBTCUSD_1h` champion is
+  effectively inert (0.70 entry gate -> ~3 trades / 30 months); a 0.60 gate reveals a real but
+  cost-fragile edge (183 trades, Sharpe > 1.0 at low cost, dies by ~10 bps). The proposed 3h 2x-sizing
+  re-tune was neutral-to-worse.
+- Source numbers are the (now-deleted) research branch's own self-reported cost-stress sweeps;
+  reproduce via `scripts/analyze/cost_stress_sweep.py` before acting. Deferred to post-freeze
+  (after 2026-12-31), tracked as GitHub Issue #12.
+
+## [2026-06-17] update | run-trace foundation merged; research tooling + GitHub hardening
+
+- Merged the run-trace foundation (`core.packets` + `core.trace`) and the salvaged research tooling to
+  `main`: optimizer robustness (PSR/DSR/PBO-CSCV/FDR), cost-stress sweep, forward/backtest reconcile,
+  and the edge-mechanism register (`mechanism_registry.py` + `docs/strategies/MECHANISMS.md`).
+- `EDGE_MAP=UNRESOLVED` still holds; the tooling to test mechanisms toward `CANDIDATE` now exists.
+- Hardened the repo (branch protection, Dependabot security + auto-merge, deliberate dep-major holds).
+  Baton-pass in `handoffs/2026-06-17-config-merges-and-github-hardening.md`.
