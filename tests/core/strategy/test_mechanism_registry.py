@@ -11,6 +11,7 @@ from core.strategy.mechanism_registry import (
     STATUS_UNVERIFIED,
     EdgeMechanism,
     MechanismRegistryError,
+    _build_registry,
     get_mechanism,
     has_verified_edge,
     list_mechanisms,
@@ -67,6 +68,14 @@ def test_falsification_uses_phase1_thresholds() -> None:
 def test_thresholds_match_cost_sweep_constants() -> None:
     assert EDGE_DEAD_SHARPE == 1.0
     assert EDGE_DEAD_PF == 1.1
+
+
+def test_duplicate_mechanism_id_is_rejected() -> None:
+    # Building the registry with a repeated id must fail fast, not silently
+    # overwrite the earlier entry.
+    mech = get_mechanism("ml_confidence_v1")
+    with pytest.raises(MechanismRegistryError):
+        _build_registry((mech, mech))
 
 
 def test_every_mechanism_has_falsification_and_evidence() -> None:

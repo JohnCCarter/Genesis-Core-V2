@@ -45,8 +45,8 @@ rejected on Sharpe noise alone. Constants live in
   no profitable confidence threshold exists with ≥30 trades.
 - **Current evidence (Phase 1)**: edge only survives at `conf ≥ 0.60`
   (PF=1.24, Sharpe=0.72, 183 trades); unprofitable below. Thin, not OOS-validated.
-- **Evidence**: `artifacts/diagnostics/cost_stress_sweep_2026-06-16.md`,
-  `config/strategy/champions/tBTCUSD_1h.json`.
+- **Evidence**: `config/strategy/champions/tBTCUSD_1h.json`; quantitative sweep
+  regenerable via `scripts/analyze/cost_stress_sweep.py` (not a committed artifact).
 
 ### `regime_intelligence_v1` — Regime-conditioned entry · **EXPERIMENTAL**
 
@@ -58,8 +58,9 @@ rejected on Sharpe noise alone. Constants live in
   survive slippage ≥ 40 bps).
 - **Current evidence (Phase 1)**: 3h PF=1.585 at low cost, but Sharpe < 1.0
   everywhere and PF collapses to ~1.11 by slip=40bps. Backtest-only support.
-- **Evidence**: `artifacts/diagnostics/cost_stress_sweep_2026-06-16.md`,
-  `config/strategy/champions/tBTCUSD_3h.json`, `src/core/optimizer/robustness.py`.
+- **Evidence**: `config/strategy/champions/tBTCUSD_3h.json`,
+  `src/core/optimizer/robustness.py`; quantitative sweep regenerable via
+  `scripts/analyze/cost_stress_sweep.py` (not a committed artifact).
 
 ## Promotion rule
 
@@ -68,5 +69,5 @@ A mechanism may move `EXPERIMENTAL → CANDIDATE` only with:
 1. Robustness pass (deflated Sharpe / PBO-CSCV / Benjamini–Hochberg — Phase 2).
 2. Forward-vs-backtest reconciliation with high fidelity at realistic cost
    (Phase 3, `tools/reconcile_forward_backtest.py`).
-3. A bounded statement of what the edge means and does not mean, citing both
-   evidence endpoints (`docs/knowledge/EDGE_MAP.md` admission rule).
+3. A bounded statement of what the edge means and does not mean, citing the
+   evidence endpoints.

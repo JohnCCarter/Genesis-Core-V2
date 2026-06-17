@@ -9,7 +9,11 @@ family merely to give early research a container").
 Each mechanism states:
   - the causal claim (why an edge should exist),
   - the surfaces that express it (signal / gates),
-  - a falsification condition that, if met, flips its status to REJECTED.
+  - a falsification condition that, when met, warrants marking it REJECTED.
+
+This registry is a frozen data structure: it records the conditions and the
+current status but performs no automatic status transitions — flipping a status
+is a manual review action that edits the entry here.
 
 The falsification conditions are deliberately tied to the Phase 1 cost-stress
 edge-death thresholds (Sharpe < 1.0, PF < 1.1 at realistic cost) so that the
@@ -82,9 +86,11 @@ _MECHANISMS: tuple[EdgeMechanism, ...] = (
         # Phase 1 sweep: edge only survives at conf>=0.60 (PF=1.24, Sharpe=0.72,
         # 183 trades); unprofitable below. Thin, not yet OOS-validated.
         status=STATUS_UNVERIFIED,
+        # Quantitative evidence is regenerable via scripts/analyze/cost_stress_sweep.py
+        # (not a committed artifact); refs point at the tracked surfaces only.
         evidence_refs=(
-            "artifacts/diagnostics/cost_stress_sweep_2026-06-16.md",
             "config/strategy/champions/tBTCUSD_1h.json",
+            "scripts/analyze/cost_stress_sweep.py",
         ),
     ),
     EdgeMechanism(
@@ -103,15 +109,29 @@ _MECHANISMS: tuple[EdgeMechanism, ...] = (
         # Phase 1 sweep: 3h PF=1.585 at low cost but Sharpe<1.0 everywhere and
         # PF collapses to ~1.11 by slip=40bps. Backtest-only support.
         status=STATUS_EXPERIMENTAL,
+        # Quantitative evidence is regenerable via scripts/analyze/cost_stress_sweep.py
+        # (not a committed artifact); refs point at the tracked surfaces only.
         evidence_refs=(
-            "artifacts/diagnostics/cost_stress_sweep_2026-06-16.md",
             "config/strategy/champions/tBTCUSD_3h.json",
             "src/core/optimizer/robustness.py",
+            "scripts/analyze/cost_stress_sweep.py",
         ),
     ),
 )
 
-MECHANISM_REGISTRY: dict[str, EdgeMechanism] = {m.mechanism_id: m for m in _MECHANISMS}
+
+def _build_registry(mechanisms: tuple[EdgeMechanism, ...]) -> dict[str, EdgeMechanism]:
+    """Index mechanisms by id, failing fast on duplicates instead of silently
+    overwriting an earlier entry with a later one sharing the same id."""
+    registry: dict[str, EdgeMechanism] = {}
+    for mechanism in mechanisms:
+        if mechanism.mechanism_id in registry:
+            raise MechanismRegistryError(f"duplicate_mechanism_id:{mechanism.mechanism_id}")
+        registry[mechanism.mechanism_id] = mechanism
+    return registry
+
+
+MECHANISM_REGISTRY: dict[str, EdgeMechanism] = _build_registry(_MECHANISMS)
 
 
 def get_mechanism(mechanism_id: str) -> EdgeMechanism:
