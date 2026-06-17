@@ -30,6 +30,9 @@ Every durable query answer should include:
   agent discipline means for V2 research work
 - `2026-06-04-nvidia-skills-cherry-pick-review.md` ÔÇö filed answer capturing which NVIDIA
   skills patterns fit V2 without displacing the repo-native research wiki
+- `2026-06-17-champion-1h-trade-frequency.md` - filed answer that the tracked 1h champion is
+  effectively inert (entry gate too high) while a real but cost-fragile edge exists at a lower
+  gate; the 3h re-tune was neutral-to-worse. Post-freeze validation target (Issue #12).
 
 ## Next use
 
