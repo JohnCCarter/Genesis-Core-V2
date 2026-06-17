@@ -8,6 +8,13 @@ updates:
     open-pull-requests-limit: 5
     commit-message:
       prefix: "build(deps)"
+    ignore:
+      # Held at 0.136.x deliberately: fastapi 0.137 changed include_router
+      # introspection and would force rewriting the route-inventory governance
+      # guard (test_transport_route_inertness, Track B) for no security/feature
+      # gain. Security updates still flow regardless of this ignore. Revisit only
+      # as a deliberate, reviewed bump.
+      - dependency-name: "fastapi"
 
   # GitHub Actions used in workflows (enables moving to SHA-pinned refs later)
   - package-ecosystem: "github-actions"
