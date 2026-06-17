@@ -42,7 +42,7 @@ genesis-v2-smoke-suite = "genesis_core_v2_cli.console_scripts:smoke_suite_main"
 
 [project.optional-dependencies]
 dev = [
-  "pytest>=9.0.3,<10",
+  "pytest>=9.1.0,<10",
   "pytest-asyncio>=1.0,<2",
   "httpx2>=2.3,<3",
   "hypothesis>=6.155.3,<7",
