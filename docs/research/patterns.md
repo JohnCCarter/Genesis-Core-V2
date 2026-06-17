@@ -239,3 +239,41 @@ Must not:
 - store secrets or non-redacted private data
 - authorize deployment, live/private trading, or remote operations by checklist alone
 - widen runtime/startup/server bindings without a separate validated slice
+
+## Pattern 7 - External pattern absorption (NU / DELAR / SENARE)
+
+Use this when considering whether to adopt an external repo, framework, or system pattern into V2.
+Read this before starting any external-pattern work so the why is met before the how.
+
+Why this exists:
+
+- V2's only actors are one solo human and AI agents. Governance exists to contain and audit agents, with
+  the human as sole gate, not to coordinate humans. So we absorb patterns that let us SEE and mechanically
+  CATCH agent error, and we defer patterns whose value needs a second human.
+- External systems are pattern sources and adapter targets only. They never own V2 state, evidence, or
+  promotion authority. Adopting one as the runtime/authority would be framework inversion and is rejected.
+
+Driving rule:
+
+- absorb NOW: patterns that give visibility plus mechanical self-verification
+- absorb in PARTS: take the format/pattern, drop the ceremony half (e.g. evidence-manifest shape without
+  MLflow; tamper-evident hash without external signing)
+- absorb LATER or never: anything needing a second human, an external verifier, or a runtime that wants
+  to own the loop
+
+Five identity filters every candidate must pass:
+
+- deterministic, fail-closed, local-first, authority-separated, no framework inversion
+
+Sources:
+
+- `docs/adr/0001-absorption-tiers-solo-agents.md` (decision and tiers)
+- `docs/adr/0002-run-trace-packet-contract.md` (first NU slice contract)
+- `external-pattern-scan-report.md` (full scan and per-candidate dispositions)
+- linked `log.md` entry
+
+Must not:
+
+- import an external runtime stack just because its pattern is useful
+- let a cited external system become V2 authority
+- skip the NU/DELAR/SENARE tiering when proposing a new absorption

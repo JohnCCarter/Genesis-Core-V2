@@ -159,3 +159,17 @@ Suggested kinds:
   recovery artifacts.
 - Added a dated handoff note so future sessions can start from the restored wiki rather than repeat
   transcript/PR archaeology.
+
+## [2026-06-17] update | record external-pattern absorption decision and trace foundation
+
+- Added `docs/adr/0001-absorption-tiers-solo-agents.md` and `docs/adr/0002-run-trace-packet-contract.md`
+  to canonize WHY and HOW V2 absorbs external patterns. The operating model (one solo human + AI agents)
+  means governance exists to contain and audit agents, with the human as sole gate; external systems are
+  pattern sources only, never V2 authority.
+- Captured the full external scan in `external-pattern-scan-report.md` (repo root): NU/DELAR/SENARE
+  absorption tiers sorted by the repo's five identity filters (deterministic, fail-closed, local-first,
+  authority-separated, no framework inversion).
+- First NU slice in progress: an agent-readable run-trace + minimal packet contract so future agents can
+  read exactly what a prior agent did (`run_id` locator vs reproducible `content_hash` identity).
+- Recorded the absorption rationale as `Pattern 7` in `docs/research/patterns.md` so later sessions meet
+  the why before touching external-pattern work.

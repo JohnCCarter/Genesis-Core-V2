@@ -1,16 +1,19 @@
 from __future__ import annotations
 
-import json
 from dataclasses import dataclass
-from typing import Any, TypeAlias
+from typing import Any
 
-JsonScalar: TypeAlias = str | int | float | bool | None
-JsonValue: TypeAlias = JsonScalar | list["JsonValue"] | dict[str, "JsonValue"]
-JsonObject: TypeAlias = dict[str, JsonValue]
+from core.utils.json_stable import JsonObject, JsonScalar, JsonValue, json_dumps_stable
 
-
-def json_dumps_stable(payload: JsonObject) -> str:
-    return json.dumps(payload, indent=2, sort_keys=True, ensure_ascii=False) + "\n"
+__all__ = [
+    "IntelligenceEvent",
+    "IntelligenceReference",
+    "JsonObject",
+    "JsonScalar",
+    "JsonValue",
+    "ValidatedIntelligenceEvent",
+    "json_dumps_stable",
+]
 
 
 @dataclass(frozen=True, slots=True)

@@ -72,7 +72,9 @@ def _score_to_metric_payload(
     }
 
 
-def _run_backtest(symbol: str, timeframe: str, cfg: dict[str, Any]) -> dict[str, Any]:
+def _run_backtest(
+    symbol: str, timeframe: str, cfg: dict[str, Any], trace_writer=None
+) -> dict[str, Any]:
     runtime_cfg = copy.deepcopy(cfg)
     runtime_cfg.setdefault("meta", {})
     runtime_cfg["meta"]["skip_champion_merge"] = True
@@ -88,6 +90,12 @@ def _run_backtest(symbol: str, timeframe: str, cfg: dict[str, Any]) -> dict[str,
     )
     if result.get("error") is not None:
         raise RuntimeError(f"Backtest error for {symbol} {timeframe}: {result.get('error')}")
+
+    if trace_writer is not None:
+        from core.trace import record_backtest_run
+
+        record_backtest_run(result, writer=trace_writer, symbol=symbol, timeframe=timeframe)
+
     return result
 
 
@@ -123,14 +131,36 @@ def main() -> int:
         "--candidate-config",
         help="Optional path to candidate artifact/config JSON (merged_config/cfg/parameters)",
     )
+    parser.add_argument(
+        "--trace",
+        action="store_true",
+        help="Emit an agent-readable run-trace under results/trace/ (opt-in, side-effect-free)",
+    )
     args = parser.parse_args()
 
     output_dir = Path(args.output).resolve()
     output_dir.mkdir(parents=True, exist_ok=True)
 
+    trace_writer = None
+    if args.trace:
+        try:
+            from core.trace import TraceWriter, new_run_id, resolve_actor_from_env
+
+            trace_writer = TraceWriter(
+                run_id=new_run_id(),
+                actor=resolve_actor_from_env(),
+                intent="candidate_search",
+                symbol=args.symbol,
+                timeframe=args.timeframe,
+            )
+        except Exception:  # fail-open: tracing must never block the search
+            trace_writer = None
+
     seed_cfg = _load_runtime_seed_cfg()
 
-    incumbent_result = _run_backtest(args.symbol, args.timeframe, seed_cfg)
+    incumbent_result = _run_backtest(
+        args.symbol, args.timeframe, seed_cfg, trace_writer=trace_writer
+    )
     incumbent_payload = _score_to_metric_payload(incumbent_result)
     incumbent_snapshot = metric_snapshot_from_mapping(incumbent_payload)
 
@@ -145,7 +175,9 @@ def main() -> int:
         candidate_cfg["exit"]["exit_conf_threshold"] = spec.exit_conf_threshold
         candidate_cfg["exit"]["max_hold_bars"] = spec.max_hold_bars
 
-        candidate_result = _run_backtest(args.symbol, args.timeframe, candidate_cfg)
+        candidate_result = _run_backtest(
+            args.symbol, args.timeframe, candidate_cfg, trace_writer=trace_writer
+        )
         candidate_payload = _score_to_metric_payload(candidate_result)
         candidate_snapshot = metric_snapshot_from_mapping(candidate_payload)
         candidate_scored = candidate_payload.get("_scored") or {}
@@ -158,6 +190,16 @@ def main() -> int:
             promotion_override_flag=True,
             promotion_signoff_flag=True,
         )
+
+        if trace_writer is not None:
+            from core.trace import record_candidate_build
+
+            record_candidate_build(
+                packet,
+                incumbent=incumbent_snapshot,
+                candidate=candidate_snapshot,
+                writer=trace_writer,
+            )
 
         eval_item = {
             "spec": {
@@ -193,7 +235,9 @@ def main() -> int:
             else:
                 candidate_cfg[top_key] = top_value
 
-        candidate_result = _run_backtest(args.symbol, args.timeframe, candidate_cfg)
+        candidate_result = _run_backtest(
+            args.symbol, args.timeframe, candidate_cfg, trace_writer=trace_writer
+        )
         candidate_payload = _score_to_metric_payload(candidate_result)
         candidate_snapshot = metric_snapshot_from_mapping(candidate_payload)
         candidate_scored = candidate_payload.get("_scored") or {}
@@ -205,6 +249,16 @@ def main() -> int:
             promotion_override_flag=True,
             promotion_signoff_flag=True,
         )
+
+        if trace_writer is not None:
+            from core.trace import record_candidate_build
+
+            record_candidate_build(
+                packet,
+                incumbent=incumbent_snapshot,
+                candidate=candidate_snapshot,
+                writer=trace_writer,
+            )
 
         eval_item = {
             "spec": {
@@ -222,6 +276,20 @@ def main() -> int:
 
     if best_eval is None:
         raise RuntimeError("No candidate evaluations were produced")
+
+    if trace_writer is not None:
+        try:
+            ready = bool(best_eval["candidate_packet"]["ready_for_promotion"])
+            status = "PASS" if ready else "WAIT"
+            trace_writer.record_gate(
+                stage="promotion_readiness",
+                status=status,
+                criteria_snapshot={"best_spec": best_eval["spec"], "ready_for_promotion": ready},
+                issued_by="governance-kernel",
+            )
+            trace_writer.close(outcome=status)
+        except Exception:  # fail-open: tracing must never block the search
+            pass
 
     now = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
     run_payload = {
