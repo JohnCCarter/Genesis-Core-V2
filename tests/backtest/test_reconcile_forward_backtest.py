@@ -3,6 +3,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
+
 from tools.reconcile_forward_backtest import (
     ACTION_DRIFT,
     BACKTEST_ONLY,
@@ -119,3 +121,18 @@ def test_ndjson_input_supported(tmp_path: Path) -> None:
     )
     rc = main([str(bt_path), str(fw_path)])
     assert rc == 0
+
+
+def test_row_without_timestamp_is_rejected() -> None:
+    # A symbol/timeframe-only row must not produce a key (would collapse rows).
+    bt = [{"symbol": "tBTCUSD", "timeframe": "1h", "action": "LONG"}]
+    with pytest.raises(ValueError):
+        reconcile(backtest_rows=bt, forward_rows=[])
+
+
+def test_duplicate_keys_are_rejected_not_collapsed() -> None:
+    # Two decisions on the same bar share a key; silently overwriting one would
+    # undercount mismatches, so reconcile must fail fast.
+    bt = [_row(1, "LONG"), _row(1, "SHORT")]
+    with pytest.raises(ValueError):
+        reconcile(backtest_rows=bt, forward_rows=[_row(1, "LONG")])

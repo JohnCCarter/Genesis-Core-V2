@@ -126,18 +126,21 @@ def _action(row: dict[str, Any]) -> str:
 
 
 def _key(row: dict[str, Any]) -> str:
-    parts: list[str] = []
+    timestamp = None
     for field_name in ("timestamp", "entry_time", "bar_index"):
         value = row.get(field_name)
         if value is not None and value != "":
-            parts.append(f"ts={value}")
+            timestamp = value
             break
+    if timestamp is None:
+        # A timestamp is mandatory; without it a symbol/timeframe-only key would
+        # collapse every row for a symbol onto one key and silently misalign.
+        raise ValueError(f"Row lacks an alignable timestamp key: {row!r}")
+    parts: list[str] = [f"ts={timestamp}"]
     for field_name in ("symbol", "timeframe"):
         value = row.get(field_name)
         if value is not None and value != "":
             parts.append(f"{field_name}={value}")
-    if not parts:
-        raise ValueError(f"Row lacks an alignable key (need timestamp): {row!r}")
     return "|".join(parts)
 
 
@@ -151,6 +154,21 @@ def _normalize(rows: list[dict[str, Any]]) -> list[_Row]:
         )
         for r in rows
     ]
+
+
+def _index_by_key(rows: list[_Row], side: str) -> dict[str, _Row]:
+    """Index rows by key, failing fast on duplicates instead of silently
+    overwriting them (which would undercount mismatches)."""
+    indexed: dict[str, _Row] = {}
+    for row in rows:
+        if row.key in indexed:
+            raise ValueError(
+                f"Duplicate {side} key {row.key!r}: decisions are not uniquely "
+                "alignable. Enrich the key (e.g. include action) so each decision "
+                "maps to a distinct row."
+            )
+        indexed[row.key] = row
+    return indexed
 
 
 def reconcile(
@@ -168,8 +186,8 @@ def reconcile(
     if size_tolerance < 0 or slippage_tolerance_bps < 0:
         raise ValueError("tolerances must be >= 0")
 
-    bt = {r.key: r for r in _normalize(backtest_rows)}
-    fw = {r.key: r for r in _normalize(forward_rows)}
+    bt = _index_by_key(_normalize(backtest_rows), "backtest")
+    fw = _index_by_key(_normalize(forward_rows), "forward")
 
     counts: dict[str, int] = defaultdict(int)
     outcomes: list[PairOutcome] = []
