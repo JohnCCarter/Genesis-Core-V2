@@ -21,6 +21,15 @@ updates:
       # reference. Bump deliberately (with a version-robust annotation + ws tests)
       # only when the WS transport is actually activated. Security updates still flow.
       - dependency-name: "websockets"
+      # Hold the numerical stack on its current major: numpy 2.0 and pyarrow 24
+      # are broad ecosystem majors with no driver (no CVE) and the <2 / <24 pins
+      # were deliberate. Ignore only the MAJOR bump so 1.x / 23.x minor+patch
+      # updates still flow (and auto-merge). Adopt numpy 2 / pyarrow 24 as a
+      # deliberate, validated migration.
+      - dependency-name: "numpy"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "pyarrow"
+        update-types: ["version-update:semver-major"]
 
   # GitHub Actions used in workflows (enables moving to SHA-pinned refs later)
   - package-ecosystem: "github-actions"
