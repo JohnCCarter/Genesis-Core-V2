@@ -1,13 +1,18 @@
-"""External decision-trace recorder (Slice 4a, ADR 0002).
+"""External run-trace recorders (Slice 4a/4b, ADR 0002).
 
-Emits a run-trace from the *returned* ``CandidateBuildPacket`` plus its input snapshots, without
-touching the pure decision kernel (``decision/*`` stays unedited — STRICT surface). This is the
-"option A" pattern from ``tests/governance/test_trace_integration.py`` lifted into a reusable helper:
-the recorder is a pure consumer of the packet and never mutates it.
+Emit a run-trace from the *returned* result of an existing flow, without touching the pure surfaces
+that produced it:
 
-Authority separation: the recorded ``GateResult`` only *mirrors* ``ready_for_promotion``; the recorder
-issues no promotion authority. Recording is fail-open — any trace/disk error is swallowed so the
-caller's primary output is never blocked.
+- ``record_candidate_build`` (4a) consumes a returned ``CandidateBuildPacket`` + its input snapshots —
+  ``decision/*`` (STRICT) stays unedited. This is the "option A" pattern from
+  ``tests/governance/test_trace_integration.py`` lifted into a reusable helper.
+- ``record_backtest_run`` (4b) consumes a returned ``BacktestEngine.run()`` dict — it never touches
+  ``configs``/``champion_cfg`` (records from the read-only results only).
+
+Both recorders are pure consumers (never mutate their input), fail-open (any trace/disk error is
+swallowed so the caller's primary output is never blocked), and deep-redact recorded structures.
+Authority separation: recorded ``GateResult``s only *mirror* an outcome; the recorders issue no
+promotion authority.
 """
 
 from __future__ import annotations
@@ -76,6 +81,26 @@ def _finite_metrics(snapshot: MetricSnapshot) -> dict[str, float]:
         numeric = float(value)
         if math.isfinite(numeric):
             out[field_name] = numeric
+    return out
+
+
+def _finite_metric_map(mapping: dict | None) -> dict[str, float]:
+    """Coerce a metrics mapping to finite floats, dropping non-numeric/non-finite entries.
+
+    The ``EvidencePacket`` validator rejects non-finite metric values; ``profit_factor`` is ``inf``
+    when a backtest has no losing trades, so it must be filtered out rather than recorded raw.
+    """
+
+    out: dict[str, float] = {}
+    for key, value in (mapping or {}).items():
+        if value is None or isinstance(value, bool):
+            continue
+        try:
+            numeric = float(value)
+        except (TypeError, ValueError):
+            continue
+        if math.isfinite(numeric):
+            out[str(key)] = numeric
     return out
 
 
@@ -194,4 +219,90 @@ def record_candidate_build(
         return None
 
 
-__all__ = ["new_run_id", "record_candidate_build", "resolve_actor_from_env"]
+def record_backtest_run(
+    results: dict,
+    *,
+    writer: TraceWriter | None = None,
+    run_id: str | None = None,
+    actor: Actor | None = None,
+    intent: str = "backtest",
+    symbol: str | None = None,
+    timeframe: str | None = None,
+    root=None,
+) -> str | None:
+    """Record one backtest as ``kind="backtest"`` evidence (+ a gate when this call owns the run).
+
+    Pure consumer of the returned ``BacktestEngine.run()`` dict: it reads ``backtest_info``/``metrics``/
+    ``error`` and never mutates ``results`` (or the ``configs``/``champion_cfg`` that produced them).
+
+    Ownership follows who creates the writer (same rule as ``record_candidate_build``):
+    - ``writer`` provided → caller owns the run lifecycle; this call emits **evidence only** (no gate,
+      no close), so it can append to a shared run mid-loop without terminating it.
+    - ``writer is None`` → this call owns the run: it emits evidence + a ``backtest`` gate
+      (``PASS``/``FAIL`` from ``results["error"]``) and closes the run.
+
+    Returns the run_id, or ``None`` if recording failed (fail-open).
+    """
+
+    try:
+        own_writer = writer is None
+        run_writer = writer or TraceWriter(
+            run_id=run_id or new_run_id(),
+            actor=actor or resolve_actor_from_env(),
+            intent=intent,
+            symbol=symbol,
+            timeframe=timeframe,
+            root=root,
+        )
+
+        backtest_info = results.get("backtest_info") or {}
+        environment_hash = fingerprint_config(backtest_info)
+        subject_hash = str(
+            backtest_info.get("effective_config_fingerprint") or ""
+        ) or fingerprint_config(backtest_info)
+        error = results.get("error")
+        num_trades = (results.get("metrics") or {}).get("num_trades")
+
+        run_writer.record_evidence(
+            subject_hash=subject_hash,
+            kind="backtest",
+            environment_hash=environment_hash,
+            metrics=_finite_metric_map(results.get("metrics")),
+            summary=redact_text(
+                f"backtest {symbol or backtest_info.get('symbol')} "
+                f"{timeframe or backtest_info.get('timeframe')} "
+                f"trades={num_trades} error={error}".strip()
+            ),
+        )
+
+        if own_writer:
+            status = "FAIL" if error else "PASS"
+            run_writer.record_gate(
+                stage="backtest",
+                status=status,
+                criteria_snapshot=_redact_deep(
+                    {
+                        "symbol": symbol,
+                        "timeframe": timeframe,
+                        "num_trades": num_trades,
+                        "error": error,
+                    }
+                ),
+                issued_by="backtest-engine",
+            )
+            run_writer.close(outcome=status)
+
+        return run_writer.run_id
+    except Exception:  # fail-open: never block the caller's primary output
+        logger.warning(
+            "backtest run-trace recording failed; continuing without trace", exc_info=True
+        )
+        return None
+
+
+__all__ = [
+    "new_run_id",
+    "record_backtest_run",
+    "record_candidate_build",
+    "resolve_actor_from_env",
+]

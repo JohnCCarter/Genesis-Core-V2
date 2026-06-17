@@ -13,12 +13,19 @@ records what an agent did so the human — and other agents — can read it back
 - `rebuild_index`: rebuilds the index cache from the authoritative `run.json` files.
 - Reader/query API (`read_run`, `read_events`, `latest_run`, `find_runs`, `follow_parents`,
   `read_evidence`): the read-only, fail-closed inter-agent surface.
-- `recorder` (`record_candidate_build`, `resolve_actor_from_env`, `new_run_id`): external,
-  fail-open helper that emits a decision-trace from a returned `CandidateBuildPacket` + inputs —
-  it never edits or imports authority from `decision/*`, and its `GateResult` only mirrors
-  `ready_for_promotion` (issues no promotion authority). It deep-redacts recorded decision
-  results / gate criteria (free-text leaves via `redact_text`, sensitive keys masked) because the
-  packet layer redacts only `EvidencePacket` bodies — so no input `metadata` secret reaches disk.
+- `recorder` (`record_candidate_build`, `record_backtest_run`, `resolve_actor_from_env`,
+  `new_run_id`): external, fail-open helpers that emit a trace from a returned result —
+  `record_candidate_build` from a `CandidateBuildPacket` (+ inputs); `record_backtest_run` from a
+  `BacktestEngine.run()` dict (`kind="backtest"` evidence). They never edit or import authority from
+  `decision/*`, never mutate their input, and their `GateResult`s only mirror an outcome (issue no
+  promotion authority). Both deep-redact recorded results / gate criteria (free-text leaves via
+  `redact_text`, sensitive keys masked) because the packet layer redacts only `EvidencePacket`
+  bodies — so no input `metadata` secret reaches disk. Both honor the same ownership rule: a
+  caller-provided `writer` gets evidence only (no gate/close), so multiple records can share one run.
+  - **Live emitters:** `scripts/audit/build_candidate_packet.py` and `find_new_champion_candidate.py`
+    under `--trace` (the latter also records `kind="backtest"` evidence per backtest). The
+    `pipeline.run_backtest(trace=True)` hook is trace-capable but has **no production caller yet** —
+    "backtest-trace exists" does not mean every backtest is traced.
 - `paths`: TRACE_ROOT resolution (`results/trace/`, overridable via `GENESIS_TRACE_ROOT`).
 
 ## Scope OUT

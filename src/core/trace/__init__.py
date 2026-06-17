@@ -23,6 +23,7 @@ from core.trace.reader import (
 )
 from core.trace.recorder import (
     new_run_id,
+    record_backtest_run,
     record_candidate_build,
     resolve_actor_from_env,
 )
@@ -44,6 +45,7 @@ __all__ = [
     "read_evidence",
     "read_run",
     "rebuild_index",
+    "record_backtest_run",
     "record_candidate_build",
     "resolve_actor_from_env",
     "run_dir",

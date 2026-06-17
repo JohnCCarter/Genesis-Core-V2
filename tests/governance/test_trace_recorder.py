@@ -14,8 +14,10 @@ from core.decision.models import MetricSnapshot
 from core.packets import Actor, DecisionPacket, EvidencePacket, GateResult
 from core.trace import (
     TraceWriter,
+    latest_run,
     read_events,
     read_run,
+    record_backtest_run,
     record_candidate_build,
     resolve_actor_from_env,
 )
@@ -239,3 +241,151 @@ def test_resolve_actor_from_env_defaults_and_override(monkeypatch) -> None:
     overridden = resolve_actor_from_env()
     assert overridden.type == "human"
     assert overridden.id == "claude-opus"
+
+
+# --- Slice 4b: backtest-trace recorder ---
+
+
+def _backtest_results(*, error=None, profit_factor=1.5, num_trades=42) -> dict:
+    return {
+        "backtest_info": {
+            "symbol": "tBTCUSD",
+            "timeframe": "1h",
+            "seed": "42",
+            "git_hash": "abc123",
+            "effective_config_fingerprint": "cfgfp-123",
+            "execution_mode": {"fast_window": True},
+            "timestamp": "2026-06-17T12:00:00Z",  # volatile: dropped by canonicalize_config
+        },
+        "metrics": {
+            "num_trades": num_trades,
+            "profit_factor": profit_factor,
+            "max_drawdown": 0.12,
+            "win_rate": 0.55,
+        },
+        "error": error,
+    }
+
+
+def test_backtest_records_evidence_and_gate_when_owning_run(tmp_path: Path) -> None:
+    run_id = record_backtest_run(
+        _backtest_results(),
+        run_id="run_bt_1",
+        actor=_ACTOR,
+        symbol="tBTCUSD",
+        timeframe="1h",
+        root=tmp_path,
+    )
+    assert run_id == "run_bt_1"
+
+    events = read_events("run_bt_1", root=tmp_path)
+    assert [type(e).__name__ for e in events] == ["EvidencePacket", "GateResult"]
+    evidence = events[0]
+    assert isinstance(evidence, EvidencePacket)
+    assert evidence.kind == "backtest"
+    assert evidence.subject_hash == "cfgfp-123"
+    assert evidence.metrics["num_trades"] == 42.0
+
+    gate = events[1]
+    assert isinstance(gate, GateResult)
+    assert gate.stage == "backtest"
+    assert gate.status == "PASS"
+    assert read_run("run_bt_1", root=tmp_path).outcome == "PASS"
+
+
+def test_backtest_error_yields_fail_gate(tmp_path: Path) -> None:
+    record_backtest_run(_backtest_results(error="no_data"), run_id="run_bt_err", root=tmp_path)
+    events = read_events("run_bt_err", root=tmp_path)
+    gate = events[-1]
+    assert isinstance(gate, GateResult)
+    assert gate.status == "FAIL"
+    assert read_run("run_bt_err", root=tmp_path).outcome == "FAIL"
+
+
+def test_backtest_shared_writer_emits_evidence_only(tmp_path: Path) -> None:
+    writer = TraceWriter(
+        run_id="run_bt_shared",
+        actor=_ACTOR,
+        intent="candidate_search",
+        root=tmp_path,
+        clock=lambda: "2026-06-17T12:00:00+00:00",
+    )
+    record_backtest_run(_backtest_results(), writer=writer, symbol="tBTCUSD", timeframe="1h")
+
+    events = read_events("run_bt_shared", root=tmp_path)
+    assert [type(e).__name__ for e in events] == ["EvidencePacket"]  # no gate
+    assert read_run("run_bt_shared", root=tmp_path).outcome is None  # caller has not closed
+
+
+def test_backtest_infinite_profit_factor_is_dropped(tmp_path: Path) -> None:
+    # profit_factor is inf when there are no losing trades; the EvidencePacket validator rejects
+    # non-finite metrics, so it must be filtered rather than recorded.
+    record_backtest_run(
+        _backtest_results(profit_factor=float("inf")), run_id="run_bt_noloss", root=tmp_path
+    )
+    raw = (tmp_path / "run_bt_noloss" / "events.jsonl").read_text(encoding="utf-8")
+    assert "Infinity" not in raw  # json repr of a leaked float('inf')
+
+    evidence = read_events("run_bt_noloss", root=tmp_path)[0]
+    assert isinstance(evidence, EvidencePacket)
+    assert "profit_factor" not in evidence.metrics
+    assert evidence.metrics["num_trades"] == 42.0  # finite metrics still recorded
+
+
+def test_backtest_content_hash_is_deterministic_despite_volatile_timestamp(tmp_path: Path) -> None:
+    # ADR-0002 invariant: same inputs -> same content_hash. Two identical backtests differ only in
+    # the volatile backtest_info["timestamp"]; canonicalize_config drops it, so hashes must match.
+    results_a = _backtest_results()
+    results_b = _backtest_results()
+    results_b["backtest_info"]["timestamp"] = "2099-12-31T23:59:59Z"  # only the volatile field differs
+
+    record_backtest_run(
+        results_a, run_id="bt_a", actor=Actor(type="agent", id="A"), root=tmp_path / "a"
+    )
+    record_backtest_run(
+        results_b, run_id="bt_b", actor=Actor(type="human", id="kingpin"), root=tmp_path / "b"
+    )
+    hashes_a = [e.content_hash() for e in read_events("bt_a", root=tmp_path / "a")]
+    hashes_b = [e.content_hash() for e in read_events("bt_b", root=tmp_path / "b")]
+    assert hashes_a == hashes_b
+
+
+def test_backtest_recording_is_fail_open(tmp_path: Path) -> None:
+    class _ExplodingWriter:
+        run_id = "boom"
+
+        def record_evidence(self, **_kwargs):
+            raise RuntimeError("disk is on fire")
+
+    assert record_backtest_run(_backtest_results(), writer=_ExplodingWriter()) is None
+
+
+def test_backtest_secret_in_error_is_redacted_on_disk(tmp_path: Path) -> None:
+    record_backtest_run(
+        _backtest_results(error="apiKey=LEAKED"), run_id="run_bt_secret", root=tmp_path
+    )
+    raw = (tmp_path / "run_bt_secret" / "events.jsonl").read_text(encoding="utf-8")
+    assert "LEAKED" not in raw
+    assert "apiKey=***" in raw
+
+
+def test_run_backtest_trace_hook_emits_readable_run(tmp_path: Path, monkeypatch) -> None:
+    from core.pipeline import GenesisPipeline
+
+    monkeypatch.setenv("GENESIS_TRACE_ROOT", str(tmp_path))
+
+    class _StubEngine:
+        symbol = "tBTCUSD"
+        timeframe = "1h"
+        candles_df = [1]  # non-empty -> run_backtest skips load_data
+
+        def run(self, configs=None):
+            return _backtest_results()
+
+    GenesisPipeline().run_backtest(_StubEngine(), trace=True)
+
+    record = latest_run(intent="backtest", root=tmp_path)
+    assert record is not None
+    events = read_events(record.run_id, root=tmp_path)
+    assert [type(e).__name__ for e in events] == ["EvidencePacket", "GateResult"]
+    assert events[0].kind == "backtest"

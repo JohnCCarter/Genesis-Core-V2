@@ -133,9 +133,18 @@ class GenesisPipeline:
         return engine
 
     def run_backtest(
-        self, engine: BacktestEngine, overrides: dict[str, Any] | None = None
+        self,
+        engine: BacktestEngine,
+        overrides: dict[str, Any] | None = None,
+        *,
+        trace: bool = False,
     ) -> dict[str, Any]:
-        """Runs the backtest with optional config overrides."""
+        """Runs the backtest with optional config overrides.
+
+        When ``trace=True`` (opt-in, default off), the returned results are additionally recorded as a
+        run-trace via ``core.trace.record_backtest_run``. This is side-effect-free with respect to the
+        backtest itself (it only reads the returned dict) and fail-open, so it never changes outcomes.
+        """
 
         if engine.candles_df is None or len(engine.candles_df) == 0:
             logger.info("Loading data...")
@@ -144,4 +153,14 @@ class GenesisPipeline:
 
         logger.info("Running backtest...")
         results = engine.run(configs=overrides)
+
+        if trace:
+            from core.trace import record_backtest_run
+
+            record_backtest_run(
+                results,
+                symbol=getattr(engine, "symbol", None),
+                timeframe=getattr(engine, "timeframe", None),
+            )
+
         return results
