@@ -337,7 +337,9 @@ def test_backtest_content_hash_is_deterministic_despite_volatile_timestamp(tmp_p
     # the volatile backtest_info["timestamp"]; canonicalize_config drops it, so hashes must match.
     results_a = _backtest_results()
     results_b = _backtest_results()
-    results_b["backtest_info"]["timestamp"] = "2099-12-31T23:59:59Z"  # only the volatile field differs
+    results_b["backtest_info"][
+        "timestamp"
+    ] = "2099-12-31T23:59:59Z"  # only the volatile field differs
 
     record_backtest_run(
         results_a, run_id="bt_a", actor=Actor(type="agent", id="A"), root=tmp_path / "a"
