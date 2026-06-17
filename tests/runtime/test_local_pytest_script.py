@@ -3,7 +3,6 @@ from __future__ import annotations
 import importlib.util
 import json
 import os
-import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -92,12 +91,9 @@ def test_local_pytest_script_runs_backtest_tooling_test() -> None:
 def test_plain_pytest_entrypoint_runs_backtest_tooling_test() -> None:
     repo_root = Path(__file__).resolve().parents[2]
     _require_pytest_regressions()
-    pytest_executable = shutil.which("pytest")
-    if pytest_executable is None:
-        pytest.skip("pytest entrypoint is not available on PATH")
 
     completed = subprocess.run(
-        [pytest_executable, "tests/backtest/test_compare_backtest_results.py", "-q"],
+        [sys.executable, "-m", "pytest", "tests/backtest/test_compare_backtest_results.py", "-q"],
         cwd=repo_root,
         capture_output=True,
         text=True,
