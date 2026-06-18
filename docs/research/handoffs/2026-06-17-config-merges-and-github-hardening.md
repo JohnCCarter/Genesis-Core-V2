@@ -10,9 +10,8 @@ Knowledge product links: `../index.md` · `../map.md` · `../log.md`
 ## Why this handoff exists
 
 A long ops/infra session ended with everything merged to `main` and `feature/research-candidate`
-recreated fresh. This note is the git-tracked record (the detailed one lives locally in
-`.claude/handoffs/2026-06-17-config-merges-github-hardening.md`, which does not travel between
-machines).
+recreated fresh. This note is the durable, git-tracked record of that milestone; per-PR granularity is
+recoverable from the `main` history (PRs #9-#45).
 
 ## What changed
 
