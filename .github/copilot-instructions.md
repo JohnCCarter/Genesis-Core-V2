@@ -129,6 +129,9 @@ AI agents do not create authority.
 
 Authority comes from evidence, validation, promotion decisions, and approved governance paths.
 
+The binding agent epistemic principles — "Research should be easy, authority should be hard" and "Do not
+choose convenience over validity" — live in `AGENTS.md` under "Agent epistemic principles".
+
 ## Repository Philosophy
 
 Genesis-Core-V2 prioritizes:
