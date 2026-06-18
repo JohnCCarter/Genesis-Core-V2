@@ -16,6 +16,55 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 RUNTIME_SEED_PATH = REPO_ROOT / "config" / "runtime.seed.json"
 DEFAULT_OUTPUT_DIR = REPO_ROOT / "results" / "evaluation" / "candidate_search"
 
+# --- Research <-> authority boundary guard ---------------------------------------------
+# A candidate SEARCH is research, not authority. It must never self-issue the promotion
+# override/signoff that would let its output read as an approval. With both flags False,
+# ready_for_promotion is structurally unforceable here (apply_promotion requires a real
+# override + signoff), so a candidate-search artifact can only *propose*, never *approve*.
+RESEARCH_PROMOTION_OVERRIDE = False
+RESEARCH_PROMOTION_SIGNOFF = False
+RESEARCH_AUTHORITY_STATUS = "research_only"
+
+
+def research_authority_stamp() -> dict[str, Any]:
+    """Non-authoritative marker stamped onto every candidate-search artifact.
+
+    Makes the research<->authority boundary explicit in the output so a later reader (human
+    or agent) cannot mistake candidate-search output for promotion / champion / signoff
+    authority. Research proposes; it does not approve.
+    """
+    return {
+        "status": RESEARCH_AUTHORITY_STATUS,
+        "non_authoritative": True,
+        "requires_human_signoff": True,
+        "note": (
+            "candidate_search is a research artifact: it may propose a candidate but cannot "
+            "approve promotion. ready_for_promotion stays False here because a research search "
+            "does not issue the promotion override/signoff that authority requires."
+        ),
+    }
+
+
+def build_research_run_payload(
+    *,
+    run_at: str,
+    symbol: str,
+    timeframe: str,
+    incumbent_payload: dict[str, Any],
+    best_eval: dict[str, Any],
+    evaluations: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """Assemble the candidate-search artifact, stamped non-authoritative."""
+    return {
+        "authority": research_authority_stamp(),
+        "run_at": run_at,
+        "symbol": symbol,
+        "timeframe": timeframe,
+        "incumbent": {k: v for k, v in incumbent_payload.items() if not k.startswith("_")},
+        "best_candidate": best_eval,
+        "evaluations": evaluations,
+    }
+
 
 @dataclass(frozen=True)
 class CandidateSpec:
@@ -187,8 +236,8 @@ def main() -> int:
             candidate_snapshot,
             validate_run_intent="candidate",
             promotion_run_intent="promotion_compare",
-            promotion_override_flag=True,
-            promotion_signoff_flag=True,
+            promotion_override_flag=RESEARCH_PROMOTION_OVERRIDE,
+            promotion_signoff_flag=RESEARCH_PROMOTION_SIGNOFF,
         )
 
         if trace_writer is not None:
@@ -246,8 +295,8 @@ def main() -> int:
             candidate_snapshot,
             validate_run_intent="candidate",
             promotion_run_intent="promotion_compare",
-            promotion_override_flag=True,
-            promotion_signoff_flag=True,
+            promotion_override_flag=RESEARCH_PROMOTION_OVERRIDE,
+            promotion_signoff_flag=RESEARCH_PROMOTION_SIGNOFF,
         )
 
         if trace_writer is not None:
@@ -284,22 +333,29 @@ def main() -> int:
             trace_writer.record_gate(
                 stage="promotion_readiness",
                 status=status,
-                criteria_snapshot={"best_spec": best_eval["spec"], "ready_for_promotion": ready},
-                issued_by="governance-kernel",
+                criteria_snapshot={
+                    "best_spec": best_eval["spec"],
+                    "ready_for_promotion": ready,
+                    "authority_status": RESEARCH_AUTHORITY_STATUS,
+                    "requires_human_signoff": True,
+                },
+                # Honest provenance: this gate is issued by the research search, not the
+                # governance kernel. A candidate_search run must not self-attribute authority.
+                issued_by="candidate-search",
             )
             trace_writer.close(outcome=status)
         except Exception:  # fail-open: tracing must never block the search
             pass
 
     now = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
-    run_payload = {
-        "run_at": now,
-        "symbol": args.symbol,
-        "timeframe": args.timeframe,
-        "incumbent": {k: v for k, v in incumbent_payload.items() if not k.startswith("_")},
-        "best_candidate": best_eval,
-        "evaluations": evaluations,
-    }
+    run_payload = build_research_run_payload(
+        run_at=now,
+        symbol=args.symbol,
+        timeframe=args.timeframe,
+        incumbent_payload=incumbent_payload,
+        best_eval=best_eval,
+        evaluations=evaluations,
+    )
 
     out_file = output_dir / f"candidate_search_{args.symbol}_{args.timeframe}_{now}.json"
     out_file.write_text(
@@ -310,10 +366,12 @@ def main() -> int:
     print(
         json.dumps(
             {
-                "output": str(out_file),
-                "best_spec": best_eval["spec"],
+                "authority_status": RESEARCH_AUTHORITY_STATUS,
                 "best_score": best_eval["score"],
+                "best_spec": best_eval["spec"],
+                "output": str(out_file),
                 "ready_for_promotion": best_eval["candidate_packet"]["ready_for_promotion"],
+                "requires_human_signoff": True,
             },
             indent=2,
             ensure_ascii=False,
