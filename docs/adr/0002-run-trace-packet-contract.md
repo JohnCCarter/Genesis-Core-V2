@@ -1,6 +1,6 @@
 # ADR 0002: Agent-readable run-trace and minimal packet contract (v1)
 
-- Status: Proposed
+- Status: Accepted (2026-06-18) — the packet/trace contract is implemented (`src/core/packets/models.py`, `src/core/trace/**`) and validated by `tests/governance/test_packets_contract.py` plus the trace tests; emit-wiring into `pipeline.py`/`decision/*` remains the deferred follow-up noted under Out of scope.
 - Date: 2026-06-17
 - Scope: A V2-local, contract-clean run-trace substrate and the minimal typed packet set it records. Defines the schema, identity rules, on-disk layout, and read API. No emit wiring or behavior change is decided here beyond the contract itself.
 - Owners: Saliba (solo dev) + AI agents

@@ -1,6 +1,6 @@
 # ADR 0001: External pattern absorption tiers for the solo/agents operating model
 
-- Status: Proposed
+- Status: Accepted (2026-06-18) — the tiers are in active use: ADR 0002 instantiated the first "Absorbera NU" item, and the LLM/agent-quarantine tier ("agent/LLM output is proposal-evidence, never authority") is realized by the candidate-search non-authoritative guard (PR #54) and ADR 0003.
 - Date: 2026-06-17
 - Scope: How Genesis-Core-V2 decides what external patterns to absorb, given its operating model. Strategy/policy only — no runtime or authority change.
 - Owners: Saliba (solo dev) + AI agents (Claude + possibly other agents)
