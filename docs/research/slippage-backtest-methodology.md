@@ -11,10 +11,10 @@ Knowledge product links: `index.md` · `map.md` · `log.md`
 
 ## Purpose
 
-Record how transaction cost is modeled in the V2 backtest — specifically how slippage should be
-derived, what holds when no order book is available, and why the current cost numbers are assumptions
-rather than exchange facts. This exists so future sessions reason about cost from a stable page instead
-of re-deriving the methodology from chat or raw code scans.
+Record how transaction cost is modeled in the V2 backtest — specifically which cost components are
+documented exchange facts, which remain assumptions/proxies, how slippage should be derived, and what
+holds when no order book is available. This exists so future sessions reason about cost from a stable page
+instead of re-deriving the methodology from chat or raw code scans.
 
 ## Review question
 
