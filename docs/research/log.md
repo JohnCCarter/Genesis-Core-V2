@@ -332,3 +332,19 @@ Suggested kinds:
   and local `.env`; refreshed the three affected `seed_manifest.json` file hashes.
 - Supersedes the `qwen_builder.py` row in `infrastructure-fitness-audit.md` (was KEEP_WITH_GUARDS → now
   removed). No runtime/strategy/champion/optimizer/transport behavior changed; clean-slate cleanup only.
+
+## [2026-06-18] governance | research↔authority boundary sync (ADR 0001/0002 Accepted, ADR 0003)
+
+- Filed `docs/adr/0003-research-tooling-non-authoritative.md`: makes the research↔authority boundary a
+  durable decision. It covers the research/evidence-only paths (`find_new_champion_candidate.py`,
+  `cost_stress_sweep.py`, `tools/reconcile_forward_backtest.py`, and the trace/packets substrate) that may
+  *propose* but never *approve*, plus the boundary-spanning decision-packet CLI (`build_candidate_packet.py`)
+  whose default output is non-authoritative and whose approval mode requires the explicit human override +
+  signoff authority path. Records the Phase 1 guard (PR #54) as the enforcement.
+- Moved ADR 0001 (absorption tiers) and ADR 0002 (run-trace/packet contract) from Proposed → **Accepted**:
+  0002's contract is implemented (`core/packets`, `core/trace`) and validated by green governance tests;
+  0001's tiers are in active use (0002 instantiated the first "Absorbera NU" item; the LLM-quarantine tier
+  is realized by the candidate-search guard).
+- Docs-only governance sync. No code/config/champion/runtime/seed_manifest change. The AGENTS/copilot/
+  SKELETON_SCOPE pointers and manifest registration of these research paths are deferred to the next slice
+  (those docs are manifest-hashed; their hashes are refreshed there).
