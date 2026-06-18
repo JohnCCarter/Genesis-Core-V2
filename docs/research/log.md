@@ -205,3 +205,14 @@ Suggested kinds:
   the wiki is an agent-native tool (agent curates sources + writes + reads; human only asks questions)
   whose job is millisecond orientation — context restore without re-scanning the repo. Authority is
   still promoted out; referential lint mechanizes integrity only, not semantic consistency.
+
+## [2026-06-18] question | slippage/cost methodology filed
+
+- Filed `slippage-backtest-methodology.md`: Bitfinex publishes no general slippage figure, so slippage
+  must be derived from order-book depth (VWAP walk vs a reference price, mid recommended) when data
+  exists, and otherwise run as labeled stress-scenario *assumptions* — never as Bitfinex facts. Fee ≠
+  slippage, and `position_tracker.py` already keeps them separate (not a gap).
+- Recorded the current reality: no `book` channel exists (`ws_public.py` is ticker-only), so the engine
+  always runs the stress branch via `cost_stress_sweep.py` with a flat candle-close slippage proxy. The
+  order-book VWAP slice is scoped but deferred behind the champion freeze (ends 2026-12-31, Issue #12);
+  no trading-claim until the edge survives fee + slippage sensitivity.
