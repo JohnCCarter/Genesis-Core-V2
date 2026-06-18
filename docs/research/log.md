@@ -298,3 +298,23 @@ Suggested kinds:
 - VWAP is necessary-but-not-sufficient: neither result is *blocked* by VWAP (1h fails on negative OOS; 3h on
   Sharpe<1.0 at zero cost). Next step = a falsifiable OOS reproduction without the bypass (needs-experiment,
   post-freeze / Issue #12). Docs-first; no runtime/strategy/champion/optimizer/transport change.
+
+## [2026-06-18] audit | infrastructure-fitness audit (pre clean-slate candidate lane)
+
+- Filed `infrastructure-fitness-audit.md` (topic page): an evidence-backed fitness map of V2 infra across 8
+  areas, classifying each component KEEP / KEEP_WITH_GUARDS / REPLACE / DEPRECATE / DELETE_CANDIDATE /
+  QUARANTINE_LEGACY / BASELINE_ONLY / UNKNOWN_NEEDS_EVIDENCE. Principle: *Reuse is not preservation* +
+  *Research should be easy, authority should be hard* — a fitness audit, not a policing audit.
+- Headline (own-verified, not just Explore sweeps): **no live V1 imports** anywhere. `find_new_champion_candidate.py`
+  is candidate-generation-adjacent research that writes only to `results/evaluation/`, mutates no authority,
+  reads seed read-only — but builds packets with **forced** `promotion_override/signoff` flags → *authority
+  risk if reused without guards* (not a violation). Five research tools/scripts (`find_new_champion_candidate`,
+  `build_candidate_packet`, `cost_stress_sweep`, `reconcile_forward_backtest`, `qwen_builder`) are
+  **unregistered research paths** (absent from `seed_manifest.json`); `openai`+`optuna` sit in main deps.
+- DELETE_CANDIDATE: test fixtures committed under `results/hparam_search/**` + a synthetic-symbol parity
+  artifact (flag for a separate removal PR, not deleted now). DEPRECATE: legacy backtest exit-engine family
+  (mid-migration), `agent-ecosystem-inventory.md` (superseded). KEEP: REST read spine, backtest core,
+  strategy/governance spine, wiki substrate.
+- Pre-clean-slate must-resolve: a research↔authority boundary contract; the candidate-script boundaries
+  (needs governance decision); the `evaluate.py` staleness bug; exit-engine consolidation; funding-cost
+  handling. Docs-first, audit-only; no code/dep/champion/results change. Page is non-authoritative.
