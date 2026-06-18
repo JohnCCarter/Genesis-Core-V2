@@ -229,3 +229,22 @@ Suggested kinds:
   always runs the stress branch via `cost_stress_sweep.py` with a flat candle-close slippage proxy. The
   order-book VWAP slice is scoped but deferred behind the champion freeze (ends 2026-12-31, Issue #12);
   no trading-claim until the edge survives fee + slippage sensitivity.
+
+## [2026-06-18] update | wiki-lint semantic slice + agent-substrate docs
+
+- Mechanized the fidelity-review's largest gap: `research_wiki_lint.py` now runs `run_semantic_checks()`
+  — `orphan_pages` (pages reachable from nowhere) and `broken_links` — on a warn-only `semantic_ok`,
+  decoupled from `referential_ok`/`ok` so a false positive can never flip the structural gate. Added a
+  positive and negative test in `tests/runtime/test_local_research_wiki_lint_script.py`. Live repo: clean
+  (no orphans, no broken links).
+- **Scope decision (diverged from the approved plan, deliberately):** the plan scoped broken-link
+  detection to backtick `.md` refs across all pages. Running it live showed that is all prose-noise —
+  external citations (NVIDIA clone paths), historical chronology, and a `<date>` placeholder. The wiki's
+  backtick navigation is load-bearing *only* in the registries, which the referential check already
+  validates. So broken-link detection now targets markdown `[text](target.md)` link syntax (the actual
+  link convention); orphan reachability stays broad (any backtick OR markdown mention counts). Opposite
+  directions, both "stay green unless real."
+- Hardened the agent substrate (frys-safe docs, no `src/` logic / config / champion touch): added
+  `docs/glossary.md` (repo terms → SSOT links, not restated), `mcp_server/index.md` (verification-only
+  MCP boundary), and rolled the `index.md` convention out to `src/core/backtest/`, `indicators/`, and
+  `intelligence/`. Marked the fidelity review's semantic-lint next-step done.
