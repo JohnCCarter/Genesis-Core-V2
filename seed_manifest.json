@@ -872,7 +872,8 @@
     "Runtime determinism guardrails for pipeline fast-hash policy and feature-cache hash stability are admitted into the seed.",
     "Legacy `core.strategy.features` surface intentionally excluded.",
     "Only explicitly admitted stateful artifacts were carried over; repo-tracked `config/runtime.seed.json` and the verified BTC champion subset are included while local runtime override, candidate/test/backup champions, and `data/**` remain excluded.",
-    "Generated `.env` contains local-shell and Bitfinex REST credential placeholders only."
+    "Generated `.env` contains local-shell and Bitfinex REST credential placeholders only.",
+    "The top-level `mode` field records the lifecycle mode at seed-generation time (generation-time/manifest context); it is not a live runtime authority-mode switch and does not gate runtime behavior."
   ],
   "optimizer_package_verification": {
     "audit_script_files": ["scripts/audit/audit_optuna_objective_parity.py"],
@@ -963,7 +964,7 @@
   "output_hashes": {
     ".env": "ea2b7b5677de2ccaf471a32ad9f313a8f50665b6cdefb6d6dbc12e0d48864671",
     ".env.example": "a924978634b1d29d8a703899f3abb76aa98d7e04657f88e8bffada8a23cd0729",
-    ".github/copilot-instructions.md": "ef1e89a7f54b3fe8c96f28156b6fcaeba1f566f199971b8621585f837c565d4a",
+    ".github/copilot-instructions.md": "225979c60bc016ca9df680fe36962d8416e8b3e71b1be42afe0d549027afd9e5",
     ".gitignore": "bd3bf4ef7c7fe2321b27f750ff7b4778fccef504627fa4c5cf9acf4c5ce0c35c",
     ".pre-commit-config.yaml": "b8af71324cc02d8bce8f6e34583c438dab39ec47f845413080b5ebafe6d63494",
     ".vscode/extensions.json": "5d1b5e77d7eb37c81ec5e9e1cc884a3bc363c6f14158e8481307c19519587c83",
@@ -971,7 +972,7 @@
     ".vscode/mcp.json": "47d666456dbc8def5821cf14444bee22f929eb6360689a259806b51d247958f8",
     ".vscode/settings.json": "e74b59b003fce766ae7c842d5822ddd7557b4498812ccc62275fca2789a27b26",
     ".vscode/tasks.json": "ac998b8a5f78b05bca7d7e5bdcbc19b368bb06c822e2690bfd509b0245ae2bb4",
-    "AGENTS.md": "b76165c942dfb2d17d3ea6f9de3c5de89732f38f089f1baafaf6c9520d10b24f",
+    "AGENTS.md": "4800fa6ee369cbea4fd73dd7241f90085886a9a272c5d4392f3f4b967b33b827",
     "README.md": "921486b67db38bc36d0143f3ed25e46bb4ca945e2b823cc49501dbb15d90ed59",
     "config/__init__.py": "8994ca2027dce1be71c006c42a3a6372fbbe93c547c0516a258499cf08142753",
     "config/backtest_defaults.yaml": "f3e7464975dbeaf6a27ec2119d0df325728ca2f68cececd16ebeb5c9f79addfe",
@@ -1201,7 +1202,7 @@
     "config/strategy/composable/1h/poc/v2_ml_htf.yaml": "114273a3a0966a4fe6614f1bdd0a362da0cb817af2b1f1708f02846ff344aa5b",
     "config/strategy/composable/1h/poc/v3_all.yaml": "bb8fafd2167c069ba139d26d195efd151e5f3b2630634a1f23bfd211de8df874",
     "config/timeframe_configs.py": "18469ea5de4609c626ce07d00c5cb13cc6c930f34662aa17008488af935582fa",
-    "docs/SKELETON_SCOPE.md": "4323029708f317cf9a38966ead439d5b5f9e8579fc435b930d87ec4fce4cb8ba",
+    "docs/SKELETON_SCOPE.md": "f069e4a9144cfafd95d5911775af3d82f6a1401f30f36b0566ac8ae91c47fde7",
     "mcp_server/__init__.py": "f80803af0867fe2f671c072d1348f335fef5332f4d43c208479dfe519e1702a8",
     "mcp_server/config.py": "d21d266978d95d7483347b81abd34122cfc63b954244acbf7e998f7d366b117d",
     "mcp_server/remote_server.py": "a8b609bbe8ff93508c62a24c097f17836a0d0c504d6352df3f81af3fa4c0f451",
@@ -1414,7 +1415,7 @@
     "tests/governance/test_no_legacy_feature_imports.py": "f3aeb21da5e113a87fd458a70aea1ce1dda904d7f878e39c49a428cd10138259",
     "tests/governance/test_pipeline_fast_hash_guard.py": "26e1632eb9406b0a4232c4b689d745a7b40e35f43fcf5a07809bb223964fd2f7",
     "tests/governance/test_pyproject_console_scripts.py": "c156c7976d9731bdcf8b045918ab8240986f3e6331d9e85a5811323aac7d4227",
-    "tests/governance/test_v2_seed_boundaries.py": "0e632be98437e595da421e5d387b95fcbeaaa52da9398ab3fb083fddc214f9fa",
+    "tests/governance/test_v2_seed_boundaries.py": "3336ff6fd850c5067e97d8a5640d0eed3bc5bf7f17f338450a0a5be87adf2509",
     "tests/integration/test_config_endpoints.py": "28059e71553716539edb23924a26951e2687f580703507843d5029335afcf310",
     "tests/integration/test_mcp_git_status_remote_filters.py": "1044e38e64d7be769a0000584ba3c219980317bdf2c97b65effd52f44f25d7db",
     "tests/integration/test_mcp_remote_git_workflow_confirm.py": "1c907484e6f71fcfba7c3f7e4b59c2b4369e0be9638c5d3da17b4d672504a028",
@@ -1539,6 +1540,37 @@
     "remote_safe_config": {
       "config_file": "config/mcp_settings.remote_safe.json",
       "filter_test_file": "tests/integration/test_mcp_git_status_remote_filters.py"
+    }
+  },
+  "research_tooling_surfaces": {
+    "boundary": "non-authoritative; registration grants visibility, not authority",
+    "adr": "docs/adr/0003-research-tooling-non-authoritative.md",
+    "doctrine": "research/audit tooling may propose/evidence, not approve; promotion/champion-readiness requires the explicit human override + signoff authority path",
+    "paths": {
+      "scripts/audit/find_new_champion_candidate.py": {
+        "role": "candidate_search",
+        "authority": "research_only",
+        "writes": "results/evaluation/candidate_search/",
+        "guard_test": "tests/governance/test_candidate_search_artifact_guard.py"
+      },
+      "scripts/audit/build_candidate_packet.py": {
+        "role": "decision_packet_cli",
+        "authority": "boundary_spanning",
+        "note": "default/no-signoff output is non-authoritative; explicit --promotion-override --promotion-signoff is the authority path"
+      },
+      "scripts/analyze/cost_stress_sweep.py": {
+        "role": "cost_stress_probe",
+        "authority": "research_only"
+      },
+      "tools/reconcile_forward_backtest.py": {
+        "role": "forward_backtest_reconciliation",
+        "authority": "research_only"
+      }
+    },
+    "trace_packets": {
+      "adr": "docs/adr/0002-run-trace-packet-contract.md",
+      "authority": "evidence_only",
+      "note": "the run-trace/packet substrate records evidence; it never issues promotion authority"
     }
   },
   "skeleton_priority": "prioritize_v2_skeleton_completeness_before_content_migration",

@@ -348,3 +348,16 @@ Suggested kinds:
 - Docs-only governance sync. No code/config/champion/runtime/seed_manifest change. The AGENTS/copilot/
   SKELETON_SCOPE pointers and manifest registration of these research paths are deferred to the next slice
   (those docs are manifest-hashed; their hashes are refreshed there).
+
+## [2026-06-18] governance | register research tooling paths in seed_manifest (visibility, not authority)
+
+- Added `seed_manifest.json` `research_tooling_surfaces`: registers the research/audit tooling paths
+  (`find_new_champion_candidate.py`, `build_candidate_packet.py`, `cost_stress_sweep.py`,
+  `tools/reconcile_forward_backtest.py`) and the trace/packets substrate with explicit boundaries —
+  `research_only` / `boundary_spanning` / `evidence_only`. **Registration grants visibility, not authority.**
+- Landed the deferred ADR 0003 pointers in the manifest-hashed governance docs (`AGENTS.md`,
+  `.github/copilot-instructions.md`, `docs/SKELETON_SCOPE.md`) and refreshed their `output_hashes` entries
+  (plus `tests/governance/test_v2_seed_boundaries.py`, which now locks the registration's boundary semantics).
+- Clarified in `notes` that the manifest `mode` field is generation-time/manifest context, not a live
+  runtime authority-mode switch. Removed qwen/glm/nvidia tooling is **not** registered. No
+  runtime/config/champion/strategy/optimizer/backtest/transport change; no research-script behavior change.

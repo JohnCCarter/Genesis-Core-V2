@@ -660,6 +660,42 @@ def test_seed_contains_local_dependency_audit_script() -> None:
     assert "python scripts/audit/pip_audit.py" in scope_text
 
 
+def test_seed_registers_research_tooling_paths() -> None:
+    repo_root = Path(__file__).resolve().parents[2]
+    manifest = json.loads((repo_root / "seed_manifest.json").read_text(encoding="utf-8"))
+    scope_text = (repo_root / "docs" / "SKELETON_SCOPE.md").read_text(encoding="utf-8")
+
+    block = manifest["research_tooling_surfaces"]
+    assert block["adr"] == "docs/adr/0003-research-tooling-non-authoritative.md"
+
+    paths = block["paths"]
+    # exactly the four current research/audit paths — no removed qwen/glm/nvidia tooling
+    assert set(paths) == {
+        "scripts/audit/find_new_champion_candidate.py",
+        "scripts/audit/build_candidate_packet.py",
+        "scripts/analyze/cost_stress_sweep.py",
+        "tools/reconcile_forward_backtest.py",
+    }
+    for relative_path in paths:
+        assert (repo_root / relative_path).exists(), relative_path
+
+    # research-only paths may propose, not approve; the decision CLI is boundary-spanning
+    assert paths["scripts/audit/find_new_champion_candidate.py"]["authority"] == "research_only"
+    assert paths["scripts/analyze/cost_stress_sweep.py"]["authority"] == "research_only"
+    assert paths["tools/reconcile_forward_backtest.py"]["authority"] == "research_only"
+    assert paths["scripts/audit/build_candidate_packet.py"]["authority"] == "boundary_spanning"
+    assert block["trace_packets"]["authority"] == "evidence_only"
+
+    # registration is visibility, not authority — no qwen/glm/nvidia tooling resurrected
+    serialized = json.dumps(block).lower()
+    assert "qwen" not in serialized
+    assert "glm" not in serialized
+    assert "nvidia" not in serialized
+
+    # SKELETON_SCOPE recognizes the boundary
+    assert "research_tooling_surfaces" in scope_text
+
+
 def test_seed_contains_local_info_routes() -> None:
     repo_root = Path(__file__).resolve().parents[2]
 
