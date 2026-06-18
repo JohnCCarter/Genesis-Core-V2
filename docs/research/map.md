@@ -63,6 +63,7 @@ This page answers three questions quickly:
 | `queries/2026-06-04-karpathy-agent-discipline.md`        | query   | closed | What does Karpathy-style `llm-wiki` imply about agent discipline for V2 research work?                   | `docs/research/index.md`, `docs/research/operations.md`                                         |
 | `queries/2026-06-04-nvidia-skills-cherry-pick-review.md` | query   | closed | Which NVIDIA skills patterns fit V2 without replacing the repo-native research wiki?                     | `docs/research/index.md`, `docs/research/patterns.md`, capability/artifact/experiment templates |
 | `lint/2026-06-04-structure-health-check.md`              | lint    | closed | Is the fuller Karpathy-style research wiki shape structurally aligned and internally consistent?         | `docs/research/index.md`, `seed_manifest.json`, `tests/governance/test_v2_seed_boundaries.py`   |
+| `queries/2026-06-17-karpathy-wiki-fidelity-review.md`    | query   | closed | How faithfully does `docs/research/**` implement Karpathy's `llm-wiki`, and where does it diverge?       | `docs/research/index.md`, `docs/research/operations.md`, `scripts/audit/research_wiki_lint.py`   |
 
 ## Page states
 

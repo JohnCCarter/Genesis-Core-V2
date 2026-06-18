@@ -193,6 +193,19 @@ Suggested kinds:
 - Hardened the repo (branch protection, Dependabot security + auto-merge, deliberate dep-major holds).
   Baton-pass in `handoffs/2026-06-17-config-merges-and-github-hardening.md`.
 
+## [2026-06-17] question | file back karpathy wiki fidelity review
+
+- Added `docs/research/queries/2026-06-17-karpathy-wiki-fidelity-review.md`
+  comparing the V2 research wiki to Karpathy's `llm-wiki` gist.
+- Conclusion: faithful in form (raw→wiki→schema layers, ingest/query/lint loop,
+  content-oriented map, prefixed append-only log) but deliberately divergent in
+  motor (LLM-owned/low-friction/wiki-as-truth → human-gated/high-friction/
+  derivative-non-authority).
+- Recorded the largest open gap vs the gist: `research_wiki_lint.py` is a
+  structural presence check, not a semantic lint (no contradiction/orphan/
+  broken-link detection).
+- Registered the page in `map.md` and `queries/index.md`.
+
 ## [2026-06-18] update | agent-native lint + framing for the research wiki
 
 - Extended `scripts/audit/research_wiki_lint.py` with a referential-integrity check (unregistered
