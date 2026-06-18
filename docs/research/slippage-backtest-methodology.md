@@ -96,9 +96,16 @@ and what conservative fallback holds when order-book depth is not available?
 - **Ideal method vs current proxy.** The correct method is VWAP-from-order-book against mid; the engine
   applies a flat rate against candle close. The proxy is a reasonable stand-in while no depth data
   exists, but the divergence should be closed (or explicitly accepted) before any execution-near claim.
-- **Assumptions that read as facts.** `slippage: 0.0005` in `config/backtest_defaults.yaml` and the
-  sweep grid look like settled numbers. They are assumptions about an unmeasured book and should be
-  framed as such wherever cited.
+- **Which numbers are facts vs assumptions (cost numbers are not all assumptions).** Keep the taxonomy
+  precise:
+  - `commission: 0.0` is **documented Bitfinex reality** for eligible maker/taker trading (since
+    2025-12-17), not an assumption.
+  - `slippage: 0.0005` and the **slippage** stress levels remain **assumptions about an unmeasured book**
+    until derived from order-book depth, and must be labeled so wherever cited.
+  - the commission stress values above zero (`{5, 10, 20}` bps in the sweep) are **hypothetical robustness
+    probes** ("what if fees returned"), not current-reality claims.
+  - funding / margin-lending is a **separate** cost that applies **only** under margin / leverage / funding
+    exposure (not the spot `tBTCUSD` champions).
 - **Claim gate.** No edge claim may rest on low-cost results alone; survival across the fee + slippage
   grid is required. This is deferred behind the champion freeze (ends 2026-12-31, Issue #12) and must
   not reopen champion config before then.
