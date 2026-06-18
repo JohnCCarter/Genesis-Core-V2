@@ -48,7 +48,9 @@ and what conservative fallback holds when order-book depth is not available?
   - market **buy**: walk asks → VWAP; `slippage_bps = (VWAP − ref) / ref × 10_000`
   - market **sell**: walk bids → VWAP; `slippage_bps = (ref − VWAP) / ref × 10_000`
   - reference price choice: **mid** = cleanest market-impact measure (recommended default);
-    **best bid/ask** = closer to execution; **candle close** = weaker approximation.
+    **best bid/ask** = closer to execution; **candle close** = weaker approximation. The mid↔best-bid/ask
+    gap is the half-**spread** — a distinct cost component, kept separate from slippage/market-impact (as
+    fee is) rather than folded into the slippage number.
 - **When no order book exists, run stress scenarios — and call them assumptions.** With only OHLCV
   data, slippage cannot be derived, so the conservative path is to sweep low / normal / stressed levels
   and report where the edge dies. These levels are *assumptions*, not Bitfinex facts, and must be
@@ -93,9 +95,12 @@ and what conservative fallback holds when order-book depth is not available?
 A future, separately validated slice — **planned, not built**, and out of scope under the current freeze
 and the dormant-transport boundary.
 
-- **Scope IN:** read Bitfinex `book` channel; store depth snapshots; a pure `orderbook_vwap_bps(side,
-  size, book, ref_price)` helper implementing the walk above; a reference-price config knob (default
-  mid). Validate the helper against fixture order books before any engine wiring.
+- **Scope IN:** read Bitfinex `book` channel (or equivalent depth source); store depth snapshots
+  (snapshot/stream persistence); a pure `orderbook_vwap_bps(side, size, book, ref_price)` helper
+  implementing the order-size-aware walk above; a reference-price config knob (default mid); and explicit,
+  documented assumptions for **spread**, **partial fills**, and **liquidity / depth exhaustion**. Validate
+  the helper against fixture order books — behind a separate validation gate, before any engine wiring or
+  promotion/champion use.
 - **Scope OUT (now):** rebinding the dormant `ws_public.py` `book` subscription into the live transport
   path; any runtime / champion-config surface; any promotion of cost numbers to authority.
 - **Gating:** runs after the freeze; champion config stays untouched; no trading-claim without
