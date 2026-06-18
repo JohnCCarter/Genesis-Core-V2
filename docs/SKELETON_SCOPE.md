@@ -125,6 +125,22 @@ Major subsystem folders may carry a local `index.md` that explains purpose, boun
 tests, and lifecycle role. These local indexes are guidance surfaces only; they do not override
 tests, governance documents, or authority-bearing contracts.
 
+### Research and audit tooling (non-authoritative)
+
+The following research/audit tooling paths are admitted as **non-authoritative** — they may propose/evidence,
+not approve (ADR 0003; registered under `seed_manifest.json` `research_tooling_surfaces`):
+
+- `scripts/audit/find_new_champion_candidate.py` — candidate search; writes only under
+  `results/evaluation/candidate_search/`, stamped research-only.
+- `scripts/audit/build_candidate_packet.py` — decision-packet CLI; **boundary-spanning**: its default /
+  no-signoff output is non-authoritative, while explicit human `--promotion-override --promotion-signoff` is
+  the authority path.
+- `scripts/analyze/cost_stress_sweep.py` — cost-stress research probe.
+- `tools/reconcile_forward_backtest.py` — forward/backtest reconciliation evidence.
+
+Registration grants visibility, not authority. Promotion/champion-readiness requires the explicit authority
+path + human signoff. The run-trace/packet substrate (ADR 0002) records evidence; it never issues authority.
+
 ### API, runtime, and strategy seams
 
 The following runtime-facing seams are admitted:

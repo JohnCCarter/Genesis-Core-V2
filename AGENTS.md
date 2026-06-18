@@ -92,3 +92,9 @@ methodological reason **before running** or pre-declare a small conservative fam
 Never choose a baseline/control after seeing the result. The smallest implementation is fine — but only
 after validity is preserved. *Why:* convenience-driven or post-hoc choices silently bias results and
 produce overclaims.
+
+These bind concretely to the repo's research tooling: the research/audit paths are non-authoritative (they
+may propose/evidence, not approve), and `build_candidate_packet.py` is boundary-spanning (default output
+non-authoritative; explicit human override + signoff is the authority path). Promotion/champion-readiness
+requires that explicit authority path. See ADR 0003 (`docs/adr/0003-research-tooling-non-authoritative.md`)
+and `seed_manifest.json` `research_tooling_surfaces`.

@@ -132,6 +132,11 @@ Authority comes from evidence, validation, promotion decisions, and approved gov
 The binding agent epistemic principles — "Research should be easy, authority should be hard" and "Do not
 choose convenience over validity" — live in `AGENTS.md` under "Agent epistemic principles".
 
+The repo's research/audit tooling paths are non-authoritative (they may propose/evidence, not approve), and
+`build_candidate_packet.py` is boundary-spanning (default output non-authoritative; explicit human override +
+signoff is the authority path). See ADR 0003 (`docs/adr/0003-research-tooling-non-authoritative.md`) and
+`seed_manifest.json` `research_tooling_surfaces`.
+
 ## Repository Philosophy
 
 Genesis-Core-V2 prioritizes:
