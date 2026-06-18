@@ -244,7 +244,7 @@ Suggested kinds:
   validates. So broken-link detection now targets markdown `[text](target.md)` link syntax (the actual
   link convention); orphan reachability stays broad (any backtick OR markdown mention counts). Opposite
   directions, both "stay green unless real."
-- Hardened the agent substrate (frys-safe docs, no `src/` logic / config / champion touch): added
+- Hardened the agent substrate (freeze-safe docs, no `src/` logic / config / champion touch): added
   `docs/glossary.md` (repo terms → SSOT links, not restated), `mcp_server/index.md` (verification-only
   MCP boundary), and rolled the `index.md` convention out to `src/core/backtest/`, `indicators/`, and
   `intelligence/`. Marked the fidelity review's semantic-lint next-step done.

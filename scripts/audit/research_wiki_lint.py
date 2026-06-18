@@ -138,7 +138,9 @@ BACKTICK_MD_RE = re.compile(r"`([^`]*?\.md)`")
 # mention, not a link (often an external citation or historical chronology note). Broken-link
 # detection therefore targets markdown links only. The target is the first whitespace-free token
 # inside `(...)`; an optional title (`[x](page.md "title")`) and surrounding whitespace are
-# tolerated so a titled link is still validated rather than silently skipped.
+# tolerated so a titled link is still validated rather than silently skipped. Intentionally NOT
+# supported: URLs containing literal balanced parentheses (`[x](foo(bar).md)`) — wiki filenames
+# do not contain parens, so the simple form is preferred over a balanced-paren parser.
 MARKDOWN_LINK_RE = re.compile(r"\]\(\s*([^)\s]+?)(?:\s+[^)]*)?\s*\)")
 # Fenced code blocks delimited by line-anchored triple backticks; matched non-greedily and
 # anchored to line starts so an unmatched fence cannot swallow unrelated text.
@@ -161,14 +163,17 @@ def _is_placeholder_ref(ref: str) -> bool:
 def _resolve_ref(source_dir: Path, ref: str) -> Path | None:
     # Resolve a backtick `.md` reference to an absolute path, trying the referencing
     # file's own dir, then RESEARCH_ROOT, then REPO_ROOT (matching how the wiki writes
-    # relative, research-relative, and repo-relative refs). Returns None if none resolve.
+    # relative, research-relative, and repo-relative refs). Absolute refs are rejected and
+    # resolution is constrained to paths under REPO_ROOT, so a `..`-traversal that escapes the
+    # repo never counts as resolved. Returns None if none resolve in-bounds.
     ref_path = ref.split("#", 1)[0].strip()
-    if not ref_path:
+    if not ref_path or Path(ref_path).is_absolute():
         return None
+    repo = REPO_ROOT.resolve()
     for base in (source_dir, RESEARCH_ROOT, REPO_ROOT):
-        candidate = base / ref_path
-        if candidate.exists():
-            return candidate.resolve()
+        candidate = (base / ref_path).resolve()
+        if candidate.exists() and (candidate == repo or repo in candidate.parents):
+            return candidate
     return None
 
 
@@ -248,23 +253,26 @@ def run_semantic_checks() -> dict[str, Any]:
     referenced: set[Path] = set()
     broken_links: list[dict[str, str]] = []
     for page in pages:
+        page_self = page.resolve()
         text = page.read_text(encoding="utf-8")
         for ref in BACKTICK_MD_RE.findall(text):
             if _is_placeholder_ref(ref):
                 continue
             resolved = _resolve_ref(page.parent, ref)
-            if resolved is not None:
+            # A page mentioning its own filename (breadcrumb/self-citation) does not make
+            # itself reachable — exclude self-references from the reachability set.
+            if resolved is not None and resolved != page_self:
                 referenced.add(resolved)
         for target in MARKDOWN_LINK_RE.findall(_strip_code_spans(text)):
             if "://" in target or not target.split("#", 1)[0].strip().endswith(".md"):
                 continue
             resolved = _resolve_ref(page.parent, target)
-            if resolved is not None:
-                referenced.add(resolved)
-            else:
+            if resolved is None:
                 broken_links.append(
                     {"page": page.relative_to(RESEARCH_ROOT).as_posix(), "link": target}
                 )
+            elif resolved != page_self:
+                referenced.add(resolved)
 
     orphan_pages: list[str] = []
     for page in pages:

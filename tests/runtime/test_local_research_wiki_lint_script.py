@@ -154,6 +154,8 @@ def test_semantic_checks_fire_on_orphan_and_broken_link(tmp_path, monkeypatch) -
     )
     # topic-orphan is referenced by nobody -> orphan
     (research_root / "topic-orphan.md").write_text("# orphan\n", encoding="utf-8")
+    # topic-self only mentions its own filename -> a self-reference does not make it reachable
+    (research_root / "topic-self.md").write_text("see `topic-self.md`\n", encoding="utf-8")
 
     monkeypatch.setattr(module, "REPO_ROOT", tmp_path)
     monkeypatch.setattr(module, "RESEARCH_ROOT", research_root)
@@ -163,9 +165,26 @@ def test_semantic_checks_fire_on_orphan_and_broken_link(tmp_path, monkeypatch) -
     assert result["semantic_ok"] is False
     assert "topic-orphan.md" in result["orphan_pages"]
     assert "topic-a.md" not in result["orphan_pages"]
+    # a self-reference is not incoming reachability -> still an orphan
+    assert "topic-self.md" in result["orphan_pages"]
     assert any(link["link"] == "missing.md" for link in result["broken_links"])
     # a titled link is still validated -> its broken target is reported
     assert any(link["link"] == "broken-titled.md" for link in result["broken_links"])
     # links inside inline code and fenced blocks are literal text, not links -> never reported
     assert not any(link["link"] == "in-code.md" for link in result["broken_links"])
     assert not any(link["link"] == "in-fence.md" for link in result["broken_links"])
+
+
+def test_resolve_ref_rejects_absolute_and_out_of_repo(tmp_path, monkeypatch) -> None:
+    module = _load_lint_module()
+    research_root = tmp_path / "docs" / "research"
+    research_root.mkdir(parents=True)
+    (research_root / "real.md").write_text("# real\n", encoding="utf-8")
+
+    monkeypatch.setattr(module, "REPO_ROOT", tmp_path)
+    monkeypatch.setattr(module, "RESEARCH_ROOT", research_root)
+
+    # an in-bounds ref resolves; an absolute ref and a repo-escaping traversal do not
+    assert module._resolve_ref(research_root, "real.md") == (research_root / "real.md").resolve()
+    assert module._resolve_ref(research_root, "/etc/hosts.md") is None
+    assert module._resolve_ref(research_root, "../../../outside.md") is None
