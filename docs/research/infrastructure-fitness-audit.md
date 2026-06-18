@@ -10,6 +10,11 @@ Opened: 2026-06-18
 Working branch: `feature/research-infrastructure-audit`
 Knowledge product links: `index.md` · `map.md` · `log.md`
 
+> **Update (2026-06-18):** the `qwen_builder.py` + `openai` LLM-builder surface assessed below
+> (originally KEEP_WITH_GUARDS) was **removed as obsolete** — see `log.md` `[2026-06-18] change` and the
+> clean-slate cleanup. Rows mentioning `qwen_builder`/`openai` are retained as point-in-time record; they
+> no longer describe live infrastructure.
+
 ## Guiding principles
 
 - **Reuse is not preservation. Clean slate requires cleanup.** Existing infra is not reused by default

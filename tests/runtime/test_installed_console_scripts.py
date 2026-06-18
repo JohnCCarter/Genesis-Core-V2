@@ -13,7 +13,6 @@ EXPECTED_ENTRYPOINTS = {
     "genesis-v2-api-shell": "genesis_core_v2_cli.console_scripts:api_shell_main",
     "genesis-v2-mcp-stdio": "genesis_core_v2_cli.console_scripts:mcp_stdio_main",
     "genesis-v2-pytest": "genesis_core_v2_cli.console_scripts:pytest_suite_main",
-    "genesis-v2-qwen-builder": "genesis_core_v2_cli.console_scripts:qwen_builder_main",
     "genesis-v2-champion-smoke": "genesis_core_v2_cli.console_scripts:champion_smoke_main",
     "genesis-v2-evaluate-champion-smoke": "genesis_core_v2_cli.console_scripts:evaluate_champion_smoke_main",
     "genesis-v2-fixture-smoke": "genesis_core_v2_cli.console_scripts:fixture_smoke_main",
@@ -115,16 +114,6 @@ raise SystemExit(callable_obj())
             "the local test dependencies (`uv sync --extra dev`)",
             {
                 "pytest_args": ["-q"],
-            },
-        ),
-        (
-            "genesis-v2-qwen-builder",
-            ["--print-config"],
-            None,
-            None,
-            {
-                "api_base": "https://integrate.api.nvidia.com/v1",
-                "model": "qwen/qwen3-coder-480b-a35b-instruct",
             },
         ),
         (

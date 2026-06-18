@@ -318,3 +318,17 @@ Suggested kinds:
 - Pre-clean-slate must-resolve: a research↔authority boundary contract; the candidate-script boundaries
   (needs governance decision); the `evaluate.py` staleness bug; exit-engine consolidation; funding-cost
   handling. Docs-first, audit-only; no code/dep/champion/results change. Page is non-authoritative.
+
+## [2026-06-18] change | remove obsolete qwen/glm/nvidia LLM-builder surface
+
+- Removed the `genesis-v2-qwen-builder` console tool and its entire surface as **obsolete**: deleted
+  `src/genesis_core_v2_cli/qwen_builder.py`, `scripts/ai/qwen_builder.py`, and
+  `tests/runtime/test_local_qwen_builder_script.py`; dropped the `genesis-v2-qwen-builder` console script
+  and the `qwen_builder_main` shim from `pyproject.toml` + `console_scripts.py`; pruned the qwen/NVIDIA
+  assertions from the console-script and env-template tests.
+- Dropped the now-orphaned `openai` dependency (qwen_builder was its only consumer; flagged
+  quarantine-only in the external-pattern scan) and regenerated `uv.lock` (also removed transitive
+  `distro`/`jiter`/`sniffio`). Cleared the `LLM_API_KEY`/`GLM_API_KEY`/`NVIDIA_*` block from `.env.example`
+  and local `.env`; refreshed the three affected `seed_manifest.json` file hashes.
+- Supersedes the `qwen_builder.py` row in `infrastructure-fitness-audit.md` (was KEEP_WITH_GUARDS → now
+  removed). No runtime/strategy/champion/optimizer/transport behavior changed; clean-slate cleanup only.
