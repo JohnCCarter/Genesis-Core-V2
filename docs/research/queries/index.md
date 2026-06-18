@@ -37,6 +37,10 @@ Every durable query answer should include:
   research wiki to Karpathy's `llm-wiki` gist: faithful in form (layers, loop,
   index/log), deliberately divergent in motor (human-gated, derivative,
   non-authoritative); largest gap is semantic lint.
+- `2026-06-18-edge-mechanism-map-review.md` — non-authoritative edge/mechanism map under
+  unresolved VWAP: both champions and both registered mechanisms `UNRESOLVED`, `EDGE_MAP=UNRESOLVED`;
+  the only real OOS number is negative and the in-sample edge is bug-bypass-dependent. Not a
+  profitability or promotion review.
 
 ## Next use
 

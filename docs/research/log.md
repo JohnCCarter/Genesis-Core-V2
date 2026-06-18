@@ -282,3 +282,19 @@ Suggested kinds:
   outputs `vwap/filled_size/slippage_bps/spread_bps/depth_exhausted`, no live transport / depth-pipeline /
   engine wiring / champion use before a validation gate. Docs-only; no runtime/config/champion/strategy/
   transport change.
+
+## [2026-06-18] question | edge / mechanism map review (under unresolved VWAP)
+
+- Filed `queries/2026-06-18-edge-mechanism-map-review.md`: a non-authoritative map of the two registered
+  mechanisms (`ml_confidence_v1`, `regime_intelligence_v1`) and the two committed champions
+  (`tBTCUSD_1h/3h`) under the rule that current results = mechanism mapping + fee-adjusted baseline +
+  slippage-stress proxy, NOT order-book-VWAP-adjusted and NOT execution-final.
+- Result: **both champions and both mechanisms = `UNRESOLVED`; `EDGE_MAP = UNRESOLVED`.** The only real
+  OOS number is negative (`candidate_search_tBTCUSD_1h`: Sharpe −0.22, PF 0.53, best candidate fails
+  pf<1.0); the in-sample edge (PF 1.24/1.585) is contingent on the `stale_threshold_factor=1e9` bug bypass
+  (0 trades without it) and comes from a deleted, unreproduced branch; Optuna/parity artifacts are test
+  fixtures (`dummy.json`, synthetic `tTESTBTC`). 1h is *closest to REJECTED* but held at UNRESOLVED because
+  falsification needs a reproduced run (out of scope). Neither mechanism has a counterparty/persistence story.
+- VWAP is necessary-but-not-sufficient: neither result is *blocked* by VWAP (1h fails on negative OOS; 3h on
+  Sharpe<1.0 at zero cost). Next step = a falsifiable OOS reproduction without the bypass (needs-experiment,
+  post-freeze / Issue #12). Docs-first; no runtime/strategy/champion/optimizer/transport change.
