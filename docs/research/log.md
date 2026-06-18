@@ -261,3 +261,24 @@ Suggested kinds:
 - Consequence recorded: with the spot fee axis at ~0, slippage now carries essentially all executable
   cost — vindicating fee ≠ slippage and raising the relative priority of the deferred order-book VWAP
   slice. Docs-only; no runtime/config/champion change.
+
+## [2026-06-18] update | slippage methodology: official fee wording + VWAP slice prep
+
+- **Wording correction (supersedes the "permanent" framing above).** Verified against Bitfinex's own
+  sources (`bitfinex.com/zero-fee-trading`, `blog.bitfinex.com` zero-fees Q&A): they call it *"the new
+  standard"*, *"not a short term promotion"*, with *"no fixed end date"* — and reserve the right to alter
+  fees later with notice. The page now says **current documented Bitfinex standard / no fixed end date**,
+  not "permanent". `commission: 0.0` framed as the *correct current baseline* for spot, not a convenience.
+- **Funding verified, not assumed.** Confirmed the tracked champions (`tBTCUSD_1h/3h.json`) are spot RI
+  configs with fraction-of-capital sizing and no leverage/margin/funding parameters, and `position_tracker.py`
+  models no funding/borrow cost — so funding does not apply to them as configured today (would apply under
+  real funding exposure).
+- **Cost-stress reframed:** commission axis = fee-return / robustness probe (realistic baseline is the zero
+  column); slippage axis stays a realistic conservative proxy until order-book depth is modeled.
+- **Added an "Implication" section:** zero fees ≠ zero execution cost; the burden shifts onto spread,
+  order-book depth, order-size-aware VWAP slippage, and latency/adverse selection as separate stresses.
+- **Prepared the deferred VWAP slice (docs-only, still not built):** a pure deterministic
+  `orderbook_vwap_bps()` helper, fixtures first — inputs `side/order_size/bids/asks/reference_price`,
+  outputs `vwap/filled_size/slippage_bps/spread_bps/depth_exhausted`, no live transport / depth-pipeline /
+  engine wiring / champion use before a validation gate. Docs-only; no runtime/config/champion/strategy/
+  transport change.

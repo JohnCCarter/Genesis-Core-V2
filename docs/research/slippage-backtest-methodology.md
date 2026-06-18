@@ -43,18 +43,23 @@ and what conservative fallback holds when order-book depth is not available?
   inputs in [position_tracker.py:120-121](../../src/core/backtest/position_tracker.py#L120-L121):
   `commission_rate` is charged on notional; `slippage_rate` moves the fill price. This separation is
   correct as-is — it is not a gap to fix.
-- **Bitfinex trading fee is now zero — documented reality, not an assumption.** Effective **2025-12-17**
-  Bitfinex scrapped the maker/taker model: zero maker and taker fees, permanent, no volume/tier/LEO
-  condition, across spot, margin, derivatives, securities, and OTC. So `commission: 0.0` in
-  `config/backtest_defaults.yaml` is now the *documented exchange reality* for spot, not a convenient
-  default. (The `commission_rate=0.002` Taker constructor default in `position_tracker.py` is now a
-  historical value, harmless because config overrides it to 0.0.) The cost-stress commission grid stays
-  valid only as a "what if fees returned" robustness probe, not a realistic anchor.
-- **Funding / margin-lending is the remaining exchange cost — and it is separate from both fee and
-  slippage.** The zero-fee change did *not* touch margin lending, derivative funding, or deposit/withdrawal
-  fees. For **spot** the exchange-fee story is now complete: zero. For **margin/leverage** funding is the
-  only live exchange cost left and must be modeled as its own component (the tracked champions are spot
-  `tBTCUSD`, so funding does not apply to them today).
+- **Bitfinex trading fee is now zero — current documented standard, not an assumption.** Announced
+  **2025-12-17**, Bitfinex moved maker and taker trading fees to zero for all eligible trading products
+  (spot, margin, derivatives, Bitfinex Securities eligible products, OTC), with no volume / token-holding /
+  tier condition. Bitfinex's own framing (verified against their sources): it is *"the new standard"*, *not
+  a short-term promotion*, with *no fixed end date* — and they reserve the right to alter fees in future
+  with customer notice. So this is **current documented Bitfinex reality**, not an eternal guarantee; the
+  doc must not call it "permanent". Therefore `commission: 0.0` in `config/backtest_defaults.yaml` is the
+  *correct current baseline* for Bitfinex spot backtests, not merely a convenience assumption. (The
+  `commission_rate=0.002` Taker constructor default in `position_tracker.py` is now a historical value,
+  harmless because config overrides it to 0.0.)
+- **Funding / margin-lending is a separate exchange-cost component.** The zero-fee change did *not* touch
+  margin lending or funding fees ("margin lending and funding fees are not changing"), nor deposit/withdrawal
+  fees. Funding is separate from both fee and slippage and is relevant **only** when a strategy actually
+  takes margin / leverage / funding exposure. Verified for the tracked champions: `tBTCUSD_1h.json` and
+  `tBTCUSD_3h.json` are spot RI configs with fraction-of-capital sizing and **no** leverage/margin/funding
+  parameters, and `position_tracker.py` models no funding/borrow cost — so funding does not apply to them as
+  configured today. It would apply if a future strategy used funding exposure.
 - **Order-book-derived slippage (the correct method when depth exists).** Walk the book until the order
   size is filled, take the size-weighted average fill price (VWAP), and express the gap to a reference
   price in basis points:
@@ -81,12 +86,15 @@ and what conservative fallback holds when order-book depth is not available?
   [position_tracker.py](../../src/core/backtest/position_tracker.py) the fill is
   `price * (1 ± slippage_rate)` on entry, exit, and partial exit — size-independent and applied against
   the candle price, not a VWAP against mid. Constructor defaults: `commission_rate=0.002` (Taker),
-  `slippage_rate=0.0005`. `config/backtest_defaults.yaml` overrides commission to `0.0` (Bitfinex
-  zero-fee default) and keeps slippage at `0.0005`.
+  `slippage_rate=0.0005`. `config/backtest_defaults.yaml` overrides commission to `0.0` (current documented
+  Bitfinex baseline) and keeps slippage at `0.0005` (still a proxy assumption).
 - **The stress branch already exists as tooling.**
   [cost_stress_sweep.py](../../scripts/analyze/cost_stress_sweep.py) sweeps the tracked champions over
   commission ∈ {0, 5, 10, 20} bps × slippage ∈ {5, 10, 20, 40} bps and flags edge death at Sharpe < 1.0
-  or PF < 1.1, writing `artifacts/diagnostics/cost_stress_sweep_<date>.md`.
+  or PF < 1.1, writing `artifacts/diagnostics/cost_stress_sweep_<date>.md`. Read the two axes differently
+  now: the **commission** axis is a *fee-return / robustness probe* (the realistic Bitfinex baseline is the
+  zero column), while the **slippage** axis stays a *realistic conservative proxy* — order-book depth is not
+  yet modeled, so sweeping slippage is the honest way to bound an unmeasured cost.
 - **The cost-fragility is already recorded.** `mechanism_registry.py` encodes tripwires that the tracked
   `tBTCUSD_1h` edge does not survive slippage ≥ 40 bps; `queries/2026-06-17-champion-1h-trade-frequency.md`
   records the same fragility (dies by ~10 bps on the 0.60 gate).
@@ -110,6 +118,22 @@ and what conservative fallback holds when order-book depth is not available?
   grid is required. This is deferred behind the champion freeze (ends 2026-12-31, Issue #12) and must
   not reopen champion config before then.
 
+## Implication: zero trading fees ≠ zero execution cost
+
+The zero-fee change removes the *fee* line, not the *cost* of executing. An order still moves the book,
+crosses the spread, and arrives with latency against an informed counterparty. So the research burden does
+not shrink — it shifts off fees and onto components that were always there but were previously dwarfed by a
+20 bps taker fee. Each is a **separate** cost to model, not a single "slippage" number:
+
+- **spread** — the bid/ask gap actually crossed (half-spread per side), separate from market impact.
+- **order-book depth** — how far the order walks the book before it is filled.
+- **order-size-aware VWAP slippage** — the size-weighted fill vs a reference price (the deferred slice).
+- **latency / adverse selection** — fills arriving late or against information, modeled as their own
+  stress assumptions, not folded into the flat slippage proxy.
+
+Net: with fees at zero for spot, these are now the dominant executable costs, and bounding them
+conservatively (stress/proxy) remains the honest stance until order-book depth is actually measured.
+
 ## Implementation path (deferred order-book VWAP slice)
 
 A future, separately validated slice — **planned, not built**, and out of scope under the current freeze
@@ -120,17 +144,27 @@ slippage carries essentially all of the executable cost. That vindicates the fee
 shifts all the weight to the slippage half — making this order-book VWAP slice relatively **more**
 important, not less, once the freeze lifts.
 
-- **Scope IN:** read Bitfinex `book` channel (or equivalent depth source); store depth snapshots
-  (snapshot/stream persistence); a pure `orderbook_vwap_bps(side, size, book, ref_price)` helper
-  implementing the order-size-aware walk above; a reference-price config knob (default mid); and explicit,
-  documented assumptions for **spread**, **partial fills**, and **liquidity / depth exhaustion**. Validate
-  the helper against fixture order books — behind a separate validation gate, before any engine wiring or
-  promotion/champion use.
+The first build target is an **isolated, pure deterministic helper** — `orderbook_vwap_bps(...)` — validated
+on fixture order books before anything else. No live transport, no engine wiring, no champion/promotion use
+until it passes a separate validation gate.
+
+- **Helper contract (deterministic, fixtures first):**
+  - **inputs:** `side` (buy/sell), `order_size`, `bids` / `asks` (price/size ladders), `reference_price`.
+  - **outputs:** `vwap`, `filled_size`, `slippage_bps`, `spread_bps` (or an explicit spread component),
+    `depth_exhausted` flag (true when the book can't fill the full size).
+  - **properties:** pure and side-effect-free; deterministic for identical input; spread and book-impact
+    reported as **distinct** components, never folded into one number.
+- **Scope IN:** the pure helper above and its fixture order books; a reference-price config knob (default
+  mid); explicit, documented assumptions for **spread**, **partial fills**, and **liquidity / depth
+  exhaustion**; later (only after the helper is validated) a `book`-channel / equivalent depth source and
+  snapshot/stream persistence to feed it.
 - **Scope OUT (now):** rebinding the dormant `ws_public.py` `book` subscription into the live transport
-  path; any runtime / champion-config surface; any promotion of cost numbers to authority.
-- **Gating:** runs after the freeze; champion config stays untouched; no trading-claim without
-  fee + slippage sensitivity evidence. Sequence: validate helper on fixtures → record measured slippage
-  distribution → only then consider replacing the flat proxy.
+  path; any depth-pipeline or backtest-engine wiring; any runtime / champion-config surface; any promotion
+  of cost numbers to authority.
+- **Gating / sequence:** runs after the freeze; champion config stays untouched; no trading-claim without
+  fee + slippage sensitivity evidence. Order: **(1)** pure helper on fixtures → **(2)** validation gate →
+  **(3)** measured slippage distribution from real depth → **(4)** only then consider replacing the flat
+  proxy. No step skips ahead.
 
 ## Immediate next checks
 
