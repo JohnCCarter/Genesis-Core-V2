@@ -361,3 +361,17 @@ Suggested kinds:
 - Clarified in `notes` that the manifest `mode` field is generation-time/manifest context, not a live
   runtime authority-mode switch. Removed qwen/glm/nvidia tooling is **not** registered. No
   runtime/config/champion/strategy/optimizer/backtest/transport change; no research-script behavior change.
+
+## [2026-06-18] design | clean-slate candidate factory (design page, no implementation)
+
+- Filed `clean-slate-candidate-factory.md` (topic, active): a non-authoritative design for a V2-native
+  candidate lane — "reuse the platform, reset the candidate". Mechanism-first (not threshold mining),
+  grounded in the Phase 1 guard, ADR 0003, the Phase 3 manifest registration, `EDGE_MAP=UNRESOLVED`, the
+  slippage methodology (zero-fee baseline + slippage stress, VWAP later), and the infrastructure audit
+  (reuse core spine; old candidates baseline/control only).
+- Defines candidate doctrine (mechanism + counterparty/persistence + causal known-at-`t` features + null
+  baseline + OOS plan + falsification + REJECTED/UNRESOLVED/WATCH/CANDIDATE rule), forbidden patterns, a
+  fail-closed research→authority lifecycle, and a recommended first slice (a candidate prereg template —
+  docs-only, not built).
+- Design only; no code/tests/seed_manifest/runtime/config/champion/strategy/optimizer/backtest/transport
+  change. Authority remains the explicit human override + signoff path.
