@@ -22,8 +22,8 @@ In case of conflict, follow the higher-order documents first, especially:
 - `docs/governance_mode.md`
 - `AGENTS.md`
 
-When present and relevant, repository root docs such as `README.md` and `handoff.md` may provide
-additional practical context, but they must not override the authority order above.
+When present and relevant, repository root docs such as `README.md` may provide additional practical
+context, but they must not override the authority order above.
 
 This policy focuses on where repository content should live, how modules should be split,
 and when to prefer folders, sibling modules, or local helper files.

@@ -80,7 +80,7 @@ thinking is and what should happen next.
 Role split:
 
 - `log.md` ÔÇö chronology and research-product change history
-- `handoffs/**` ÔÇö session baton-pass notes
+- `handoff.md` ÔÇö single rolling session baton-pass, overwritten each milestone
 - topic pages ÔÇö durable subject understanding
 
 Minimum handoff contract:

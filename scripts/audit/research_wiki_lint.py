@@ -18,7 +18,7 @@ REQUIRED_PATHS = [
     "docs/research/sources/index.md",
     "docs/research/artifacts/index.md",
     "docs/research/experiments/index.md",
-    "docs/research/handoffs/index.md",
+    "docs/research/handoff.md",
     "docs/research/queries/index.md",
     "docs/research/lint/index.md",
     "docs/research/lint/2026-06-04-structure-health-check.md",
@@ -123,12 +123,11 @@ REQUIRED_MARKERS = {
 # in their section index.md; dangling-reference scanning is limited to the registries below,
 # where backtick path semantics are consistent. Contradiction/staleness detection stays an
 # agent task (see operations.md), not a script concern.
-CONTENT_SECTIONS = ["queries", "lint", "handoffs", "artifacts", "experiments"]
+CONTENT_SECTIONS = ["queries", "lint", "artifacts", "experiments"]
 REGISTRY_FILES = [
     "docs/research/map.md",
     "docs/research/queries/index.md",
     "docs/research/lint/index.md",
-    "docs/research/handoffs/index.md",
     "docs/research/artifacts/index.md",
     "docs/research/experiments/index.md",
     "docs/research/sources/index.md",

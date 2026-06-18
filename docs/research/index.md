@@ -45,7 +45,7 @@ Operationally:
 - `sources/index.md` ÔÇö raw-source layer contract and current source families
 - `artifacts/index.md` ÔÇö contract for atomic runnable research artifacts within repo bounds
 - `experiments/index.md` ÔÇö contract for black-box experiments and their bounded inventory
-- `handoffs/index.md` ÔÇö contract for session handoff notes and baton-pass continuity
+- `handoff.md` ÔÇö single rolling baton-pass note for the next session
 - `queries/index.md` ÔÇö filed-back query answers that should not disappear into chat history
 - `lint/index.md` ÔÇö recorded health checks and lint passes over the wiki surface
 - `templates/topic-template.md` ÔÇö canonical shape for new topic pages
@@ -124,7 +124,7 @@ Operationally:
   validation evidence explicit
 - endpoint security checklists must make trust boundary, auth/secret handling, data classification,
   egress controls, failure modes, and promotion gates explicit
-- handoffs must stay short, dated, and baton-pass oriented rather than becoming a second wiki
+- the handoff must stay short and baton-pass oriented rather than becoming a second wiki
 - raw source surfaces remain immutable from the perspective of research ingest
 - query answers that matter should be filed back into the wiki instead of staying chat-only
 - session context must not become load-bearing; durable findings should be crystallized here
@@ -174,7 +174,7 @@ Operationally:
 - `sources/index.md` ÔÇö raw-source layer index and immutability contract
 - `artifacts/index.md` ÔÇö inventory/contract for atomic runnable artifacts
 - `experiments/index.md` ÔÇö inventory/contract for black-box experiment records
-- `handoffs/index.md` ÔÇö inventory/contract for session handoff notes
+- `handoff.md` ÔÇö single rolling baton-pass for the next session
 - `queries/index.md` ÔÇö inventory/contract for durable query answers
 - `lint/index.md` ÔÇö inventory/contract for wiki health-check passes
 - `champion-results-review.md` ÔÇö active compiled page for champion/evidence review
@@ -186,7 +186,7 @@ Operationally:
 - `sources/index.md` ÔÇö source-of-truth layer and raw-source conventions
 - `artifacts/index.md` ÔÇö home/base contract for atomic runnable research artifacts
 - `experiments/index.md` ÔÇö home/base contract for black-box experiment records
-- `handoffs/index.md` ÔÇö home/base contract for session baton-pass notes
+- `handoff.md` ÔÇö single rolling baton-pass note for the next session
 - `queries/index.md` ÔÇö home/base contract for filed-back query answers
 - `lint/index.md` ÔÇö home/base contract for lint passes and health checks
 - `templates/topic-template.md` ÔÇö topic-page template

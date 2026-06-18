@@ -24,6 +24,7 @@ This page answers three questions quickly:
 - `patterns.md` ÔÇö research pattern registry for artifacts, experiments, handoffs, capability cards,
   evidence pipelines, evaluation records, and endpoint security checklists
 - `log.md` ÔÇö append-only chronology for research-product updates and ingest moments
+- `handoff.md` ÔÇö single rolling baton-pass for the next session (overwritten each milestone)
 - `operations.md` ÔÇö ingest/query/lint workflow for the wiki
 - `sources/index.md` ÔÇö raw-source layer contract and current source families
 - `templates/topic-template.md` ÔÇö canonical starting shape for new topic pages
@@ -41,7 +42,6 @@ This page answers three questions quickly:
 
 - `artifacts/index.md` ÔÇö contract for atomic runnable research artifacts inside repo bounds
 - `experiments/index.md` ÔÇö contract for black-box experiment records inside repo bounds
-- `handoffs/index.md` ÔÇö contract for session baton-pass notes inside repo bounds
 - `queries/index.md` ÔÇö contract for filed-back query answers inside repo bounds
 - `lint/index.md` ÔÇö contract for recorded health checks inside repo bounds
 
@@ -51,7 +51,6 @@ This page answers three questions quickly:
 | ---------------------- | ------------------------------------------------- | ---------------------------------------- |
 | `artifacts/index.md`   | inventory and rules for atomic runnable artifacts | scaffolded, no admitted artifacts yet    |
 | `experiments/index.md` | inventory and rules for black-box experiments     | scaffolded, no admitted experiments yet  |
-| `handoffs/index.md`    | inventory and rules for session baton-pass notes  | active, recovery handoff now tracked     |
 | `queries/index.md`     | inventory and rules for filed-back query answers  | active, first filed answer now tracked   |
 | `lint/index.md`        | inventory and rules for wiki health checks        | active, first recorded lint pass tracked |
 
@@ -60,7 +59,6 @@ This page answers three questions quickly:
 | Page                                                     | Type    | Status | Core question                                                                                            | Promotion touchpoints                                                                           |
 | -------------------------------------------------------- | ------- | ------ | -------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
 | `champion-results-review.md`                             | topic   | active | What is the current V2 meaning of the admitted champion subset and seed fallback contract?               | `README.md`, `docs/SKELETON_SCOPE.md`, `tests/governance/test_v2_seed_boundaries.py`            |
-| `handoffs/2026-06-08-wiki-recovery.md`                   | handoff | closed | What was restored from the previously lost research-wiki slice, and where should future sessions resume? | `docs/research/log.md`, `README.md`, `docs/SKELETON_SCOPE.md`                                   |
 | `queries/2026-06-04-karpathy-agent-discipline.md`        | query   | closed | What does Karpathy-style `llm-wiki` imply about agent discipline for V2 research work?                   | `docs/research/index.md`, `docs/research/operations.md`                                         |
 | `queries/2026-06-04-nvidia-skills-cherry-pick-review.md` | query   | closed | Which NVIDIA skills patterns fit V2 without replacing the repo-native research wiki?                     | `docs/research/index.md`, `docs/research/patterns.md`, capability/artifact/experiment templates |
 | `lint/2026-06-04-structure-health-check.md`              | lint    | closed | Is the fuller Karpathy-style research wiki shape structurally aligned and internally consistent?         | `docs/research/index.md`, `seed_manifest.json`, `tests/governance/test_v2_seed_boundaries.py`   |
@@ -103,12 +101,12 @@ This page answers three questions quickly:
 3. Split candidate, baseline, quality signals, performance signals, result, and promotion decision.
 4. Register the record in `experiments/index.md` unless a narrower index is added later.
 
-## Add a new handoff
+## Update the handoff
 
-1. Copy `templates/handoff-template.md` into `handoffs/` using a dated, bounded filename.
-2. Keep it short: what changed, current hypothesis, next steps, blockers.
-3. Append a short chronology entry to `log.md` if the handoff changes repo understanding.
-4. Promote durable findings into a topic page instead of leaving them stranded in the handoff.
+1. Overwrite `handoff.md` (shape: `templates/handoff-template.md`): what changed, current hypothesis,
+   next steps, blockers.
+2. Append a short chronology entry to `log.md` if the milestone changes repo understanding.
+3. Promote durable findings into a topic page instead of leaving them stranded in the handoff.
 
 ## File back a query answer
 
@@ -149,7 +147,7 @@ This page answers three questions quickly:
 
 - Need durable topic understanding? Use a topic page.
 - Need quick chronology? Append to `log.md`.
-- Need a pause/resume checkpoint for the next session? Use `templates/handoff-template.md`.
+- Need a pause/resume checkpoint for the next session? Overwrite `handoff.md` (shape: `templates/handoff-template.md`).
 - Need a bounded parameter/evaluation/result/log loop? Use `templates/experiment-template.md`.
 - Need scan/review/evidence before admission? Use `templates/evidence-pipeline-template.md`.
 - Need eval/perf/security evidence with a baseline and promotion decision? Use `templates/evaluation-record-template.md`.
@@ -164,5 +162,5 @@ This page answers three questions quickly:
 - Prefer updating a bounded existing page over opening overlapping pages.
 - If a page becomes stale, move it to `watch`, `closed`, or `superseded` explicitly.
 - Prefer links to authority surfaces over copying large payloads into markdown.
-- Use `log.md` for chronology, `handoffs/**` for baton passes, and topic pages for durable understanding.
+- Use `log.md` for chronology, `handoff.md` for the current baton pass, and topic pages for durable understanding.
 - Keep `map.md` content-oriented: it is the first file an agent should read when answering against the wiki.
