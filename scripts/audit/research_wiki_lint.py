@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 from pathlib import Path
 from typing import Any
 
@@ -17,7 +18,7 @@ REQUIRED_PATHS = [
     "docs/research/sources/index.md",
     "docs/research/artifacts/index.md",
     "docs/research/experiments/index.md",
-    "docs/research/handoffs/index.md",
+    "docs/research/handoff.md",
     "docs/research/queries/index.md",
     "docs/research/lint/index.md",
     "docs/research/lint/2026-06-04-structure-health-check.md",
@@ -118,6 +119,72 @@ REQUIRED_MARKERS = {
 }
 
 
+# Referential-integrity scope. Dated content pages in these sections must be registered
+# in their section index.md; dangling-reference scanning is limited to the registries below,
+# where backtick path semantics are consistent. Contradiction/staleness detection stays an
+# agent task (see operations.md), not a script concern.
+CONTENT_SECTIONS = ["queries", "lint", "artifacts", "experiments"]
+REGISTRY_FILES = [
+    "docs/research/map.md",
+    "docs/research/queries/index.md",
+    "docs/research/lint/index.md",
+    "docs/research/artifacts/index.md",
+    "docs/research/experiments/index.md",
+    "docs/research/sources/index.md",
+]
+DATED_PAGE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}-.*\.md$")
+BACKTICK_MD_RE = re.compile(r"`([^`]*?\.md)`")
+
+
+def _is_placeholder_ref(ref: str) -> bool:
+    # Naming-convention placeholders in prose (e.g. `YYYY-MM-DD-{topic}.md`) are not links.
+    return "{" in ref or "YYYY" in ref
+
+
+def _reference_resolves(registry_dir: Path, ref: str) -> bool:
+    ref_path = ref.split("#", 1)[0].strip()
+    if not ref_path:
+        return True
+    for base in (registry_dir, RESEARCH_ROOT, REPO_ROOT):
+        if (base / ref_path).exists():
+            return True
+    return False
+
+
+def run_referential_checks() -> dict[str, Any]:
+    unregistered_pages: list[str] = []
+    dangling_references: list[dict[str, str]] = []
+
+    for section in CONTENT_SECTIONS:
+        section_dir = RESEARCH_ROOT / section
+        index_path = section_dir / "index.md"
+        if not index_path.exists():
+            continue
+        index_text = index_path.read_text(encoding="utf-8")
+        for child in sorted(section_dir.glob("*.md")):
+            if child.name == "index.md" or not DATED_PAGE_RE.match(child.name):
+                continue
+            if child.name not in index_text:
+                unregistered_pages.append(f"{section}/{child.name}")
+
+    for relative_path in REGISTRY_FILES:
+        registry_path = REPO_ROOT / relative_path
+        if not registry_path.exists():
+            continue
+        text = registry_path.read_text(encoding="utf-8")
+        for ref in BACKTICK_MD_RE.findall(text):
+            if _is_placeholder_ref(ref):
+                continue
+            if not _reference_resolves(registry_path.parent, ref):
+                dangling_references.append({"registry": relative_path, "ref": ref})
+
+    return {
+        "referential_ok": not unregistered_pages and not dangling_references,
+        "unregistered_pages": unregistered_pages,
+        "dangling_references": dangling_references,
+    }
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="Run structural checks for the local Genesis-Core-V2 research wiki"
@@ -154,7 +221,11 @@ def run_lint() -> int:
             if marker not in text:
                 missing_markers.append({"file": relative_path, "marker": marker})
 
+    referential = run_referential_checks()
+
     payload = {
+        # `ok` stays purely structural; referential findings are warn-only and do not gate it
+        # or the exit code (the script is not wired into CI/pre-commit today).
         "ok": not missing_paths and not missing_markers,
         "repo_root": str(REPO_ROOT),
         "research_root": str(RESEARCH_ROOT),
@@ -162,6 +233,9 @@ def run_lint() -> int:
         "checked_marker_count": sum(len(markers) for markers in REQUIRED_MARKERS.values()),
         "missing_paths": missing_paths,
         "missing_markers": missing_markers,
+        "referential_ok": referential["referential_ok"],
+        "unregistered_pages": referential["unregistered_pages"],
+        "dangling_references": referential["dangling_references"],
     }
     print(json.dumps(payload, indent=2, ensure_ascii=False, sort_keys=True))
     return 0 if payload["ok"] else 1

@@ -436,7 +436,7 @@ Varje skill/agent/index.md deklarerar **Mode · Lifecycle · Scope IN/OUT · Ver
 
 **Observed (lästa filer på `candidate-results-review`):**
 
-- Doktrin/governance: `AGENTS.md`, `.github/copilot-instructions.md`, `docs/SKELETON_SCOPE.md`, `docs/governance_mode.md`, `docs/repository-layout-policy.md`, `docs/subsystem-index-and-premortem-convention.md`, `handoff.md`, `README.md`.
+- Doktrin/governance: `AGENTS.md`, `.github/copilot-instructions.md`, `docs/SKELETON_SCOPE.md`, `docs/governance_mode.md`, `docs/repository-layout-policy.md`, `docs/subsystem-index-and-premortem-convention.md`, `README.md`.
 - Kod/tooling: `src/core/decision/premortem.py`, `decision/index.md`, `tools/compare_backtest_results.py`, `src/core/utils/diffing/results_diff.py`, `src/core/strategy/run_intent.py`.
 - CI/PR: `.github/workflows/ci.yml`, `champion-freeze-guard.yml`, `.github/pull_request_template.md`.
 - Tester (delvis): `test_v2_seed_boundaries.py`, `test_dead_code_tripwires.py`, `test_no_legacy_feature_imports.py`, `test_mcp_remote_authorization.py`.

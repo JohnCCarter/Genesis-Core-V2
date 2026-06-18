@@ -205,3 +205,27 @@ Suggested kinds:
   structural presence check, not a semantic lint (no contradiction/orphan/
   broken-link detection).
 - Registered the page in `map.md` and `queries/index.md`.
+
+## [2026-06-18] update | agent-native lint + framing for the research wiki
+
+- Extended `scripts/audit/research_wiki_lint.py` with a referential-integrity check (unregistered
+  dated pages + dangling registry references). Warn-only: it does not flip the structural `ok`. Added
+  positive and negative tests in `tests/runtime/test_local_research_wiki_lint_script.py`.
+- Lint caught real rot: `map.md` and `index.md` both pointed at `.github/skills/v2-research-review/`
+  which never existed (carried since admission). Removed the stale "Companion agent workflow" section
+  from both; `log.md` history left intact.
+- Sharpened the agent-native framing in `patterns.md` (Pattern 7), `map.md`, and `operations.md`:
+  the wiki is an agent-native tool (agent curates sources + writes + reads; human only asks questions)
+  whose job is millisecond orientation — context restore without re-scanning the repo. Authority is
+  still promoted out; referential lint mechanizes integrity only, not semantic consistency.
+
+## [2026-06-18] question | slippage/cost methodology filed
+
+- Filed `slippage-backtest-methodology.md`: Bitfinex publishes no general slippage figure, so slippage
+  must be derived from order-book depth (VWAP walk vs a reference price, mid recommended) when data
+  exists, and otherwise run as labeled stress-scenario *assumptions* — never as Bitfinex facts. Fee ≠
+  slippage, and `position_tracker.py` already keeps them separate (not a gap).
+- Recorded the current reality: no `book` channel exists (`ws_public.py` is ticker-only), so the engine
+  always runs the stress branch via `cost_stress_sweep.py` with a flat candle-close slippage proxy. The
+  order-book VWAP slice is scoped but deferred behind the champion freeze (ends 2026-12-31, Issue #12);
+  no trading-claim until the edge survives fee + slippage sensitivity.

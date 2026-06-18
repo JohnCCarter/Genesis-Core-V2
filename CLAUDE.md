@@ -34,9 +34,10 @@ Cite the resolution reason, e.g. `Mode: RESEARCH (source=branch feature/research
 
 - **Bounded sessions**: reset at natural milestones (PR merged, experiment concluded, feature shipped,
   context > 60%). Don't compact indefinitely — start fresh.
-- **State externalization**: before a milestone reset, write a handoff artifact to
-  `.claude/handoffs/YYYY-MM-DD-{topic}.md` (milestone, files changed, decisions, open questions,
-  next-session primer). The next session reads the artifact, not the history.
+- **State externalization**: before a milestone reset, overwrite the rolling handoff at
+  `docs/research/handoff.md` (milestone, files changed, decisions, open questions, next-session primer).
+  It is tracked and readable by any session/machine/agent — `.claude/` is machine-local and must not
+  hold durable handoffs. The next session reads the artifact, not the history.
 - **Output compression**: no trailing summaries, no "I've completed X" narration — show the result.
   One sentence per status update. Code comments only for non-obvious WHY.
 

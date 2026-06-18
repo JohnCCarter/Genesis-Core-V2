@@ -13,3 +13,9 @@ results/
 config/runtime.json
 .nonce_tracker.json
 dev.overrides.local.json
+
+# Claude Code machine-local scratch — never durable, never tracked.
+# The durable handoff lives at docs/research/handoff.md (tracked), not here.
+.claude/handoffs/
+.claude/plans/
+.claude/settings.local.json

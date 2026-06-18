@@ -66,8 +66,11 @@ Use lint when the question is not about a business seam, but about the health of
 Typical loop:
 
 1. Choose the scope: one page, one surface family, or the full wiki.
-2. Run `scripts/audit/research_wiki_lint.py` for structural checks when useful.
-3. Look for contradictions, stale claims, orphan pages, missing links, and unclear ownership.
+2. Run `scripts/audit/research_wiki_lint.py` for structural checks (required paths/markers) and
+   referential integrity (unregistered dated pages, dangling registry references). Referential
+   findings are warn-only and do not gate the structural `ok`.
+3. Look for contradictions, stale claims, orphan pages, missing links, and unclear ownership. This
+   stays agent judgment — the script does referential integrity, not semantic consistency.
 4. Record substantive passes or findings in `lint/**`.
 5. Append a dated `lint` entry to `log.md` if the pass matters to future sessions.
 
