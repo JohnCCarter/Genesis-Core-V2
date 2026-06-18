@@ -229,3 +229,56 @@ Suggested kinds:
   always runs the stress branch via `cost_stress_sweep.py` with a flat candle-close slippage proxy. The
   order-book VWAP slice is scoped but deferred behind the champion freeze (ends 2026-12-31, Issue #12);
   no trading-claim until the edge survives fee + slippage sensitivity.
+
+## [2026-06-18] update | wiki-lint semantic slice + agent-substrate docs
+
+- Mechanized the fidelity-review's largest gap: `research_wiki_lint.py` now runs `run_semantic_checks()`
+  — `orphan_pages` (pages reachable from nowhere) and `broken_links` — on a warn-only `semantic_ok`,
+  decoupled from `referential_ok`/`ok` so a false positive can never flip the structural gate. Added a
+  positive and negative test in `tests/runtime/test_local_research_wiki_lint_script.py`. Live repo: clean
+  (no orphans, no broken links).
+- **Scope decision (diverged from the approved plan, deliberately):** the plan scoped broken-link
+  detection to backtick `.md` refs across all pages. Running it live showed that is all prose-noise —
+  external citations (NVIDIA clone paths), historical chronology, and a `<date>` placeholder. The wiki's
+  backtick navigation is load-bearing *only* in the registries, which the referential check already
+  validates. So broken-link detection now targets markdown `[text](target.md)` link syntax (the actual
+  link convention); orphan reachability stays broad (any backtick OR markdown mention counts). Opposite
+  directions, both "stay green unless real."
+- Hardened the agent substrate (freeze-safe docs, no `src/` logic / config / champion touch): added
+  `docs/glossary.md` (repo terms → SSOT links, not restated), `mcp_server/index.md` (verification-only
+  MCP boundary), and rolled the `index.md` convention out to `src/core/backtest/`, `indicators/`, and
+  `intelligence/`. Marked the fidelity review's semantic-lint next-step done.
+
+## [2026-06-18] ingest | Bitfinex zero-fee change folded into slippage methodology
+
+- External fact verified across sources: Bitfinex scrapped the maker/taker model effective **2025-12-17**
+  — zero maker and taker fees, permanent, no volume/tier/LEO condition, across spot/margin/derivatives/
+  securities/OTC. Funding/margin-lending and deposit/withdrawal fees are unchanged.
+- Folded into `slippage-backtest-methodology.md`: `commission: 0.0` is now documented exchange reality for
+  spot (not an assumption); the `position_tracker.py` `commission_rate=0.002` default is now historical
+  (harmless, config overrides to 0.0); funding/margin-lending recorded as the separate remaining exchange
+  cost (applies to margin/leverage only — tracked champions are spot `tBTCUSD`).
+- Consequence recorded: with the spot fee axis at ~0, slippage now carries essentially all executable
+  cost — vindicating fee ≠ slippage and raising the relative priority of the deferred order-book VWAP
+  slice. Docs-only; no runtime/config/champion change.
+
+## [2026-06-18] update | slippage methodology: official fee wording + VWAP slice prep
+
+- **Wording correction (supersedes the "permanent" framing above).** Verified against Bitfinex's own
+  sources (`bitfinex.com/zero-fee-trading`, `blog.bitfinex.com` zero-fees Q&A): they call it *"the new
+  standard"*, *"not a short term promotion"*, with *"no fixed end date"* — and reserve the right to alter
+  fees later with notice. The page now says **current documented Bitfinex standard / no fixed end date**,
+  not "permanent". `commission: 0.0` framed as the *correct current baseline* for spot, not a convenience.
+- **Funding verified, not assumed.** Confirmed the tracked champions (`tBTCUSD_1h/3h.json`) are spot RI
+  configs with fraction-of-capital sizing and no leverage/margin/funding parameters, and `position_tracker.py`
+  models no funding/borrow cost — so funding does not apply to them as configured today (would apply under
+  real funding exposure).
+- **Cost-stress reframed:** commission axis = fee-return / robustness probe (realistic baseline is the zero
+  column); slippage axis stays a realistic conservative proxy until order-book depth is modeled.
+- **Added an "Implication" section:** zero fees ≠ zero execution cost; the burden shifts onto spread,
+  order-book depth, order-size-aware VWAP slippage, and latency/adverse selection as separate stresses.
+- **Prepared the deferred VWAP slice (docs-only, still not built):** a pure deterministic
+  `orderbook_vwap_bps()` helper, fixtures first — inputs `side/order_size/bids/asks/reference_price`,
+  outputs `vwap/filled_size/slippage_bps/spread_bps/depth_exhausted`, no live transport / depth-pipeline /
+  engine wiring / champion use before a validation gate. Docs-only; no runtime/config/champion/strategy/
+  transport change.

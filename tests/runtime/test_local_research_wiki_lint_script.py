@@ -112,3 +112,79 @@ def test_referential_checks_fire_on_unregistered_and_dangling(tmp_path, monkeypa
     assert result["referential_ok"] is False
     assert "queries/2026-01-01-orphan.md" in result["unregistered_pages"]
     assert any(ref["ref"] == "queries/nope.md" for ref in result["dangling_references"])
+
+
+def test_research_wiki_lint_script_reports_semantic_integrity() -> None:
+    repo_root = Path(__file__).resolve().parents[2]
+
+    completed = subprocess.run(
+        [sys.executable, str(repo_root / "scripts" / "audit" / "research_wiki_lint.py")],
+        cwd=repo_root,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    payload = json.loads(completed.stdout)
+
+    # Semantic findings are warn-only on their own `semantic_ok`, decoupled from `referential_ok`
+    # and the structural `ok`. No page is unreachable, and no markdown intra-wiki link is broken.
+    assert "semantic_ok" in payload
+    assert payload["orphan_pages"] == []
+    assert payload["broken_links"] == []
+    assert payload["semantic_ok"] is True
+
+
+def test_semantic_checks_fire_on_orphan_and_broken_link(tmp_path, monkeypatch) -> None:
+    module = _load_lint_module()
+
+    research_root = tmp_path / "docs" / "research"
+    research_root.mkdir(parents=True)
+    # map.md (a registry) reaches topic-a via a backtick mention -> topic-a is not an orphan
+    (research_root / "map.md").write_text("see `topic-a.md`\n", encoding="utf-8")
+    # topic-a is reachable but carries a broken markdown link (real `[text](target.md)` syntax;
+    # a backtick mention would NOT count -- broken-link detection targets markdown links only).
+    # A titled link must still be validated (target caught), while links inside inline-code and
+    # fenced blocks must be ignored: documenting link syntax is not a broken link.
+    (research_root / "topic-a.md").write_text(
+        "[gone](missing.md)\n"
+        '[t](broken-titled.md "the title")\n'
+        "syntax is `[x](in-code.md)`\n"
+        "```\n[y](in-fence.md)\n```\n",
+        encoding="utf-8",
+    )
+    # topic-orphan is referenced by nobody -> orphan
+    (research_root / "topic-orphan.md").write_text("# orphan\n", encoding="utf-8")
+    # topic-self only mentions its own filename -> a self-reference does not make it reachable
+    (research_root / "topic-self.md").write_text("see `topic-self.md`\n", encoding="utf-8")
+
+    monkeypatch.setattr(module, "REPO_ROOT", tmp_path)
+    monkeypatch.setattr(module, "RESEARCH_ROOT", research_root)
+
+    result = module.run_semantic_checks()
+
+    assert result["semantic_ok"] is False
+    assert "topic-orphan.md" in result["orphan_pages"]
+    assert "topic-a.md" not in result["orphan_pages"]
+    # a self-reference is not incoming reachability -> still an orphan
+    assert "topic-self.md" in result["orphan_pages"]
+    assert any(link["link"] == "missing.md" for link in result["broken_links"])
+    # a titled link is still validated -> its broken target is reported
+    assert any(link["link"] == "broken-titled.md" for link in result["broken_links"])
+    # links inside inline code and fenced blocks are literal text, not links -> never reported
+    assert not any(link["link"] == "in-code.md" for link in result["broken_links"])
+    assert not any(link["link"] == "in-fence.md" for link in result["broken_links"])
+
+
+def test_resolve_ref_rejects_absolute_and_out_of_repo(tmp_path, monkeypatch) -> None:
+    module = _load_lint_module()
+    research_root = tmp_path / "docs" / "research"
+    research_root.mkdir(parents=True)
+    (research_root / "real.md").write_text("# real\n", encoding="utf-8")
+
+    monkeypatch.setattr(module, "REPO_ROOT", tmp_path)
+    monkeypatch.setattr(module, "RESEARCH_ROOT", research_root)
+
+    # an in-bounds ref resolves; an absolute ref and a repo-escaping traversal do not
+    assert module._resolve_ref(research_root, "real.md") == (research_root / "real.md").resolve()
+    assert module._resolve_ref(research_root, "/etc/hosts.md") is None
+    assert module._resolve_ref(research_root, "../../../outside.md") is None

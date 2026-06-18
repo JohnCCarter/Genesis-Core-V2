@@ -109,8 +109,13 @@ catch agent error; never let an external pattern become V2 authority).
 
 ## Optional next steps (research-only; not authority)
 
-- Mechanize a semantic-lint slice: orphan detection and broken intra-wiki link
-  detection in `research_wiki_lint.py` (closes the biggest gist gap).
+- ~~Mechanize a semantic-lint slice: orphan detection and broken intra-wiki link
+  detection in `research_wiki_lint.py` (closes the biggest gist gap).~~ **Done
+  2026-06-18** — `run_semantic_checks()` adds `orphan_pages` + `broken_links` on a
+  warn-only `semantic_ok`. Scope note: orphan reachability is broad (any mention);
+  broken-link detection targets markdown `[text](target.md)` links only, because the
+  wiki's backtick navigation is filename-mention prose everywhere except the
+  registries — and those are already validated by the referential check.
 - Decide explicitly whether to grow a denser entity-page layer with real
   `[[wiki-links]]`, or to record that V2 intentionally rejects the entity-graph
   shape in favor of bounded question pages.

@@ -134,6 +134,25 @@ REGISTRY_FILES = [
 ]
 DATED_PAGE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}-.*\.md$")
 BACKTICK_MD_RE = re.compile(r"`([^`]*?\.md)`")
+# A real link is markdown `[text](target)` syntax; a backtick `code.md` is a filename
+# mention, not a link (often an external citation or historical chronology note). Broken-link
+# detection therefore targets markdown links only. The target is the first whitespace-free token
+# inside `(...)`; an optional title (`[x](page.md "title")`) and surrounding whitespace are
+# tolerated so a titled link is still validated rather than silently skipped. Intentionally NOT
+# supported: URLs containing literal balanced parentheses (`[x](foo(bar).md)`) — wiki filenames
+# do not contain parens, so the simple form is preferred over a balanced-paren parser.
+MARKDOWN_LINK_RE = re.compile(r"\]\(\s*([^)\s]+?)(?:\s+[^)]*)?\s*\)")
+# Fenced code blocks delimited by line-anchored triple backticks; matched non-greedily and
+# anchored to line starts so an unmatched fence cannot swallow unrelated text.
+FENCED_BLOCK_RE = re.compile(r"^```.*?^```", re.DOTALL | re.MULTILINE)
+INLINE_CODE_RE = re.compile(r"`[^`]*`")
+
+
+def _strip_code_spans(text: str) -> str:
+    # A markdown link inside a code span (inline `` `...` `` or fenced ```` ``` ````) is not a link —
+    # it is literal text, e.g. docs that quote `[text](page.md)` link syntax. Strip code before
+    # scanning for real links so documenting the convention never registers as a broken link.
+    return INLINE_CODE_RE.sub("", FENCED_BLOCK_RE.sub("", text))
 
 
 def _is_placeholder_ref(ref: str) -> bool:
@@ -141,14 +160,28 @@ def _is_placeholder_ref(ref: str) -> bool:
     return "{" in ref or "YYYY" in ref
 
 
-def _reference_resolves(registry_dir: Path, ref: str) -> bool:
+def _resolve_ref(source_dir: Path, ref: str) -> Path | None:
+    # Resolve a backtick `.md` reference to an absolute path, trying the referencing
+    # file's own dir, then RESEARCH_ROOT, then REPO_ROOT (matching how the wiki writes
+    # relative, research-relative, and repo-relative refs). Absolute refs are rejected and
+    # resolution is constrained to paths under REPO_ROOT, so a `..`-traversal that escapes the
+    # repo never counts as resolved. Returns None if none resolve in-bounds.
     ref_path = ref.split("#", 1)[0].strip()
-    if not ref_path:
+    if not ref_path or Path(ref_path).is_absolute():
+        return None
+    repo = REPO_ROOT.resolve()
+    for base in (source_dir, RESEARCH_ROOT, REPO_ROOT):
+        candidate = (base / ref_path).resolve()
+        if candidate.exists() and (candidate == repo or repo in candidate.parents):
+            return candidate
+    return None
+
+
+def _reference_resolves(registry_dir: Path, ref: str) -> bool:
+    # Anchor-only refs (e.g. `#section`) carry no path and are treated as resolved.
+    if not ref.split("#", 1)[0].strip():
         return True
-    for base in (registry_dir, RESEARCH_ROOT, REPO_ROOT):
-        if (base / ref_path).exists():
-            return True
-    return False
+    return _resolve_ref(registry_dir, ref) is not None
 
 
 def run_referential_checks() -> dict[str, Any]:
@@ -182,6 +215,77 @@ def run_referential_checks() -> dict[str, Any]:
         "referential_ok": not unregistered_pages and not dangling_references,
         "unregistered_pages": unregistered_pages,
         "dangling_references": dangling_references,
+    }
+
+
+def _iter_wiki_pages() -> list[Path]:
+    # All wiki markdown except templates/**, whose illustrative refs are not real links
+    # and whose pages are intentionally unreferenced canonical shapes.
+    return [
+        page
+        for page in sorted(RESEARCH_ROOT.rglob("*.md"))
+        if "templates" not in page.relative_to(RESEARCH_ROOT).parts
+    ]
+
+
+def run_semantic_checks() -> dict[str, Any]:
+    # Semantic-integrity slice (warn-only, own `semantic_ok` boolean): orphan pages and
+    # broken intra-wiki links. Kept off `referential_ok`/`ok` so a false positive can never
+    # break the existing referential test or the structural exit code. Reuses the shared
+    # _resolve_ref machinery (no new parser). templates/** is excluded from both checks.
+    #
+    # Deliberate asymmetry, both serving "stay green unless the finding is real":
+    #   - orphan check uses BROAD reachability — any backtick OR markdown-link mention counts
+    #     as reaching a page, minimizing false orphans. Resolution is by absolute-path
+    #     identity, not filename substring, so a short common stem cannot silently mark a real
+    #     orphan as referenced.
+    #   - broken-link check is NARROW — only markdown `[text](target.md)` links are links;
+    #     backtick refs are filename mentions (the wiki's backtick navigation lives in the
+    #     registries, already validated by run_referential_checks), minimizing false positives.
+    pages = _iter_wiki_pages()
+    required_abs = {
+        (REPO_ROOT / rel).resolve() for rel in REQUIRED_PATHS if (REPO_ROOT / rel).exists()
+    }
+    registry_abs = {
+        (REPO_ROOT / rel).resolve() for rel in REGISTRY_FILES if (REPO_ROOT / rel).exists()
+    }
+
+    referenced: set[Path] = set()
+    broken_links: list[dict[str, str]] = []
+    for page in pages:
+        page_self = page.resolve()
+        text = page.read_text(encoding="utf-8")
+        for ref in BACKTICK_MD_RE.findall(text):
+            if _is_placeholder_ref(ref):
+                continue
+            resolved = _resolve_ref(page.parent, ref)
+            # A page mentioning its own filename (breadcrumb/self-citation) does not make
+            # itself reachable — exclude self-references from the reachability set.
+            if resolved is not None and resolved != page_self:
+                referenced.add(resolved)
+        for target in MARKDOWN_LINK_RE.findall(_strip_code_spans(text)):
+            if "://" in target or not target.split("#", 1)[0].strip().endswith(".md"):
+                continue
+            resolved = _resolve_ref(page.parent, target)
+            if resolved is None:
+                broken_links.append(
+                    {"page": page.relative_to(RESEARCH_ROOT).as_posix(), "link": target}
+                )
+            elif resolved != page_self:
+                referenced.add(resolved)
+
+    orphan_pages: list[str] = []
+    for page in pages:
+        resolved = page.resolve()
+        if resolved in required_abs or resolved in registry_abs:
+            continue
+        if resolved not in referenced:
+            orphan_pages.append(page.relative_to(RESEARCH_ROOT).as_posix())
+
+    return {
+        "semantic_ok": not orphan_pages and not broken_links,
+        "orphan_pages": sorted(orphan_pages),
+        "broken_links": broken_links,
     }
 
 
@@ -222,10 +326,11 @@ def run_lint() -> int:
                 missing_markers.append({"file": relative_path, "marker": marker})
 
     referential = run_referential_checks()
+    semantic = run_semantic_checks()
 
     payload = {
-        # `ok` stays purely structural; referential findings are warn-only and do not gate it
-        # or the exit code (the script is not wired into CI/pre-commit today).
+        # `ok` stays purely structural; referential AND semantic findings are warn-only and
+        # do not gate it or the exit code (the script is not wired into CI/pre-commit today).
         "ok": not missing_paths and not missing_markers,
         "repo_root": str(REPO_ROOT),
         "research_root": str(RESEARCH_ROOT),
@@ -236,6 +341,9 @@ def run_lint() -> int:
         "referential_ok": referential["referential_ok"],
         "unregistered_pages": referential["unregistered_pages"],
         "dangling_references": referential["dangling_references"],
+        "semantic_ok": semantic["semantic_ok"],
+        "orphan_pages": semantic["orphan_pages"],
+        "broken_links": semantic["broken_links"],
     }
     print(json.dumps(payload, indent=2, ensure_ascii=False, sort_keys=True))
     return 0 if payload["ok"] else 1
