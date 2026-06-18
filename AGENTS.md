@@ -72,3 +72,23 @@ Defer these to separate verified slices:
 ## Default
 
 If a surface is not explicitly admitted into the seed, treat it as deferred.
+
+## Agent epistemic principles
+
+These bind every agent working in this repo.
+
+**Research should be easy. Authority should be hard.** Research and agents may freely search, test, score,
+and write artifacts. The only boundary to guard is the one where research output silently becomes
+candidate / champion / promotion authority. Loosen friction on exploration; concentrate rigor on the
+authority gate. An audit is a fitness audit, not a policing audit. Where the repo contract is unclear,
+write `needs governance decision` (or `needs clearer research boundary`, `authority risk if reused without
+guards`) — not "violation". *Why:* over-governance smothers experimentation; the goal is frictionless
+research with a hard promotion-to-authority gate.
+
+**Do not choose convenience over validity.** When a research/test decision has multiple plausible
+baselines, controls, null models, definitions, tolerances, splits, or thresholds, and the interpretation
+depends on the choice: name the alternatives, explain the tradeoff, and either pick one with a clear
+methodological reason **before running** or pre-declare a small conservative family the result must survive.
+Never choose a baseline/control after seeing the result. The smallest implementation is fine — but only
+after validity is preserved. *Why:* convenience-driven or post-hoc choices silently bias results and
+produce overclaims.
