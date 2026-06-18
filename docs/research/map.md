@@ -5,7 +5,9 @@
 > It is not a runtime-authority or promotion-authority surface.
 
 Agents working against the research wiki should read this file first, then drill into the relevant
-pages it points to.
+pages it points to. This read-first surface exists so an agent orients in milliseconds — restoring
+context from the wiki instead of scanning the whole repo, as if the session never ended — not as
+human reading material.
 
 ## Purpose
 
@@ -34,12 +36,6 @@ This page answers three questions quickly:
 - `templates/lint-template.md` ÔÇö canonical starting shape for lint passes
 - `templates/capability-card-template.md` ÔÇö canonical starting shape for bounded capability reviews
 - `templates/endpoint-security-checklist-template.md` ÔÇö canonical starting shape for endpoint safety reviews
-
-## Companion agent workflow
-
-- `.github/skills/v2-research-review/SKILL.md` ÔÇö small repo-local review skill for bounded research
-  wiki slices. Detailed guidance is in `references/**`; optional helper boundaries are in
-  `scripts/**`; compatibility is explicit. Guidance only; not authority.
 
 ## Operational pattern surfaces
 

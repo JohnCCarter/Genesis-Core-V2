@@ -192,3 +192,16 @@ Suggested kinds:
 - `EDGE_MAP=UNRESOLVED` still holds; the tooling to test mechanisms toward `CANDIDATE` now exists.
 - Hardened the repo (branch protection, Dependabot security + auto-merge, deliberate dep-major holds).
   Baton-pass in `handoffs/2026-06-17-config-merges-and-github-hardening.md`.
+
+## [2026-06-18] update | agent-native lint + framing for the research wiki
+
+- Extended `scripts/audit/research_wiki_lint.py` with a referential-integrity check (unregistered
+  dated pages + dangling registry references). Warn-only: it does not flip the structural `ok`. Added
+  positive and negative tests in `tests/runtime/test_local_research_wiki_lint_script.py`.
+- Lint caught real rot: `map.md` and `index.md` both pointed at `.github/skills/v2-research-review/`
+  which never existed (carried since admission). Removed the stale "Companion agent workflow" section
+  from both; `log.md` history left intact.
+- Sharpened the agent-native framing in `patterns.md` (Pattern 7), `map.md`, and `operations.md`:
+  the wiki is an agent-native tool (agent curates sources + writes + reads; human only asks questions)
+  whose job is millisecond orientation — context restore without re-scanning the repo. Authority is
+  still promoted out; referential lint mechanizes integrity only, not semantic consistency.

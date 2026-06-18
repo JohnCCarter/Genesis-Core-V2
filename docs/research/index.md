@@ -60,13 +60,6 @@ Operationally:
 - `templates/endpoint-security-checklist-template.md` ÔÇö canonical shape for endpoint safety reviews
 - topic pages such as `champion-results-review.md` ÔÇö bounded compiled pages for named questions
 
-## Companion agent workflow
-
-- `.github/skills/v2-research-review/SKILL.md` ÔÇö small repo-local review workflow for research-wiki
-  slices. Details live in `.github/skills/v2-research-review/references/**`; optional helper
-  boundaries live in `.github/skills/v2-research-review/scripts/**`; compatibility is explicit.
-  It is guidance only and does not create runtime or promotion authority.
-
 ## Scope IN
 
 - compiled research summaries derived from repo-tracked sources

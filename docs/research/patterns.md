@@ -272,6 +272,30 @@ Sources:
 - `external-pattern-scan-report.md` (full scan and per-candidate dispositions)
 - linked `log.md` entry
 
+Worked example - Karpathy `llm-wiki` as an agent-native tool:
+
+The research wiki absorbs Karpathy's `llm-wiki` in PARTS. The role split runs deeper than Karpathy's:
+the agent curates the sources, writes, and reads - the human's only job is to ask questions. So treat
+it as an **agent-native** tool whose job is millisecond orientation: an agent restores full context
+from the wiki instead of re-scanning the repo, as if the session never ended. Owned and optimized for
+agent retrieval, but never **agent-authoritative**. Four knobs, three turned toward Karpathy and one
+held:
+
+- ownership (who writes) -> toward Karpathy: agents own the wiki layer
+- ergonomics (form, dense cross-links, low friction) -> toward Karpathy: agents traverse links cheaply;
+  grow the entity-graph shape as page count rises
+- bookkeeping (registration, dead-reference upkeep) -> toward Karpathy: mechanize it, but as a *check*,
+  not a generator - `scripts/audit/research_wiki_lint.py` fails when a page is unregistered or a registry
+  reference dangles, replacing the human upkeep the mechanization removes
+- authority (may the wiki *act*) -> HELD: load-bearing conclusions still promote out to admitted
+  surfaces; a query page is never where a decision lives
+
+Background: `queries/2026-06-04-karpathy-agent-discipline.md`. Note the lint mechanizes referential
+integrity only; contradiction/staleness detection stays agent judgment per `operations.md`. Coverage
+boundary: the lint checks dated content pages against their section `index.md` and dangling references
+in the registries (`map.md` + section `index.md`s) only - prose backtick paths in other pages and
+non-date-prefixed topic pages are out of scope, so a green lint is not total consistency.
+
 Must not:
 
 - import an external runtime stack just because its pattern is useful
