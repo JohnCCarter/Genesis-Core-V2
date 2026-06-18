@@ -143,9 +143,14 @@ def test_semantic_checks_fire_on_orphan_and_broken_link(tmp_path, monkeypatch) -
     (research_root / "map.md").write_text("see `topic-a.md`\n", encoding="utf-8")
     # topic-a is reachable but carries a broken markdown link (real `[text](target.md)` syntax;
     # a backtick mention would NOT count -- broken-link detection targets markdown links only).
-    # The code-span link must be ignored: documenting link syntax is not a broken link.
+    # A titled link must still be validated (target caught), while links inside inline-code and
+    # fenced blocks must be ignored: documenting link syntax is not a broken link.
     (research_root / "topic-a.md").write_text(
-        "[gone](missing.md)\nsyntax is `[x](in-code.md)`\n", encoding="utf-8"
+        "[gone](missing.md)\n"
+        '[t](broken-titled.md "the title")\n'
+        "syntax is `[x](in-code.md)`\n"
+        "```\n[y](in-fence.md)\n```\n",
+        encoding="utf-8",
     )
     # topic-orphan is referenced by nobody -> orphan
     (research_root / "topic-orphan.md").write_text("# orphan\n", encoding="utf-8")
@@ -159,5 +164,8 @@ def test_semantic_checks_fire_on_orphan_and_broken_link(tmp_path, monkeypatch) -
     assert "topic-orphan.md" in result["orphan_pages"]
     assert "topic-a.md" not in result["orphan_pages"]
     assert any(link["link"] == "missing.md" for link in result["broken_links"])
-    # the code-span link is literal text, not a link -> never reported
+    # a titled link is still validated -> its broken target is reported
+    assert any(link["link"] == "broken-titled.md" for link in result["broken_links"])
+    # links inside inline code and fenced blocks are literal text, not links -> never reported
     assert not any(link["link"] == "in-code.md" for link in result["broken_links"])
+    assert not any(link["link"] == "in-fence.md" for link in result["broken_links"])

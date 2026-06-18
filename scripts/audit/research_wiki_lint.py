@@ -136,16 +136,21 @@ DATED_PAGE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}-.*\.md$")
 BACKTICK_MD_RE = re.compile(r"`([^`]*?\.md)`")
 # A real link is markdown `[text](target)` syntax; a backtick `code.md` is a filename
 # mention, not a link (often an external citation or historical chronology note). Broken-link
-# detection therefore targets markdown links only.
-MARKDOWN_LINK_RE = re.compile(r"\]\(([^)\s]+)\)")
+# detection therefore targets markdown links only. The target is the first whitespace-free token
+# inside `(...)`; an optional title (`[x](page.md "title")`) and surrounding whitespace are
+# tolerated so a titled link is still validated rather than silently skipped.
+MARKDOWN_LINK_RE = re.compile(r"\]\(\s*([^)\s]+?)(?:\s+[^)]*)?\s*\)")
+# Fenced code blocks delimited by line-anchored triple backticks; matched non-greedily and
+# anchored to line starts so an unmatched fence cannot swallow unrelated text.
+FENCED_BLOCK_RE = re.compile(r"^```.*?^```", re.DOTALL | re.MULTILINE)
+INLINE_CODE_RE = re.compile(r"`[^`]*`")
 
 
 def _strip_code_spans(text: str) -> str:
     # A markdown link inside a code span (inline `` `...` `` or fenced ```` ``` ````) is not a link —
     # it is literal text, e.g. docs that quote `[text](page.md)` link syntax. Strip code before
     # scanning for real links so documenting the convention never registers as a broken link.
-    text = re.sub(r"```.*?```", "", text, flags=re.DOTALL)
-    return re.sub(r"`[^`]*`", "", text)
+    return INLINE_CODE_RE.sub("", FENCED_BLOCK_RE.sub("", text))
 
 
 def _is_placeholder_ref(ref: str) -> bool:
