@@ -30,6 +30,8 @@ and what conservative fallback holds when order-book depth is not available?
 - `src/core/strategy/mechanism_registry.py` — cost-sensitivity tripwires for the tracked edge
 - `src/core/io/bitfinex/ws_public.py` — Bitfinex public WS (dormant; ticker-only, no `book` channel)
 - GitHub Issue #12 — post-freeze cost-fragility follow-up (freeze ends 2026-12-31)
+- Bitfinex zero-fee announcement (effective 2025-12-17): [bitfinex.com/zero-fee-trading](https://www.bitfinex.com/zero-fee-trading/),
+  [blog.bitfinex.com — zero-fees Q&A](https://blog.bitfinex.com/education/zero-fees-qa/)
 
 ## Current compiled understanding
 
@@ -37,11 +39,22 @@ and what conservative fallback holds when order-book depth is not available?
   is a property of *your order against that book*, not a headline number. So the backtest must never
   encode a claim like "Bitfinex slippage = 5 bps" — it must either derive slippage from order-book depth
   or run explicit stress scenarios.
-- **Fee ≠ slippage, and the model already keeps them separate.** Commission (maker/taker fee) and
-  slippage are independent inputs in
-  [position_tracker.py:120-121](../../src/core/backtest/position_tracker.py#L120-L121):
+- **Fee ≠ slippage, and the model already keeps them separate.** Commission and slippage are independent
+  inputs in [position_tracker.py:120-121](../../src/core/backtest/position_tracker.py#L120-L121):
   `commission_rate` is charged on notional; `slippage_rate` moves the fill price. This separation is
   correct as-is — it is not a gap to fix.
+- **Bitfinex trading fee is now zero — documented reality, not an assumption.** Effective **2025-12-17**
+  Bitfinex scrapped the maker/taker model: zero maker and taker fees, permanent, no volume/tier/LEO
+  condition, across spot, margin, derivatives, securities, and OTC. So `commission: 0.0` in
+  `config/backtest_defaults.yaml` is now the *documented exchange reality* for spot, not a convenient
+  default. (The `commission_rate=0.002` Taker constructor default in `position_tracker.py` is now a
+  historical value, harmless because config overrides it to 0.0.) The cost-stress commission grid stays
+  valid only as a "what if fees returned" robustness probe, not a realistic anchor.
+- **Funding / margin-lending is the remaining exchange cost — and it is separate from both fee and
+  slippage.** The zero-fee change did *not* touch margin lending, derivative funding, or deposit/withdrawal
+  fees. For **spot** the exchange-fee story is now complete: zero. For **margin/leverage** funding is the
+  only live exchange cost left and must be modeled as its own component (the tracked champions are spot
+  `tBTCUSD`, so funding does not apply to them today).
 - **Order-book-derived slippage (the correct method when depth exists).** Walk the book until the order
   size is filled, take the size-weighted average fill price (VWAP), and express the gap to a reference
   price in basis points:
@@ -95,6 +108,11 @@ and what conservative fallback holds when order-book depth is not available?
 A future, separately validated slice — **planned, not built**, and out of scope under the current freeze
 and the dormant-transport boundary.
 
+With the Bitfinex trading fee now zero for spot, the fee axis of the cost grid collapses to ~0 and
+slippage carries essentially all of the executable cost. That vindicates the fee ≠ slippage separation and
+shifts all the weight to the slippage half — making this order-book VWAP slice relatively **more**
+important, not less, once the freeze lifts.
+
 - **Scope IN:** read Bitfinex `book` channel (or equivalent depth source); store depth snapshots
   (snapshot/stream persistence); a pure `orderbook_vwap_bps(side, size, book, ref_price)` helper
   implementing the order-size-aware walk above; a reference-price config knob (default mid); and explicit,
@@ -123,4 +141,6 @@ and the dormant-transport boundary.
 ## Current status
 
 Open. Methodology is recorded and the order-book slice is scoped but deferred; the next concrete step is
-the post-freeze stress run, not the implementation.
+the post-freeze stress run, not the implementation. Updated 2026-06-18 with the Bitfinex zero-fee change
+(effective 2025-12-17): spot trading fee is now zero, funding/margin-lending remain, and slippage now
+carries the executable cost for spot — raising the relative priority of the deferred VWAP slice.

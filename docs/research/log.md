@@ -248,3 +248,16 @@ Suggested kinds:
   `docs/glossary.md` (repo terms → SSOT links, not restated), `mcp_server/index.md` (verification-only
   MCP boundary), and rolled the `index.md` convention out to `src/core/backtest/`, `indicators/`, and
   `intelligence/`. Marked the fidelity review's semantic-lint next-step done.
+
+## [2026-06-18] ingest | Bitfinex zero-fee change folded into slippage methodology
+
+- External fact verified across sources: Bitfinex scrapped the maker/taker model effective **2025-12-17**
+  — zero maker and taker fees, permanent, no volume/tier/LEO condition, across spot/margin/derivatives/
+  securities/OTC. Funding/margin-lending and deposit/withdrawal fees are unchanged.
+- Folded into `slippage-backtest-methodology.md`: `commission: 0.0` is now documented exchange reality for
+  spot (not an assumption); the `position_tracker.py` `commission_rate=0.002` default is now historical
+  (harmless, config overrides to 0.0); funding/margin-lending recorded as the separate remaining exchange
+  cost (applies to margin/leverage only — tracked champions are spot `tBTCUSD`).
+- Consequence recorded: with the spot fee axis at ~0, slippage now carries essentially all executable
+  cost — vindicating fee ≠ slippage and raising the relative priority of the deferred order-book VWAP
+  slice. Docs-only; no runtime/config/champion change.
