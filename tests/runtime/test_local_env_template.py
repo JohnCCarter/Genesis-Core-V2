@@ -12,9 +12,6 @@ def test_local_env_example_tracks_the_narrow_placeholder_values() -> None:
         "BEARER_TOKEN=change-me",
         "BITFINEX_API_KEY=change-me",
         "BITFINEX_API_SECRET=change-me",
-        "NVIDIA_API_KEY=change-me",
-        "NVIDIA_API_BASE=https://integrate.api.nvidia.com/v1",
-        "NVIDIA_QWEN_MODEL=qwen/qwen3-coder-480b-a35b-instruct",
         "SYMBOL_MODE=realistic",
         "LOG_LEVEL=INFO",
     ]:

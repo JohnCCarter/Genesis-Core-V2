@@ -190,12 +190,6 @@ def pytest_suite_main(argv: list[str] | None = None) -> int:
     return int(pytest.main(config["pytest_args"]))
 
 
-def qwen_builder_main(argv: list[str] | None = None) -> int:
-    from genesis_core_v2_cli.qwen_builder import main as qwen_builder_impl
-
-    return qwen_builder_impl(argv)
-
-
 def _run_smoke_entrypoint(module_name: str) -> int:
     _prefer_local_paths()
     return importlib.import_module(module_name).main()
@@ -229,7 +223,6 @@ __all__ = [
     "api_shell_main",
     "mcp_stdio_main",
     "pytest_suite_main",
-    "qwen_builder_main",
     "champion_smoke_main",
     "evaluate_champion_smoke_main",
     "fixture_smoke_main",
