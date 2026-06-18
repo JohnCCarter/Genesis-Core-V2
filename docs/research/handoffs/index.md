@@ -30,6 +30,8 @@ A good handoff should include:
   ecosystem inventory surfaces so future sessions can resume from the restored repo state
 - `2026-06-17-config-merges-and-github-hardening.md` - baton-pass for the config-separation,
   branch-merge, and GitHub-hardening session; points to the next research focus and Issue #12
+- `2026-06-18-agent-native-wiki-and-handoff-consolidation.md` - baton-pass for the agent-native lint +
+  framing work and handoff consolidation; flags the pending fidelity-branch merge and its `map.md` conflict
 
 ## Naming suggestion
 
