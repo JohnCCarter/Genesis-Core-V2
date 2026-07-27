@@ -23,7 +23,7 @@ dependencies = [
   "pandera>=0.32.1,<1",
   "pandas>=2.0,<3",
   "PyYAML>=6.0,<7",
-  "tqdm>=4.69.0,<5",
+  "tqdm>=4.69.1,<5",
   "pyarrow>=23.0.1,<24"
 ]
 
