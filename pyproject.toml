@@ -46,7 +46,7 @@ dev = [
   "hypothesis>=6.161.5,<7",
   "pytest-regressions>=2.6,<3",
   "black>=24.10",
-  "ruff>=0.15.22",
+  "ruff>=0.16.1",
   "pre-commit>=3.0",
   "pip-audit>=2.10.1,<3"
 ]
